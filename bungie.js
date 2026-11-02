@@ -195,7 +195,7 @@ function choose(cands, cid){
 }
 
 /* Equip the run's current loadout on the chosen character: gear + subclass. */
-B.applyRun = async (run, {quiet} = {}) => {
+B.applyRun = async (run, {quiet, gearOnly} = {}) => {
   if(B.busy) return; if(!B.connected()){ note("Connect your Bungie account first.","err"); return; }
   B.busy = true; window.renderBungieSoon && window.renderBungieSoon();
   const cid = B.charId;
@@ -232,10 +232,10 @@ B.applyRun = async (run, {quiet} = {}) => {
       const failed = (r.equipResults||[]).filter(x=>x.equipStatus!==1).length;
       if(failed) note(failed+" item(s) couldn't be equipped. Go to orbit or a social space and press Equip again.","err");
     }
-    await applySubclass(run, cid);
+    if(!gearOnly) await applySubclass(run, cid);
     await loadProfile();
     if(missing.length) note("Missing from your inventory: "+missing.join(", ")+". Pull them from Collections in game, then press Equip again.","err");
-    else if(!quiet) note("Run loadout equipped on your "+run.cls+".","ok");
+    else if(!quiet) note((gearOnly ? "Common gear equipped on your " : "Run loadout equipped on your ")+run.cls+".","ok");
     else note("Loadout updated in game.","ok");
   } catch(e){ note(friendly(e),"err"); }
   finally { B.busy = false; window.render && window.render(); }
