@@ -123,6 +123,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .tablewrap{overflow-x:auto;max-height:340px;overflow-y:auto}
 .res{font-family:var(--display);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:3px;white-space:nowrap}
 .res.clear{background:rgba(95,227,154,.12);color:var(--good)}
+.res.flawless{background:rgba(226,192,68,.15);color:var(--r-exotic)}
 .res.death{background:rgba(255,93,93,.14);color:var(--danger)}
 .res.extracted{background:rgba(127,212,255,.14);color:var(--accent)}
 .dimstr{font-family:var(--mono);font-size:.78rem;background:#070a10;border:1px solid var(--line);border-radius:4px;padding:10px;word-break:break-word;color:#bfe9ff}
@@ -145,7 +146,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=9"></script>
+<script src="bungie.js?v=10"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -225,7 +226,7 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("sh
 /* ---------------- State & persistence ---------------- */
 const LS_KEY = "d2rogue.v1";
 let state = { run:null, history:[], updatedAt:0 };
-let ui = { confirm:null, setup:{cls:"Hunter", el:"arc", lives:"1", mode:"ops"} };
+let ui = { confirm:null, setup:{cls:"Hunter", el:"arc", lives:"3", mode:"ops", difficulty:"normal"} };
 try { const raw = localStorage.getItem(LS_KEY); if(raw){ const s = JSON.parse(raw); if(s && typeof s==="object") state = Object.assign(state, s); } } catch(e){}
 
 function normalize(){
@@ -364,14 +365,14 @@ function startRun(){
   const cls = s.cls, el = s.el==="random" ? pick(Object.keys(ELEMENTS)) : s.el;
   const lives = parseInt(s.lives,10);
   state.run = {
-    id:"run-"+Date.now().toString(36), startedAt:Date.now(), mode:s.mode||"ops", cls, el, lives, maxLives:lives,
+    id:"run-"+Date.now().toString(36), startedAt:Date.now(), mode:s.mode||"ops", difficulty:s.difficulty||"normal", cls, el, lives, maxLives:lives,
     depth:0, light:0, deaths:0, score:0, boons:0, status:"active",
     weapons:starterGear(), armor:[], commonArmor:true, events:[], pending:null,
     ab: baseAbilities(cls, el)
   };
   ui.confirm=null; save(); render(); window.scrollTo(0,0);
   const B = window.D2R_BUNGIE;
-  if(B && B.connected()){ B.pickChar(state.run); B.applyRun(state.run); }
+  if(B && B.connected()){ const run = state.run; B.pickChar(run); B.snapshot(run).then(()=>{ save(); B.applyRun(run); }).catch(()=>B.applyRun(run)); }
 }
 function setActive(type, name){
   const run = state.run; if(!run) return;
@@ -379,35 +380,55 @@ function setActive(type, name){
   run.ab.active[type] = name; save(); afterChange(); render();
 }
 function logEvent(form){
-  logEventData({eventId:form.event.value, diff:parseInt(form.diff.value,10), outcome:form.outcome.value, note:form.note.value.trim().slice(0,140)});
+  const o = form.outcome.value;
+  logEventData({eventId:form.event.value, diff:parseInt(form.diff.value,10), completed:o!=="fail", deaths:o==="flawless"?0:Math.max(1,parseInt(form.mdeaths.value,10)||1), note:form.note.value.trim().slice(0,140)});
 }
+const FLAWLESS_LIGHT = 2, FLAWLESS_SCORE = 25;
+/* x: {eventId, diff, completed, deaths, note, at, instanceId, loot:[names], equippedLoot:[instance ids]} */
 function logEventData(x, noRender){
   const run = state.run; if(!run || run.pending || run.status!=="active") return;
   const list = eventsFor(run);
   const ev = list.find(e=>e.id===x.eventId) || list[0];
-  const diff = x.diff||0, outcome = x.outcome;
-  const power = ev.tier + diff;
-  const entry = {n:run.events.length+1, at:x.at||Date.now(), eventId:ev.id, event:ev.name, diff, diffName:DIFFS[diff], power, outcome, note:x.note||"", source:x.instanceId?"bungie":"manual", loot:null, boons:[], lost:null, lightBefore:run.light};
+  const diff = x.diff||0, power = ev.tier + diff;
+  const completed = x.completed!==undefined ? !!x.completed : x.outcome==="clear";
+  const deaths = x.deaths!==undefined ? (x.deaths|0) : (x.outcome==="death" ? 1 : 0);
+  const flawless = completed && deaths===0;
+  const hardcore = run.difficulty==="hardcore";
+  const outcome = flawless ? "flawless" : completed ? "clear" : "death";
+  const entry = {n:run.events.length+1, at:x.at||Date.now(), eventId:ev.id, event:ev.name, diff, diffName:DIFFS[diff], power, outcome, deaths, note:x.note||"", source:x.instanceId?"bungie":"manual",
+    loot:(x.loot&&x.loot.length)?x.loot.join(", "):null, boons:[], lost:null, lifeLost:false, lightBefore:run.light, scoreBefore:run.score, lightGain:0};
+  if(ev.id==="dungeon" && run.dungeon){ entry.note = (entry.note?entry.note+" · ":"")+run.dungeon.encounters+" encounter"+(run.dungeon.encounters===1?"":"s")+" cleared"; run.dungeon = null; }
   run.events.push(entry);
-  if(outcome==="clear"){
+  run.deaths += deaths;
+  // rewards for finishing
+  if(completed){
     run.depth++;
-    run.score += power*10;
-    run.light += power;
+    const gain = flawless ? power + FLAWLESS_LIGHT : hardcore ? power : Math.max(1, power - deaths);
+    entry.lightGain = gain;
+    run.light += gain;
+    run.score += power*10 + (flawless ? FLAWLESS_SCORE : -Math.min(power*10, 5*deaths));
+  }
+  // penalties
+  let loseLife = false;
+  if(hardcore && deaths>0){
+    loseLife = true;
+    const eq = new Set(x.equippedLoot || run.weapons.concat(run.armor).filter(i=>i.inst).map(i=>i.inst));
+    const gone = run.weapons.concat(run.armor).filter(i=>i.inst && eq.has(i.inst));
+    if(gone.length){
+      run.lostLoot = (run.lostLoot||[]).concat(gone.map(g=>g.inst));
+      run.weapons = run.weapons.filter(w=>!gone.includes(w)); run.armor = run.armor.filter(a=>!gone.includes(a));
+      entry.lost = gone.map(g=>g.name).join(", ");
+    }
+  } else if(!hardcore && !completed){
+    loseLife = true; // a failed run or a wipe that ends the activity
+  }
+  if(loseLife){ run.lives--; entry.lifeLost = true; }
+  if(run.lives<=0){ endRun("death"); }
+  else {
     let boonCount = 0;
     while(run.light >= LIGHT_PER_BOON){ run.light -= LIGHT_PER_BOON; boonCount++; }
-    run.pending = {eventN:entry.n, loot:lootOffers(run,power), boonsLeft:boonCount, boon: boonCount ? boonOffers(run) : null};
-    if(!run.pending.loot.length && !boonCount) run.pending = null;
-  } else {
-    run.deaths++; run.lives--;
-    const losable = run.weapons.filter(w=>w.source!=="Starter").concat(run.armor);
-    if(run.lives>0 && losable.length){
-      const lost = pick(losable);
-      run.weapons = run.weapons.filter(w=>w.id!==lost.id); run.armor = run.armor.filter(a=>a.id!==lost.id);
-      entry.lost = itemLabel(lost);
-    }
-    if(run.lives<=0) endRun("death");
+    run.pending = boonCount ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:boonOffers(run)} : null;
   }
-  if(ev.id==="dungeon" && run.dungeon){ entry.note = (entry.note?entry.note+" · ":"")+run.dungeon.encounters+" encounter"+(run.dungeon.encounters===1?"":"s")+" cleared"; run.dungeon = null; }
   if(!noRender){ save(); afterChange(); render(); }
 }
 /* events synced from Bungie wait in a queue; each one is logged when the previous rewards are picked */
@@ -438,7 +459,7 @@ function encounterCleared(){
   const entry = {n:run.events.length+1, at:Date.now(), eventId:"encounter", event:"Encounter "+run.dungeon.encounters+" · "+dname, diff, diffName:DIFFS[diff], power, outcome:"clear", note:"", source:"encounter", loot:null, boons:[], lost:null, lightBefore:run.light};
   run.events.push(entry);
   run.depth++; run.score += power*10;
-  run.pending = {eventN:entry.n, loot:lootOffers(run,power), boonsLeft:1, boon:boonOffers(run)};
+  run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run)};
   save(); render();
 }
 function itemLabel(it){ return it.kind==="armor" || it.rarity==="exotic" ? it.name : cap(it.rarity)+" "+it.name; }
@@ -484,8 +505,8 @@ function undoLast(){
   // only for the newest event with no reward taken yet (mistake fix)
   const run = state.run; if(!run || !run.events.length) return;
   const ev = run.events[run.events.length-1];
-  if(ev.outcome!=="clear" || !run.pending || run.pending.eventN!==ev.n || ev.loot || ev.boons.length) return;
-  run.events.pop(); run.depth--; run.score -= ev.power*10;
+  if(!run.pending || run.pending.eventN!==ev.n || ev.boons.length) return;
+  run.events.pop(); if(ev.outcome!=="death") run.depth--; run.score = ev.scoreBefore ?? (run.score - ev.power*10); run.deaths -= ev.deaths||0; if(ev.lifeLost) run.lives++;
   run.light = ev.lightBefore ?? 0;
   run.pending = null;
   save(); render(); toast("Last event removed");
@@ -555,8 +576,8 @@ function showText(title, text){
 /* ---------------- Rendering ---------------- */
 function elChip(el){ return `<span class="chip el el-${el}">${ELEMENTS[el].name}</span>`; }
 function itemRow(it){
-  const sub = it.kind==="armor" ? "Exotic armor" : it.any ? (it.note || "Pull from Collections") : AMMO_LABEL[it.ammo]+" ammo";
-  return `<div class="item r-${it.rarity}"><div><div class="rtag">${it.rarity}</div><div class="nm">${esc(it.name)}</div></div><div class="meta">${esc(sub)}<br>${esc(it.source||"")}</div></div>`;
+  const sub = it.inst ? "Looted"+(it.source?" · "+it.source:"") : it.kind==="armor" ? "Exotic armor" : it.any ? (it.note || "Pull from Collections") : AMMO_LABEL[it.ammo]+" ammo";
+  return `<div class="item r-${it.rarity}"><div><div class="rtag">${it.rarity}</div><div class="nm">${esc(it.name)}</div></div><div class="meta">${esc(sub)}${it.inst?"":"<br>"+esc(it.source||"")}</div></div>`;
 }
 function chipList(list, el, emptyText, slots){
   const chips = list.map(n=>`<span class="chip el el-${el}">${esc(n)}</span>`);
@@ -587,7 +608,7 @@ function baseBuildHTML(cls, el){
 function pullSteps(cls){
   return `<ol class="steps">
     <li><b>Once per account, in game:</b> open Collections and pull one common (white) <b>kinetic</b> weapon (e.g. ${PULL_SUGGEST.kinetic}), one common <b>energy</b> weapon (e.g. ${PULL_SUGGEST.energy}), one uncommon (green) <b>power</b> weapon (e.g. ${PULL_SUGGEST.power}), and a common armor set for your ${cls} (e.g. ${PULL_SUGGEST.armor[cls]}). D2 has no white heavy weapon, so power starts at green. Any common items work, and more of them gives each run more variety.</li>
-    <li><b>Connect Bungie and start the run.</b> The app moves your common gear to your ${cls}, equips it and sets your subclass. After every reward it updates your loadout.</li>
+    <li><b>Connect Bungie and start the run.</b> The app moves your common gear to your ${cls}, equips it and sets your subclass. From then on, every weapon or armor piece you pick up is yours to use for the run.</li>
     <li><b>Play Vanguard Ops</b> (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is logged for you. Other activities don't count.</li>
   </ol>`;
 }
@@ -631,9 +652,11 @@ function renderSetup(){
   const s = ui.setup;
   const seg = (name, opts, cur, cls="") => `<div class="seg" role="radiogroup">${opts.map(([v,l,extra])=>`<input type="radio" name="${name}" id="${name}-${v}" value="${v}" ${v===cur?"checked":""}><label for="${name}-${v}" class="${cls} ${extra||""}">${l}</label>`).join("")}</div>`;
   return `<section class="panel">
-    <div><h2>New run</h2><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's base build with common gear only. Clears unlock new abilities, aspects, fragments and better loot.</p></div>
+    <div><h2>New run</h2><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's base build with common gear only. Anything you pick up in game during the run becomes usable, and clears unlock new abilities, aspects and fragments.</p></div>
     <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
-      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives a loot pick and an ability unlock; finishing the dungeon gives bonus loot. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Each finished op gives loot and Light."}</p></div>
+      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives an ability unlock, and finishing the dungeon earns Light. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Each finished op earns Light toward ability unlocks."}</p></div>
+    <div><h3>Mode</h3>${seg("difficulty", [["normal","Normal"],["hardcore","Hardcore"]], s.difficulty||"normal")}
+      <p class="help" style="margin:6px 0 0">${(s.difficulty||"normal")==="hardcore" ? "Any death costs a life and every looted item you had equipped. Your starter commons are never lost." : "Clearing with no deaths earns bonus Light. Dying only reduces the Light you earn; failing or wiping out of an activity costs a life."} Flawless clears earn +${2} Light and +25 score in both modes.</p></div>
     <div><h3>Class</h3>${seg("cls", CLASSES.map(c=>[c,c]), s.cls)}</div>
     <div><h3>Subclass</h3>${seg("el", Object.keys(ELEMENTS).map(k=>[k,ELEMENTS[k].name,"elem el-"+k]).concat([["random","Random"]]), s.el)}</div>
     ${baseBuildHTML(s.cls, s.el)}
@@ -651,7 +674,7 @@ function renderStatus(run){
   for(let i=0;i<Math.max(run.maxLives,run.lives);i++) pips.push(`<span class="pip ${i<run.lives?"on":"lost"}" title="${i<run.lives?"Life":"Lost life"}"></span>`);
   const pct = Math.round(run.light/LIGHT_PER_BOON*100);
   return `<section class="status">
-    <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
+    <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to next ability</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
     <div><span class="lbl">Events / Deaths</span><span class="val">${run.events.length} / ${run.deaths}</span></div>
@@ -660,13 +683,13 @@ function renderStatus(run){
 }
 function renderLoadout(run){
   const bySlot = sl => run.weapons.filter(w=>slotOf(w)===sl);
-  const slot = sl => `<div class="slotgroup"><h3>${SLOT_LABEL[sl]}</h3>${bySlot(sl).length ? `<div class="items">${bySlot(sl).map(itemRow).join("")}</div>` : `<div class="empty-note">Nothing looted yet</div>`}</div>`;
+  const slot = sl => `<div class="slotgroup"><h3>${SLOT_LABEL[sl]}</h3>${bySlot(sl).length ? `<div class="items">${bySlot(sl).map(itemRow).join("")}</div>` : `<div class="empty-note">No loot in this slot yet</div>`}</div>`;
   const a = run.ab;
   return `<section class="panel">
     <h2>Loadout pool</h2>
-    <p class="help" style="margin:0">You may equip anything listed here. Use any copy of a weapon type at the listed rarity.</p>
+    <p class="help" style="margin:0">You may equip anything listed here. Gear you pick up in game during the run is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>
     ${slot("kinetic")}${slot("energy")}${slot("power")}
-    <div class="slotgroup"><h3>Armor</h3><div class="items">${itemRow({kind:"weapon",any:true,rarity:"common",name:"Any common "+run.cls+" armor",note:"Pull from Collections",source:"Starter"})}</div><h3>Exotic armor</h3>${run.armor.length ? `<div class="items">${run.armor.map(itemRow).join("")}</div>` : `<div class="empty-note">Common armor only until an exotic drops</div>`}</div>
+    <div class="slotgroup"><h3>Armor</h3><div class="items">${itemRow({kind:"weapon",any:true,rarity:"common",name:"Any common "+run.cls+" armor",note:"Pull from Collections",source:"Starter"})}</div><h3>Looted armor</h3>${run.armor.length ? `<div class="items">${run.armor.map(itemRow).join("")}</div>` : `<div class="empty-note">Armor you pick up during the run appears here</div>`}</div>
     <p class="help" style="margin:0">Tap an unlocked ability to switch to it in game.</p>
     <div class="slotgroup"><h3>Super</h3>${pickList(run,"super")}</div>
     <div class="slotgroup"><h3>Grenade</h3>${pickList(run,"grenade")}</div>
@@ -678,7 +701,7 @@ function renderLoadout(run){
 }
 function renderPending(run){
   const p = run.pending, ev = run.events.find(e=>e.n===p.eventN);
-  let html = `<div class="callout"><div class="row between"><h2 style="color:var(--accent)">Rewards: ${esc(ev?ev.event:"")} · ${esc(ev?ev.diffName:"")}</h2>${(!ev||ev.loot||ev.boons.length)?"":`<button class="btn ghost" data-act="undo">Undo event</button>`}</div>`;
+  let html = `<div class="callout"><div class="row between"><h2 style="color:var(--accent)">${ev && ev.outcome==="flawless"?"Flawless! ":""}Ability unlock: ${esc(ev?ev.event:"")} · ${esc(ev?ev.diffName:"")}</h2>${(!ev||ev.boons.length)?"":`<button class="btn ghost" data-act="undo">Undo event</button>`}</div>`;
   if(p.loot.length){
     html += `<h3>Choose one drop</h3><div class="offers">${p.loot.map((it,i)=>`<button class="offer r-${it.rarity}" data-act="loot" data-i="${i}"><span class="rtag">${it.rarity}</span><span class="nm">${esc(it.name)}</span><span class="sub">${it.kind==="armor"?"Exotic armor · "+run.cls:SLOT_LABEL[slotOf(it)]+" · "+AMMO_LABEL[it.ammo]+" ammo"}</span></button>`).join("")}</div>
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
@@ -694,9 +717,9 @@ function renderDungeonPanel(run){
   const n = d ? d.encounters : 0;
   return `<section class="callout dungeon">
     <div class="row between"><h2 style="color:var(--accent)">Dungeon tracker</h2><span class="help">${live}</span></div>
-    <p style="margin:0">${d ? `${esc(d.name)}: <b>${n}</b> encounter${n===1?"":"s"} cleared this clear.` : "Tap the button after each encounter you beat (bosses and major fights). Each one gives a loot pick and an ability unlock."}</p>
+    <p style="margin:0">${d ? `${esc(d.name)}: <b>${n}</b> encounter${n===1?"":"s"} cleared this clear.` : "Tap the button after each encounter you beat (bosses and major fights). Each one gives an ability unlock; the gear you pick up in game is yours to use."}</p>
     <div class="row"><button class="btn primary big" data-act="encounter">Encounter cleared</button>
-    <span class="help">When the dungeon ends, Bungie's record logs the full clear (bonus loot and Light) and any deaths.</span></div>
+    <span class="help">When the dungeon ends, Bungie's record logs the clear, your deaths and your loot.</span></div>
   </section>`;
 }
 function renderEventForm(run){
@@ -708,8 +731,10 @@ function renderEventForm(run){
       <label class="field" for="diff">Difficulty<select id="diff" name="diff">${DIFFS.map((d,i)=>`<option value="${i}">${d}</option>`).join("")}</select></label>
     </div>
     <div class="seg" role="radiogroup" aria-label="Outcome">
-      <input type="radio" name="outcome" id="oc-clear" value="clear" checked><label for="oc-clear">Cleared</label>
-      <input type="radio" name="outcome" id="oc-death" value="death"><label for="oc-death">Died / wiped</label>
+      <input type="radio" name="outcome" id="oc-flawless" value="flawless" checked><label for="oc-flawless">Cleared, no deaths</label>
+      <input type="radio" name="outcome" id="oc-clear" value="clear"><label for="oc-clear">Cleared with deaths</label>
+      <input type="radio" name="outcome" id="oc-fail" value="fail"><label for="oc-fail">Failed / wiped out</label>
+      <label class="field" for="mdeaths" style="text-transform:none;letter-spacing:0">Deaths <input type="text" id="mdeaths" name="mdeaths" value="1" inputmode="numeric" style="width:56px"></label>
     </div>
     <label class="field" for="note">Note (optional)<input type="text" id="note" name="note" maxlength="140" placeholder="e.g. Fireteam Ops Quickplay, Master"></label>
     <div class="row"><button class="btn primary" type="submit">Log event</button><span class="help">Higher tier and difficulty roll better loot and more Light.</span></div>
@@ -719,8 +744,8 @@ function renderEventLog(events){
   if(!events.length) return `<div class="empty-note">No events logged yet. Clear something in game, then log it here.</div>`;
   return `<div class="tablewrap"><table><thead><tr><th>#</th><th>Event</th><th>Result</th><th>Reward / loss</th></tr></thead><tbody>
     ${events.slice().reverse().map(e=>`<tr><td class="num">${e.n}</td><td>${esc(e.event)}<br><span class="help">${esc(e.diffName)} · power ${e.power}${e.note?" · "+esc(e.note):""}</span></td>
-    <td><span class="res ${e.outcome}">${e.outcome==="clear"?"Cleared":"Died"}</span></td>
-    <td>${e.outcome==="clear" ? esc([e.loot, ...(e.boons||[])].filter(Boolean).join(" · ")||"Pending") : (e.lost?"Lost "+esc(e.lost):"No item lost")}</td></tr>`).join("")}
+    <td><span class="res ${e.outcome}">${e.outcome==="flawless"?"Flawless":e.outcome==="clear"?"Cleared":e.eventId==="encounter"?"Cleared":"Failed"}</span>${e.deaths?`<br><span class="help">${e.deaths} death${e.deaths>1?"s":""}</span>`:""}</td>
+    <td>${esc([e.lightGain?"+"+e.lightGain+" Light":"", e.loot?"Looted "+e.loot:"", ...(e.boons||[]), e.lifeLost?"Lost a life":"", e.lost?"Lost "+e.lost:""].filter(Boolean).join(" · ")||"—")}</td></tr>`).join("")}
   </tbody></table></div>`;
 }
 function renderHistory(){
@@ -794,8 +819,7 @@ function renderBungie(run){
     ${run ? `<div class="row" style="gap:18px">
       <label class="tog"><input type="checkbox" id="bAutoEquip" ${B.opts.autoEquip?"checked":""}> Equip automatically after each reward</label>
       <label class="tog"><input type="checkbox" id="bAutoSync" ${B.opts.autoSync?"checked":""}> Sync activities every 2 minutes</label>
-      <label class="field" for="bDeath" style="text-transform:none;letter-spacing:0">A synced activity counts as a death when
-        <select id="bDeath" name="bDeath"><option value="any" ${B.opts.deathRule==="any"?"selected":""}>you die at least once</option><option value="fail" ${B.opts.deathRule==="fail"?"selected":""}>you fail or leave it</option></select></label>
+      <span class="help">${run.difficulty==="hardcore"?"Hardcore: any death costs a life and the looted gear you had equipped.":"Normal: only failing or wiping out of an activity costs a life."}</span>
       ${ago!=null?`<span class="help">Last sync ${ago} min ago${run.queue&&run.queue.length?` · ${run.queue.length} waiting`:""}</span>`:""}
     </div>` : ""}
     ${logHtml?`<ul class="blog">${logHtml}</ul>`:""}
@@ -848,9 +872,8 @@ document.addEventListener("change", e=>{
   const B = window.D2R_BUNGIE;
   if(t.id==="bAutoEquip"){ B.opts.autoEquip = t.checked; B.saveOpts(); return; }
   if(t.id==="bAutoSync"){ B.opts.autoSync = t.checked; B.saveOpts(); return; }
-  if(t.id==="bDeath"){ B.opts.deathRule = t.value; B.saveOpts(); return; }
   if(t.id==="bChar"){ B.charId = t.value; render(); return; }
-  if(["cls","el","lives","mode"].includes(t.name)){ ui.setup[t.name] = t.value; if(t.name!=="lives") render(); }
+  if(["cls","el","lives","mode","difficulty"].includes(t.name)){ ui.setup[t.name] = t.value; if(t.name!=="lives") render(); }
 });
 document.addEventListener("submit", e=>{
   if(e.target.id==="evform"){ e.preventDefault(); logEvent(e.target); }
@@ -860,7 +883,9 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape" && $("#modal").inn
 window.render = render; window.dimLoadout = dimLoadout; window.ELEMENTS = ELEMENTS;
 render();
 initCapabilities();
-if(window.D2R_BUNGIE) window.D2R_BUNGIE.init().then(()=>{ if(state.run && state.run.status==="active" && window.D2R_BUNGIE.connected() && window.D2R_BUNGIE.opts.autoSync) bungieSync(true); });
+if(window.D2R_BUNGIE) window.D2R_BUNGIE.init().then(async ()=>{
+  const B = window.D2R_BUNGIE, run = state.run;
+  if(run && run.status==="active" && B.connected() && !run.ownedAtStart){ B.pickChar(run); try { await B.snapshot(run); save(); B.note("Loot tracking started: anything you pick up from now on is usable."); render(); } catch(e){} } if(state.run && state.run.status==="active" && window.D2R_BUNGIE.connected() && window.D2R_BUNGIE.opts.autoSync) bungieSync(true); });
 </script>
 </body>
 </html>

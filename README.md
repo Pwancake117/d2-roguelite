@@ -37,16 +37,27 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 ## Playing
 1. **Connect your Bungie account.** Sign-in happens on bungie.net. The app asks to read your inventory and to move or equip gear.
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
-3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is synced from Bungie and logged automatically: clears earn loot and Light (every 4 Light unlocks an ability pick), deaths cost a life and a looted item.
-4. **Pick rewards in the app.** The app updates your loadout in game after each pick. Bungie only allows gear changes in orbit or social spaces.
+3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is synced from Bungie and logged automatically.
+4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
+5. **Unlock abilities.** Clears earn Light; every 4 Light unlocks a pick of a new super, grenade, melee, class ability, aspect, fragment or extra life. The app sets it on your subclass in game. Bungie only allows gear changes in orbit or social spaces.
+
+## Modes and deaths
+| | Normal | Hardcore |
+|---|---|---|
+| Clear with no deaths | Power + 2 bonus Light, +25 score | Same |
+| Clear with deaths | Light reduced by 1 per death (min 1), no other penalty | Lose a life **and every looted item you had equipped** |
+| Failed or wiped out | Lose a life | Lose a life and your equipped loot |
+| Starter commons | Never lost | Never lost |
+
+Power = Solo Ops 2, Fireteam/Arena Ops 3, Pinnacle Ops 4, plus 0–4 for difficulty. Lost loot is removed from your run; what you do with it in game is up to you. At 0 lives the run is over.
 
 Only Vanguard Ops activities count as events, since each has a clear start and finish. Event tier: Solo Ops 2, Fireteam Ops 3, Arena Ops 3, Pinnacle Ops 4, plus 0–4 for difficulty (Normal through Grandmaster/Ultimate). Patrols, campaign missions, Lost Sectors, dungeons, raids, Crucible and Gambit don't count.
 
 ## Dungeon Only Run
 Pick **Dungeon Only Run** on the setup screen for a run where only dungeons count.
 - The app detects when you're in a dungeon (it checks every 30 seconds) and shows a **Dungeon tracker**.
-- Tap **Encounter cleared** after each boss or major fight: every encounter gives a loot pick and an ability unlock.
-- When the dungeon ends, Bungie's record logs the full clear (bonus loot and Light) and any deaths.
+- Tap **Encounter cleared** after each boss or major fight: every encounter gives an ability unlock.
+- When the dungeon ends, Bungie's record logs the clear (Light), your deaths and the loot you picked up.
 - Bungie's API doesn't report dungeon encounters, so the encounter tap is the one manual step.
 
 ## Export

@@ -22,7 +22,7 @@ const CLASS_NAME = {0:"Titan",1:"Hunter",2:"Warlock"};
 const B = window.D2R_BUNGIE = {
   auth:null, account:null, profile:null, defs:null, chars:[], charId:null,
   busy:false, log:[], manifestState:"", lastSync:0,
-  opts:{autoEquip:true, autoSync:true, deathRule:"any"}
+  opts:{autoEquip:true, autoSync:true}
 };
 try { const a = JSON.parse(localStorage.getItem(AUTH_KEY)||"null"); if(a && a.expiresAt > Date.now()+60000) B.auth = a; } catch(e){}
 try { Object.assign(B.opts, JSON.parse(localStorage.getItem(OPT_KEY)||"{}")); } catch(e){}
@@ -133,7 +133,7 @@ function allItems(){
   const push = (it, owner, equipped) => {
     if(!it.itemInstanceId) return;
     const d = B.defs[it.itemHash]; if(!d) return;
-    out.push({inst:it.itemInstanceId, hash:it.itemHash, d, owner, equipped, canEquip: inst[it.itemInstanceId] ? inst[it.itemInstanceId].canEquip !== false : true, bucket:d.b});
+    out.push({inst:it.itemInstanceId, hash:it.itemHash, d, owner, equipped, postmaster: it.bucketHash===215593132, canEquip: inst[it.itemInstanceId] ? inst[it.itemInstanceId].canEquip !== false : true, bucket:d.b});
   };
   ((P.profileInventory && P.profileInventory.data && P.profileInventory.data.items) || []).forEach(it=>push(it,"vault",false));
   const ci = (P.characterInventories && P.characterInventories.data) || {}, ce = (P.characterEquipment && P.characterEquipment.data) || {};
@@ -146,6 +146,7 @@ function weaponAllowed(run, it){
   const d = it.d, slot = WEAPON_BUCKETS[d.b], rarity = TIER[d.tier], type = SUBTYPE[d.st];
   if(d.t!==3 || !slot) return false;
   return run.weapons.some(w=>{
+    if(w.inst) return w.inst===it.inst; // looted this run
     const wslot = w.slot || (w.ammo==="heavy" ? "power" : "kinetic");
     if(w.rarity==="exotic") return rarity==="exotic" && d.n===w.name;
     if(w.any) return rarity===w.rarity && slot===wslot;
@@ -156,7 +157,7 @@ function armorAllowed(run, it){
   const d = it.d; if(d.t!==2 || !ARMOR_BUCKETS.includes(d.b)) return false;
   if(d.c!==CLASS_TYPE[run.cls] && d.c!==3) return false;
   if(TIER[d.tier]==="common") return true;
-  return TIER[d.tier]==="exotic" && run.armor.some(a=>a.name===d.n);
+  return run.armor.some(a=>a.inst ? a.inst===it.inst : (TIER[d.tier]==="exotic" && a.name===d.n));
 }
 B.allowedCounts = run => {
   if(!B.profile || !B.defs) return null;
@@ -193,6 +194,10 @@ async function freeUp(it){
   note("Borrowed "+it.d.n+" from your "+(ownerChar?ownerChar.cls:"other character")+" (equipped "+rep.d.n+" there instead).");
 }
 async function moveTo(it, cid, keep){
+  if(it.postmaster){
+    await api("/Destiny2/Actions/Items/PullFromPostmaster/", {method:"POST", body:{itemReferenceHash:it.hash, stackSize:1, itemId:it.inst, characterId:it.owner, membershipType:B.account.type}});
+    it.postmaster = false;
+  }
   if(it.owner===cid) return;
   if(it.equipped) await freeUp(it);
   if(it.owner!=="vault"){ await transfer(it, true, it.owner); it.owner="vault"; }
@@ -204,10 +209,11 @@ async function moveTo(it, cid, keep){
   it.owner = cid;
 }
 function choose(cands, cid){
-  // prefer items already on the character, then free copies, then borrowing from another character
+  // best rarity first (looted gear beats starter commons), then items already on the character,
+  // then free copies, then borrowing from another character; random among equals
   const rank = i => (i.owner===cid ? 0 : i.equipped ? 2 : 1);
   const shuffled = cands.slice().sort(()=>Math.random()-0.5);
-  return shuffled.sort((a,b)=>rank(a)-rank(b))[0];
+  return shuffled.sort((a,b)=>(b.d.tier-a.d.tier) || (rank(a)-rank(b)))[0];
 }
 
 /* Equip the run's current loadout on the chosen character: gear + subclass. */
@@ -341,13 +347,22 @@ B.sync = async (run, {quiet} = {}) => {
       const name = info.name;
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
       const deaths = val("deaths");
-      let outcome = null;
-      if(B.opts.deathRule==="any" && deaths>0) outcome = "death";
-      else if(completed) outcome = "clear";
-      else if(B.opts.deathRule==="fail" && val("activityDurationSeconds")>120) outcome = "death";
-      if(!outcome) continue; // left early, no deaths: not an event
-      run.queue.push({eventId:type, diff:difficulty(name), outcome, note:name+(deaths?" · "+deaths+" death"+(deaths>1?"s":""):""), at:Date.parse(act.period), instanceId:id});
+      if(!completed && !deaths) continue; // left early without dying: not an event
+      run.queue.push({eventId:type, diff:difficulty(name), completed, deaths, note:name, at:Date.parse(act.period), instanceId:id});
       added++;
+    }
+    // what's equipped right now (hardcore losses), and anything new picked up since the last sync
+    if(added || run.ownedAtStart){
+      await loadDefs(); await loadProfile();
+      const eqLoot = B.equippedLoot(run);
+      if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths) q.equippedLoot = eqLoot; });
+      const loot = findLoot(run);
+      if(loot.length){
+        loot.forEach(x=>{ x.source = added ? run.queue[run.queue.length-1].note : "Found during the run"; (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
+        if(added) run.queue[run.queue.length-1].loot = loot.map(x=>x.name);
+        else run.unattachedLoot = (run.unattachedLoot||[]).concat(loot.map(x=>x.name));
+        note("Looted: "+loot.map(x=>x.name).join(", ")+". You can use "+(loot.length>1?"them":"it")+" now.","ok");
+      }
     }
     B.lastSync = Date.now();
     if(added) note(added+" new activit"+(added>1?"ies":"y")+" synced from Bungie.","ok");
@@ -355,6 +370,35 @@ B.sync = async (run, {quiet} = {}) => {
   } catch(e){ note(friendly(e),"err"); }
   finally { B.busy = false; }
   return added;
+};
+
+/* Real loot: every weapon/armor instance owned at run start is "old"; anything new is looted. */
+const ARMOR_NAME = {[BUCKET.helmet]:"helmet",[BUCKET.gauntlets]:"gauntlets",[BUCKET.chest]:"chest",[BUCKET.legs]:"legs",[BUCKET.classitem]:"classitem"};
+B.snapshot = async run => {
+  await loadDefs(); await loadProfile();
+  run.ownedAtStart = allItems().filter(i=>i.d.t===2||i.d.t===3).map(i=>i.inst);
+};
+function findLoot(run){
+  if(!run.ownedAtStart) return [];
+  const old = new Set(run.ownedAtStart), have = new Set(run.weapons.concat(run.armor).map(x=>x.inst).filter(Boolean).concat(run.lostLoot||[]));
+  const found = [];
+  for(const it of allItems()){
+    const d = it.d;
+    if(old.has(it.inst) || have.has(it.inst)) continue;
+    if(d.t===3 && WEAPON_BUCKETS[d.b]){
+      found.push({kind:"weapon", inst:it.inst, hash:it.hash, name:d.n, rarity:TIER[d.tier]||"common", slot:WEAPON_BUCKETS[d.b], dim:SUBTYPE[d.st]||"", ammo:WEAPON_BUCKETS[d.b]==="power"?"heavy":"special"});
+    } else if(d.t===2 && ARMOR_BUCKETS.includes(d.b) && (d.c===CLASS_TYPE[run.cls] || d.c===3)){
+      found.push({kind:"armor", inst:it.inst, hash:it.hash, name:d.n, rarity:TIER[d.tier]||"common", piece:ARMOR_NAME[d.b]});
+    }
+    have.add(it.inst);
+  }
+  return found;
+}
+B.findLoot = findLoot;
+B.equippedLoot = run => {
+  if(!B.profile || !B.charId) return [];
+  const eq = ((B.profile.characterEquipment.data[B.charId]||{}).items||[]).map(i=>i.itemInstanceId);
+  return run.weapons.concat(run.armor).filter(x=>x.inst && eq.includes(x.inst)).map(x=>x.inst);
 };
 
 /* Which activity is the run's character in right now? Used to detect dungeons live. */
