@@ -143,7 +143,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=7"></script>
+<script src="bungie.js?v=8"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -188,18 +188,14 @@ const EXOTIC_ARMOR = {
   Titan:["Heart of Inmost Light","Synthoceps","Cuirass of the Falling Star","Doom Fang Pauldron","Lion Rampant","Phoenix Cradle","Hallowfire Heart","Loreley Splendor Helm","Hazardous Propulsion","Precious Scars"],
   Warlock:["Sunbracers","Contraverse Hold","Geomag Stabilizers","Ophidian Aspect","Starfire Protocol","Phoenix Protocol","Transversive Steps","Getaway Artist","Necrotic Grip","Verity's Brow"]
 };
+/* Events are Vanguard Ops activities only (Director > Vanguard Ops): each has a clear start and finish. */
 const EVENTS = [
-  {id:"story",name:"Story / Campaign Mission",tier:2},
-  {id:"lost",name:"Lost Sector",tier:2},
-  {id:"strike",name:"Strike",tier:2},
-  {id:"onslaught",name:"Onslaught Run",tier:3},
-  {id:"nightfall",name:"Nightfall",tier:3},
-  {id:"exotic",name:"Exotic Mission",tier:3},
-  {id:"dungeon",name:"Dungeon Encounter",tier:4},
-  {id:"raid",name:"Raid / Raid Encounter",tier:5},
-  {id:"other",name:"Other PvE activity (with a finish)",tier:2}
+  {id:"solo",name:"Solo Ops",tier:2},
+  {id:"fireteam",name:"Fireteam Ops",tier:3},
+  {id:"arena",name:"Arena Ops",tier:3},
+  {id:"pinnacle",name:"Pinnacle Ops",tier:4}
 ];
-const DIFFS = ["Normal","Advanced","Expert","Master","Grandmaster"];
+const DIFFS = ["Normal","Advanced","Expert","Master","Grandmaster / Ultimate"];
 const RARITIES = ["uncommon","rare","legendary","exotic"];
 /* rarity odds [uncommon, rare, legendary, exotic] by power (event tier + difficulty index) */
 const ODDS = {1:[45,40,15,0],2:[25,45,28,2],3:[10,40,45,5],4:[5,25,60,10],5:[0,15,70,15],6:[0,5,70,25],7:[0,0,65,35]};
@@ -381,7 +377,7 @@ function logEvent(form){
 }
 function logEventData(x, noRender){
   const run = state.run; if(!run || run.pending || run.status!=="active") return;
-  const ev = EVENTS.find(e=>e.id===x.eventId) || EVENTS.find(e=>e.id==="other");
+  const ev = EVENTS.find(e=>e.id===x.eventId) || EVENTS[0];
   const diff = x.diff||0, outcome = x.outcome;
   const power = ev.tier + diff;
   const entry = {n:run.events.length+1, at:x.at||Date.now(), eventId:ev.id, event:ev.name, diff, diffName:DIFFS[diff], power, outcome, note:x.note||"", source:x.instanceId?"bungie":"manual", loot:null, boons:[], lost:null, lightBefore:run.light};
@@ -569,7 +565,8 @@ function baseBuildHTML(cls, el){
 function pullSteps(cls){
   return `<ol class="steps">
     <li><b>Once per account, in game:</b> open Collections and pull one common (white) <b>kinetic</b> weapon (e.g. ${PULL_SUGGEST.kinetic}), one common <b>energy</b> weapon (e.g. ${PULL_SUGGEST.energy}), one uncommon (green) <b>power</b> weapon (e.g. ${PULL_SUGGEST.power}), and a common armor set for your ${cls} (e.g. ${PULL_SUGGEST.armor[cls]}). D2 has no white heavy weapon, so power starts at green. Any common items work, and more of them gives each run more variety.</li>
-    <li><b>Connect Bungie and start the run.</b> The app moves your common gear to your ${cls}, equips it and sets your subclass. After every reward it updates your loadout, and finished activities are logged for you.</li>
+    <li><b>Connect Bungie and start the run.</b> The app moves your common gear to your ${cls}, equips it and sets your subclass. After every reward it updates your loadout.</li>
+    <li><b>Play Vanguard Ops</b> (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is logged for you. Other activities don't count.</li>
   </ol>`;
 }
 /* Per-class setup guide; when connected, a live checklist from the player's inventory */
@@ -678,7 +675,7 @@ function renderEventForm(){
       <input type="radio" name="outcome" id="oc-clear" value="clear" checked><label for="oc-clear">Cleared</label>
       <input type="radio" name="outcome" id="oc-death" value="death"><label for="oc-death">Died / wiped</label>
     </div>
-    <label class="field" for="note">Note (optional)<input type="text" id="note" name="note" maxlength="140" placeholder="e.g. Grasp of Avarice, first encounter"></label>
+    <label class="field" for="note">Note (optional)<input type="text" id="note" name="note" maxlength="140" placeholder="e.g. Fireteam Ops Quickplay, Master"></label>
     <div class="row"><button class="btn primary" type="submit">Log event</button><span class="help">Higher tier and difficulty roll better loot and more Light.</span></div>
   </form>`;
 }

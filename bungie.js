@@ -294,38 +294,27 @@ async function applySubclass(run, cid){
 }
 
 /* ---------- Activity sync ---------- */
-const MODE = {raid:4, dungeon:82, lost:87, strike:[3,18], nightfall:[16,17,46], story:2};
-/* open-ended activities (patrol, free roam, social spaces) have no finish, so they never count as events */
-const OPEN_ENDED_MODES = [6, 40, 45];
-const OPEN_ENDED_NAME = /patrol|explore|free roam|\bthe tower\b|social|orbit|h\.e\.l\.m|the farm/i;
-function classify(act, name){
-  const modes = (act.activityDetails.modes||[]).concat([act.activityDetails.mode]);
-  const has = m => [].concat(m).some(x=>modes.includes(x));
-  if(has([5,63,75,64,65,66,67])) return null; // PvP and Gambit are out of scope
-  if(has(OPEN_ENDED_MODES) || OPEN_ENDED_NAME.test(name)) return null; // no start/stop
-  if(/onslaught/i.test(name)) return "onslaught";
-  if(has(MODE.raid)) return "raid";
-  if(has(MODE.dungeon)) return "dungeon";
-  if(has(MODE.lost) || /lost sector/i.test(name)) return "lost";
-  if(has(MODE.nightfall) || /nightfall|grandmaster/i.test(name)) return "nightfall";
-  if(has(MODE.strike)) return "strike";
-  if(/exotic/i.test(name)) return "exotic";
-  if(has(MODE.story)) return "story";
-  return "other";
+/* Only Vanguard Ops activities count as events. Bungie tags them with these activity types,
+   and Quickplay nodes also report the Ops category as their destination. */
+const VO_TYPES = {1996806804:"fireteam", 2009300208:"arena", 3851289711:"solo", 3652020199:"pinnacle"};
+const VO_DESTS = {2171594315:"fireteam", 103806431:"arena", 4008773657:"solo"};
+function classify(info){
+  if(!info) return null;
+  return VO_TYPES[info.type] || VO_DESTS[info.dest] || null;
 }
 function difficulty(name){
-  if(/grandmaster/i.test(name)) return 4;
+  if(/ultimate|grandmaster/i.test(name)) return 4;
   if(/master/i.test(name)) return 3;
   if(/expert|legend/i.test(name)) return 2;
   if(/advanced|hero/i.test(name)) return 1;
   return 0;
 }
-const actNames = {};
-async function activityName(hash){
-  if(actNames[hash]) return actNames[hash];
-  try { const d = await api(`/Destiny2/Manifest/DestinyActivityDefinition/${hash}/`); actNames[hash] = (d.displayProperties && d.displayProperties.name) || "Activity"; }
-  catch(e){ actNames[hash] = "Activity"; }
-  return actNames[hash];
+const actInfo = {};
+async function activityInfo(hash){
+  if(actInfo[hash]) return actInfo[hash];
+  try { const d = await api(`/Destiny2/Manifest/DestinyActivityDefinition/${hash}/`); actInfo[hash] = {name:(d.displayProperties && d.displayProperties.name) || "Activity", type:d.activityTypeHash, dest:d.destinationHash}; }
+  catch(e){ actInfo[hash] = null; }
+  return actInfo[hash];
 }
 /* Pull activities finished since the run started and queue them as events. */
 B.sync = async (run, {quiet} = {}) => {
@@ -344,12 +333,12 @@ B.sync = async (run, {quiet} = {}) => {
       if(run.synced.includes(id)) continue;
       run.synced.push(id);
       const v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
-      const name = await activityName(act.activityDetails.directorActivityHash || act.activityDetails.referenceId);
-      const type = classify(act, name); if(!type) continue;
+      const info = await activityInfo(act.activityDetails.directorActivityHash || act.activityDetails.referenceId);
+      const type = classify(info); if(!type) continue; // not a Vanguard Ops activity
+      const name = info.name;
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
       const deaths = val("deaths");
       let outcome = null;
-      if(type==="other" && !completed) continue; // unknown activity type: only count it once it is actually finished
       if(B.opts.deathRule==="any" && deaths>0) outcome = "death";
       else if(completed) outcome = "clear";
       else if(B.opts.deathRule==="fail" && val("activityDurationSeconds")>120) outcome = "death";

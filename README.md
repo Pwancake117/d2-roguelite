@@ -37,10 +37,10 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 ## Playing
 1. **Connect your Bungie account.** Sign-in happens on bungie.net. The app asks to read your inventory and to move or equip gear.
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
-3. **Play.** Finished PvE activities are synced from Bungie and logged automatically: clears earn loot and Light (every 4 Light unlocks an ability pick), deaths cost a life and a looted item.
+3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is synced from Bungie and logged automatically: clears earn loot and Light (every 4 Light unlocks an ability pick), deaths cost a life and a looted item.
 4. **Pick rewards in the app.** The app updates your loadout in game after each pick. Bungie only allows gear changes in orbit or social spaces.
 
-Only activities with a clear start and finish count as events: Lost Sectors, strikes, Nightfalls, Onslaught, story and exotic missions, dungeons and raids. Patrols, free roam and social spaces are ignored, and so are Crucible and Gambit.
+Only Vanguard Ops activities count as events, since each has a clear start and finish. Event tier: Solo Ops 2, Fireteam Ops 3, Arena Ops 3, Pinnacle Ops 4, plus 0–4 for difficulty (Normal through Grandmaster/Ultimate). Patrols, campaign missions, Lost Sectors, dungeons, raids, Crucible and Gambit don't count.
 
 ## Export
 Download your runs as CSV (one row per event) or JSON from Run history. Run data is stored in your own browser.
