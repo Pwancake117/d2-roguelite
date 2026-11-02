@@ -146,7 +146,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=11"></script>
+<script src="bungie.js?v=12"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -854,6 +854,7 @@ async function watchActivity(){
   B.pickChar(run);
   const beforeDungeon = B.current && B.current.started, beforeLeft = B.justLeft;
   await B.pollCurrent(run);
+  if(B.pendingOrbit && B.inOrbit && !B.busy){ B.note("You're in orbit: finishing your subclass changes…"); B.applyRun(run, {quiet:true}); }
   if(B.justLeft && B.justLeft !== beforeLeft){ B.note("Activity finished. Waiting for Bungie to post the result…"); syncSoon(); render(); }
   else if((B.current && B.current.started) !== beforeDungeon) render();
 }

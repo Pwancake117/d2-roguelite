@@ -74,8 +74,12 @@ async function api(path, opts={}){
   throw {status:"Throttled", message:"Bungie.net is rate-limiting requests. Wait a minute and try again."};
 }
 B.api = api;
+const ORBIT_HASH = 82913930;
+function needsOrbit(e){ return /AtThisLocation|CannotPerformAction|InActivity|NotInOrbit|orbit/i.test(((e&&e.status)||"")+" "+((e&&e.message)||"")); }
+B.needsOrbit = needsOrbit;
 function friendly(e){
   const s = e && e.status || "";
+  if(needsOrbit(e)) return "Bungie only allows this in orbit (or while you're logged off). The app will finish it as soon as you're in orbit.";
   if(/AtThisLocation|CannotPerformAction|InActivity|DestinyItemActionForbidden/i.test(s)) return "Bungie won't change gear here. Go to orbit or a social space and try again.";
   if(/NoRoomInDestination/i.test(s)) return "Your character's inventory is full for that slot.";
   if(/SystemDisabled|Maintenance/i.test(s)) return "Bungie.net is down for maintenance.";
@@ -254,9 +258,15 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
       const failed = (r.equipResults||[]).filter(x=>x.equipStatus!==1).length;
       if(failed) note(failed+" item(s) couldn't be equipped. Go to orbit or a social space and press Equip again.","err");
     }
-    if(!gearOnly) await applySubclass(run, cid);
+    let subclassDone = true;
+    if(!gearOnly){
+      try { await applySubclass(run, cid); B.pendingOrbit = false; }
+      catch(e){ if(needsOrbit(e)){ subclassDone = false; B.pendingOrbit = true; } else throw e; }
+    }
     await sleep(4000); await loadProfile();
+    if(!subclassDone) note("Gear is set. Your subclass changes need orbit: the app will apply them as soon as you're in orbit.","err");
     if(missing.length) note("Missing from your inventory: "+missing.join(", ")+". Pull them from Collections in game, then press Equip again.","err");
+    else if(!subclassDone){ /* already explained above */ }
     else if(!quiet) note((gearOnly ? "Common gear equipped on your " : "Run loadout equipped on your ")+run.cls+".","ok");
     else note("Loadout updated in game.","ok");
   } catch(e){ note(friendly(e),"err"); }
@@ -277,7 +287,7 @@ async function applySubclass(run, cid){
   const lo = window.dimLoadout(run), target = lo.equipped[0], hash = target.hash;
   let sub = allItems().find(i=>i.owner===cid && i.hash===hash);
   if(!sub) throw {message:"Your "+run.cls+" doesn't have the "+window.ELEMENTS[run.el].name+" subclass unlocked."};
-  if(!sub.equipped){ await api("/Destiny2/Actions/Items/EquipItem/", {method:"POST", body:{itemId:sub.inst, characterId:cid, membershipType:B.account.type}}); await loadProfile(); }
+  if(!sub.equipped){ await api("/Destiny2/Actions/Items/EquipItem/", {method:"POST", body:{itemId:sub.inst, characterId:cid, membershipType:B.account.type}}); await sleep(1500); await loadProfile(); }
   const def = await fullDef(hash);
   const entries = (def.sockets && def.sockets.socketEntries) || [];
   const cur = ((B.profile.itemComponents.sockets.data[sub.inst]||{}).sockets||[]).map(s=>s.plugHash);
@@ -294,7 +304,7 @@ async function applySubclass(run, cid){
   for(const i of order){
     if(want[i] && cur[i]!==want[i]){
       try { await insertPlug(sub.inst, cid, i, want[i]); cur[i]=want[i]; }
-      catch(e){ if(/AtThisLocation|CannotPerform/i.test(e.status||"")) throw e; note("Couldn't set one subclass slot: "+friendly(e),"err"); }
+      catch(e){ if(needsOrbit(e)) throw e; note("Couldn't set one subclass slot: "+friendly(e),"err"); }
     }
   }
 }
@@ -417,6 +427,7 @@ B.pollCurrent = async run => {
     // left a counted activity since the last check: its result is about to post
     if(B.lastAct && B.lastAct.counted && B.lastAct.key !== key) B.justLeft = Date.now();
     B.lastAct = {key, counted};
+    B.inOrbit = !hash || hash===ORBIT_HASH;
     if(info && info.type===DUNGEON_TYPE){
       B.current = {hash, name:info.name.replace(/:\s*(Standard|Normal|Master|Legend|Expert|Advanced)\s*$/i,""), diff:difficulty(info.name), started:ca.dateActivityStarted};
     } else B.current = null;
