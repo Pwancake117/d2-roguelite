@@ -208,7 +208,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
     for(const [b, slot] of Object.entries(WEAPON_BUCKETS)){
       const cur = items.find(i=>i.owner===cid && i.equipped && i.d.b==b);
       if(cur && weaponAllowed(run, cur)){ keep.add(cur.inst); if(TIER[cur.d.tier]==="exotic") exoticWeaponUsed = true; continue; }
-      let cands = items.filter(i=>i.d.b==b && weaponAllowed(run,i) && !i.equipped && i.canEquip);
+      let cands = items.filter(i=>i.d.b==b && weaponAllowed(run,i) && !i.equipped && (i.canEquip || i.owner!==cid));
       if(exoticWeaponUsed) cands = cands.filter(i=>TIER[i.d.tier]!=="exotic");
       const nonEx = cands.filter(i=>TIER[i.d.tier]!=="exotic");
       const pickIt = choose(nonEx.length ? nonEx : cands, cid);
@@ -220,7 +220,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
     for(const b of ARMOR_BUCKETS){
       const cur = items.find(i=>i.owner===cid && i.equipped && i.d.b===b);
       if(cur && armorAllowed(run, cur)){ keep.add(cur.inst); if(TIER[cur.d.tier]==="exotic") exoticArmorUsed = true; continue; }
-      let cands = items.filter(i=>i.d.b===b && armorAllowed(run,i) && !i.equipped && i.canEquip);
+      let cands = items.filter(i=>i.d.b===b && armorAllowed(run,i) && !i.equipped && (i.canEquip || i.owner!==cid));
       if(exoticArmorUsed) cands = cands.filter(i=>TIER[i.d.tier]!=="exotic");
       const pickIt = choose(cands, cid);
       if(!pickIt){ missing.push("common "+ARMOR_LABEL[b].toLowerCase()+" for your "+run.cls); continue; }
