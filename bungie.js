@@ -176,9 +176,25 @@ async function makeRoom(cid, bucket, keep){
   if(!items.length) return false;
   await transfer(items[0], true, cid); return true;
 }
+/* An allowed item is equipped on another character: equip a stand-in there so it can move. */
+async function freeUp(it){
+  const owner = it.owner, ownerChar = B.chars.find(c=>c.id===owner);
+  const ownerClass = ownerChar ? CLASS_TYPE[ownerChar.cls] : -1;
+  const fits = i => i.d.b===it.d.b && i.inst!==it.inst && (i.d.c===3 || i.d.c===ownerClass) && TIER[i.d.tier]!=="exotic";
+  const items = allItems();
+  let rep = items.find(i=>i.owner===owner && !i.equipped && fits(i));
+  if(!rep){
+    rep = items.find(i=>i.owner==="vault" && fits(i));
+    if(!rep) throw {message:"Couldn't free "+it.d.n+" from your "+(ownerChar?ownerChar.cls:"other character")+": nothing else to equip in that slot."};
+    await transfer(rep, false, owner); rep.owner = owner;
+  }
+  await api("/Destiny2/Actions/Items/EquipItem/", {method:"POST", body:{itemId:rep.inst, characterId:owner, membershipType:B.account.type}});
+  it.equipped = false;
+  note("Borrowed "+it.d.n+" from your "+(ownerChar?ownerChar.cls:"other character")+" (equipped "+rep.d.n+" there instead).");
+}
 async function moveTo(it, cid, keep){
   if(it.owner===cid) return;
-  if(it.equipped) throw {message:"It's equipped on another character."};
+  if(it.equipped) await freeUp(it);
   if(it.owner!=="vault"){ await transfer(it, true, it.owner); it.owner="vault"; }
   try { await transfer(it, false, cid); }
   catch(e){
@@ -188,8 +204,8 @@ async function moveTo(it, cid, keep){
   it.owner = cid;
 }
 function choose(cands, cid){
-  // prefer items already on the character, then rarest rule, then random
-  const rank = i => (i.owner===cid ? 0 : 1);
+  // prefer items already on the character, then free copies, then borrowing from another character
+  const rank = i => (i.owner===cid ? 0 : i.equipped ? 2 : 1);
   const shuffled = cands.slice().sort(()=>Math.random()-0.5);
   return shuffled.sort((a,b)=>rank(a)-rank(b))[0];
 }
@@ -208,7 +224,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
     for(const [b, slot] of Object.entries(WEAPON_BUCKETS)){
       const cur = items.find(i=>i.owner===cid && i.equipped && i.d.b==b);
       if(cur && weaponAllowed(run, cur)){ keep.add(cur.inst); if(TIER[cur.d.tier]==="exotic") exoticWeaponUsed = true; continue; }
-      let cands = items.filter(i=>i.d.b==b && weaponAllowed(run,i) && !i.equipped && (i.canEquip || i.owner!==cid));
+      let cands = items.filter(i=>i.d.b==b && weaponAllowed(run,i) && (i.owner!==cid || !i.equipped) && (i.canEquip || i.owner!==cid));
       if(exoticWeaponUsed) cands = cands.filter(i=>TIER[i.d.tier]!=="exotic");
       const nonEx = cands.filter(i=>TIER[i.d.tier]!=="exotic");
       const pickIt = choose(nonEx.length ? nonEx : cands, cid);
@@ -220,7 +236,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
     for(const b of ARMOR_BUCKETS){
       const cur = items.find(i=>i.owner===cid && i.equipped && i.d.b===b);
       if(cur && armorAllowed(run, cur)){ keep.add(cur.inst); if(TIER[cur.d.tier]==="exotic") exoticArmorUsed = true; continue; }
-      let cands = items.filter(i=>i.d.b===b && armorAllowed(run,i) && !i.equipped && (i.canEquip || i.owner!==cid));
+      let cands = items.filter(i=>i.d.b===b && armorAllowed(run,i) && (i.owner!==cid || !i.equipped) && (i.canEquip || i.owner!==cid));
       if(exoticArmorUsed) cands = cands.filter(i=>TIER[i.d.tier]!=="exotic");
       const pickIt = choose(cands, cid);
       if(!pickIt){ missing.push("common "+ARMOR_LABEL[b].toLowerCase()+" for your "+run.cls); continue; }
@@ -233,7 +249,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
       if(failed) note(failed+" item(s) couldn't be equipped. Go to orbit or a social space and press Equip again.","err");
     }
     if(!gearOnly) await applySubclass(run, cid);
-    await loadProfile();
+    await sleep(4000); await loadProfile();
     if(missing.length) note("Missing from your inventory: "+missing.join(", ")+". Pull them from Collections in game, then press Equip again.","err");
     else if(!quiet) note((gearOnly ? "Common gear equipped on your " : "Run loadout equipped on your ")+run.cls+".","ok");
     else note("Loadout updated in game.","ok");
