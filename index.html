@@ -150,7 +150,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=13"></script>
+<script src="bungie.js?v=14"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -615,6 +615,7 @@ function baseBuildHTML(cls, el){
 function pullSteps(cls){
   return `<ol class="steps">
     <li><b>Once per account, in game:</b> open Collections and pull one common (white) <b>kinetic</b> weapon (e.g. ${PULL_SUGGEST.kinetic}), one common <b>energy</b> weapon (e.g. ${PULL_SUGGEST.energy}), one uncommon (green) <b>power</b> weapon (e.g. ${PULL_SUGGEST.power}), and a common armor set for your ${cls} (e.g. ${PULL_SUGGEST.armor[cls]}). D2 has no white heavy weapon, so power starts at green. Any common items work, and more of them gives each run more variety.</li>
+    <li><b>Recommended: clear your ${cls} first.</b> Move everything except your common starter gear to the vault, and empty the Postmaster, so anything on your character during the run is clearly run loot. After starting, the <b>Move other gear to vault</b> button in the Bungie panel does this for you.</li>
     <li><b>Connect Bungie and start the run.</b> The app moves your common gear to your ${cls}, equips it and sets your subclass. From then on, every weapon or armor piece you pick up is yours to use for the run.</li>
     <li><b>Play Vanguard Ops</b> (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is logged for you. Other activities don't count.</li>
   </ol>`;
@@ -819,7 +820,8 @@ function renderBungie(run){
       <p class="help" style="margin:4px 0 0">${B.manifestState ? esc(B.manifestState) : run ? (mine.length ? "Playing on your "+run.cls+(mine.length>1?"":"")+"." : "No "+run.cls+" on this account.") : "Start a run and the app equips it on your matching character."}</p></div>
       <div class="row">
         ${run ? `<button class="btn primary" data-act="bApply" ${B.busy||!cid?"disabled":""}>${B.busy?"Working…":"Equip run loadout"}</button>
-        <button class="btn" data-act="bSync" ${B.busy||!cid?"disabled":""}>Sync activities</button>` : ""}
+        <button class="btn" data-act="bSync" ${B.busy||!cid?"disabled":""}>Sync activities</button>
+        <button class="btn" data-act="bClear" ${B.busy||!cid?"disabled":""} title="Moves weapons and armor on this character that aren't part of the run to your vault">Move other gear to vault</button>` : ""}
         <button class="btn ghost" data-act="bLogout">Disconnect</button>
       </div></div>
     ${run && mine.length>1 ? `<label class="field" for="bChar">Character<select id="bChar" name="bChar">${mine.map(c=>`<option value="${c.id}" ${c.id===cid?"selected":""}>${esc(c.cls)} · ${c.light}</option>`).join("")}</select></label>` : ""}
@@ -884,6 +886,7 @@ document.addEventListener("click", e=>{
   else if(act==="bApply"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.applyRun(state.run); }
   else if(act==="bSync") bungieSync(false);
   else if(act==="bPull") window.D2R_BUNGIE.pullPostmaster(state.run);
+  else if(act==="bClear"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.clearToVault(state.run); }
   else if(act==="active") setActive(b.dataset.type, b.dataset.name);
   else if(act==="ask"){ ui.confirm=b.dataset.what; render(); }
   else if(act==="cancel"){ ui.confirm=null; render(); }

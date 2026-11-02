@@ -415,6 +415,29 @@ B.whereIs = inst => {
   if(((B.profile.profileInventory.data||{}).items||[]).some(i=>i.itemInstanceId===inst)) return "vault";
   return "gone";
 };
+/* Send everything on the run character that isn't part of the run to the vault (old Postmaster gear included). */
+B.clearToVault = async run => {
+  if(B.busy || !B.connected()) return;
+  B.busy = true; window.renderBungieSoon && window.renderBungieSoon();
+  let moved = 0, skipped = 0;
+  try {
+    await loadDefs(); await loadProfile();
+    const cid = B.charId;
+    const items = allItems().filter(i=>i.owner===cid && !i.equipped && (i.d.t===2 || i.d.t===3) && !weaponAllowed(run,i) && !armorAllowed(run,i));
+    for(const it of items){
+      try {
+        if(it.postmaster){ await api("/Destiny2/Actions/Items/PullFromPostmaster/", {method:"POST", body:{itemReferenceHash:it.hash, stackSize:1, itemId:it.inst, characterId:cid, membershipType:B.account.type}}); }
+        await transfer(it, true, cid); moved++; await sleep(150);
+      } catch(e){
+        if(/NoRoom|VaultFull|Full/i.test((e.status||"")+(e.message||""))){ note("Your vault is full. Moved "+moved+" item"+(moved===1?"":"s")+" before it filled up.","err"); skipped = -1; break; }
+        skipped++;
+      }
+    }
+    await sleep(2500); await loadProfile();
+    if(skipped>=0) note(moved ? "Moved "+moved+" item"+(moved===1?"":"s")+" that aren't part of the run to your vault"+(skipped?" ("+skipped+" couldn't be moved)":"")+"." : "Nothing to move: your "+run.cls+" only carries run gear.", moved?"ok":"");
+  } catch(e){ note(friendly(e),"err"); }
+  finally { B.busy = false; window.render && window.render(); }
+};
 /* Pull every looted item waiting in the run character's Postmaster */
 B.pullPostmaster = async run => {
   if(B.busy || !B.connected()) return;
