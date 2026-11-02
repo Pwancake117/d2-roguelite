@@ -296,6 +296,7 @@ async function applySubclass(run, cid){
 /* ---------- Activity sync ---------- */
 /* Only Vanguard Ops activities count as events. Bungie tags them with these activity types,
    and Quickplay nodes also report the Ops category as their destination. */
+const DUNGEON_TYPE = 608898761, DUNGEON_MODE = 82;
 const VO_TYPES = {1996806804:"fireteam", 2009300208:"arena", 3851289711:"solo", 3652020199:"pinnacle"};
 const VO_DESTS = {2171594315:"fireteam", 103806431:"arena", 4008773657:"solo"};
 function classify(info){
@@ -334,7 +335,9 @@ B.sync = async (run, {quiet} = {}) => {
       run.synced.push(id);
       const v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
       const info = await activityInfo(act.activityDetails.directorActivityHash || act.activityDetails.referenceId);
-      const type = classify(info); if(!type) continue; // not a Vanguard Ops activity
+      const isDungeon = info && (info.type===DUNGEON_TYPE || (act.activityDetails.modes||[]).includes(DUNGEON_MODE) || act.activityDetails.mode===DUNGEON_MODE);
+      const type = run.mode==="dungeon" ? (isDungeon ? "dungeon" : null) : classify(info);
+      if(!type) continue; // not an activity this run type counts
       const name = info.name;
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
       const deaths = val("deaths");
@@ -352,6 +355,22 @@ B.sync = async (run, {quiet} = {}) => {
   } catch(e){ note(friendly(e),"err"); }
   finally { B.busy = false; }
   return added;
+};
+
+/* Which activity is the run's character in right now? Used to detect dungeons live. */
+B.current = null;
+B.pollCurrent = async run => {
+  if(!B.connected() || !B.charId) return;
+  try {
+    const a = B.account;
+    const p = await api(`/Destiny2/${a.type}/Profile/${a.id}/Character/${B.charId}/?components=204`);
+    const ca = p.activities && p.activities.data;
+    const hash = ca && ca.currentActivityHash;
+    const info = hash ? await activityInfo(hash) : null;
+    if(info && info.type===DUNGEON_TYPE){
+      B.current = {hash, name:info.name.replace(/:\s*(Standard|Normal|Master|Legend|Expert|Advanced)\s*$/i,""), diff:difficulty(info.name), started:ca.dateActivityStarted};
+    } else B.current = null;
+  } catch(e){ /* keep the last known state */ }
 };
 
 /* ---------- Startup ---------- */

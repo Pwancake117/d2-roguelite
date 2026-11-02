@@ -42,5 +42,12 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 
 Only Vanguard Ops activities count as events, since each has a clear start and finish. Event tier: Solo Ops 2, Fireteam Ops 3, Arena Ops 3, Pinnacle Ops 4, plus 0–4 for difficulty (Normal through Grandmaster/Ultimate). Patrols, campaign missions, Lost Sectors, dungeons, raids, Crucible and Gambit don't count.
 
+## Dungeon Only Run
+Pick **Dungeon Only Run** on the setup screen for a run where only dungeons count.
+- The app detects when you're in a dungeon (it checks every 30 seconds) and shows a **Dungeon tracker**.
+- Tap **Encounter cleared** after each boss or major fight: every encounter gives a loot pick and an ability unlock.
+- When the dungeon ends, Bungie's record logs the full clear (bonus loot and Light) and any deaths.
+- Bungie's API doesn't report dungeon encounters, so the encounter tap is the one manual step.
+
 ## Export
 Download your runs as CSV (one row per event) or JSON from Run history. Run data is stored in your own browser.

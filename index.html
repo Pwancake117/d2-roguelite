@@ -103,6 +103,8 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .guide summary{cursor:pointer;list-style-position:outside}
 .guidecols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
 .guidecols ul.steps{list-style:disc}
+.callout.dungeon{border-color:#7a5cff;background:rgba(122,92,255,.08)}
+.btn.big{padding:12px 22px;font-size:1rem}
 .empty-note{color:var(--muted);font-size:.85rem}
 /* reward cards */
 .offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
@@ -143,7 +145,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=8"></script>
+<script src="bungie.js?v=9"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -195,6 +197,10 @@ const EVENTS = [
   {id:"arena",name:"Arena Ops",tier:3},
   {id:"pinnacle",name:"Pinnacle Ops",tier:4}
 ];
+/* Dungeon Only Run: the only event is a dungeon; each encounter cleared inside it grants an unlock. */
+const DUNGEON_EVENT = {id:"dungeon",name:"Dungeon",tier:4};
+const RUN_MODES = {ops:"Vanguard Ops Run", dungeon:"Dungeon Only Run"};
+function eventsFor(run){ return run && run.mode==="dungeon" ? [DUNGEON_EVENT] : EVENTS; }
 const DIFFS = ["Normal","Advanced","Expert","Master","Grandmaster / Ultimate"];
 const RARITIES = ["uncommon","rare","legendary","exotic"];
 /* rarity odds [uncommon, rare, legendary, exotic] by power (event tier + difficulty index) */
@@ -219,7 +225,7 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("sh
 /* ---------------- State & persistence ---------------- */
 const LS_KEY = "d2rogue.v1";
 let state = { run:null, history:[], updatedAt:0 };
-let ui = { confirm:null, setup:{cls:"Hunter", el:"arc", lives:"1"} };
+let ui = { confirm:null, setup:{cls:"Hunter", el:"arc", lives:"1", mode:"ops"} };
 try { const raw = localStorage.getItem(LS_KEY); if(raw){ const s = JSON.parse(raw); if(s && typeof s==="object") state = Object.assign(state, s); } } catch(e){}
 
 function normalize(){
@@ -358,7 +364,7 @@ function startRun(){
   const cls = s.cls, el = s.el==="random" ? pick(Object.keys(ELEMENTS)) : s.el;
   const lives = parseInt(s.lives,10);
   state.run = {
-    id:"run-"+Date.now().toString(36), startedAt:Date.now(), cls, el, lives, maxLives:lives,
+    id:"run-"+Date.now().toString(36), startedAt:Date.now(), mode:s.mode||"ops", cls, el, lives, maxLives:lives,
     depth:0, light:0, deaths:0, score:0, boons:0, status:"active",
     weapons:starterGear(), armor:[], commonArmor:true, events:[], pending:null,
     ab: baseAbilities(cls, el)
@@ -377,7 +383,8 @@ function logEvent(form){
 }
 function logEventData(x, noRender){
   const run = state.run; if(!run || run.pending || run.status!=="active") return;
-  const ev = EVENTS.find(e=>e.id===x.eventId) || EVENTS[0];
+  const list = eventsFor(run);
+  const ev = list.find(e=>e.id===x.eventId) || list[0];
   const diff = x.diff||0, outcome = x.outcome;
   const power = ev.tier + diff;
   const entry = {n:run.events.length+1, at:x.at||Date.now(), eventId:ev.id, event:ev.name, diff, diffName:DIFFS[diff], power, outcome, note:x.note||"", source:x.instanceId?"bungie":"manual", loot:null, boons:[], lost:null, lightBefore:run.light};
@@ -400,6 +407,7 @@ function logEventData(x, noRender){
     }
     if(run.lives<=0) endRun("death");
   }
+  if(ev.id==="dungeon" && run.dungeon){ entry.note = (entry.note?entry.note+" · ":"")+run.dungeon.encounters+" encounter"+(run.dungeon.encounters===1?"":"s")+" cleared"; run.dungeon = null; }
   if(!noRender){ save(); afterChange(); render(); }
 }
 /* events synced from Bungie wait in a queue; each one is logged when the previous rewards are picked */
@@ -418,6 +426,20 @@ function afterChange(){
   if(!B || !B.connected() || !B.opts.autoEquip || !run || run.status!=="active" || run.pending) return;
   clearTimeout(applyTimer);
   applyTimer = setTimeout(()=>{ B.pickChar(run); B.applyRun(run, {quiet:true}); }, 800);
+}
+/* Dungeon runs: each encounter cleared gives a loot pick and a guaranteed ability pick. */
+function encounterCleared(){
+  const run = state.run; if(!run || run.mode!=="dungeon" || run.pending || run.status!=="active") return;
+  const B = window.D2R_BUNGIE, cur = B && B.current;
+  const dname = cur ? cur.name : (run.dungeon && run.dungeon.name) || "Dungeon";
+  if(!run.dungeon || run.dungeon.name!==dname || (cur && run.dungeon.started!==cur.started)) run.dungeon = {name:dname, started:cur?cur.started:Date.now(), encounters:0};
+  run.dungeon.encounters++;
+  const diff = cur ? cur.diff : 0, power = DUNGEON_EVENT.tier + diff;
+  const entry = {n:run.events.length+1, at:Date.now(), eventId:"encounter", event:"Encounter "+run.dungeon.encounters+" · "+dname, diff, diffName:DIFFS[diff], power, outcome:"clear", note:"", source:"encounter", loot:null, boons:[], lost:null, lightBefore:run.light};
+  run.events.push(entry);
+  run.depth++; run.score += power*10;
+  run.pending = {eventN:entry.n, loot:lootOffers(run,power), boonsLeft:1, boon:boonOffers(run)};
+  save(); render();
 }
 function itemLabel(it){ return it.kind==="armor" || it.rarity==="exotic" ? it.name : cap(it.rarity)+" "+it.name; }
 function takeLoot(i){
@@ -452,7 +474,7 @@ function endRun(result){
   if(result==="extracted"){ run.score += run.depth*5; }
   const highest = run.events.filter(e=>e.outcome==="clear").reduce((m,e)=>Math.max(m,e.diff),-1);
   state.history.unshift({
-    id:run.id, cls:run.cls, el:run.el, startedAt:run.startedAt, endedAt:run.endedAt, result, depth:run.depth, deaths:run.deaths,
+    id:run.id, mode:run.mode||"ops", cls:run.cls, el:run.el, startedAt:run.startedAt, endedAt:run.endedAt, result, depth:run.depth, deaths:run.deaths,
     score:run.score, boons:run.boons, highestDiff: highest>=0 ? DIFFS[highest] : "None", events:run.events,
     finalLoadout:{weapons:run.weapons.map(itemLabel), armor:run.armor.map(a=>a.name), abilities:run.ab}
   });
@@ -610,6 +632,8 @@ function renderSetup(){
   const seg = (name, opts, cur, cls="") => `<div class="seg" role="radiogroup">${opts.map(([v,l,extra])=>`<input type="radio" name="${name}" id="${name}-${v}" value="${v}" ${v===cur?"checked":""}><label for="${name}-${v}" class="${cls} ${extra||""}">${l}</label>`).join("")}</div>`;
   return `<section class="panel">
     <div><h2>New run</h2><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's base build with common gear only. Clears unlock new abilities, aspects, fragments and better loot.</p></div>
+    <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
+      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives a loot pick and an ability unlock; finishing the dungeon gives bonus loot. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Each finished op gives loot and Light."}</p></div>
     <div><h3>Class</h3>${seg("cls", CLASSES.map(c=>[c,c]), s.cls)}</div>
     <div><h3>Subclass</h3>${seg("el", Object.keys(ELEMENTS).map(k=>[k,ELEMENTS[k].name,"elem el-"+k]).concat([["random","Random"]]), s.el)}</div>
     ${baseBuildHTML(s.cls, s.el)}
@@ -627,7 +651,7 @@ function renderStatus(run){
   for(let i=0;i<Math.max(run.maxLives,run.lives);i++) pips.push(`<span class="pip ${i<run.lives?"on":"lost"}" title="${i<run.lives?"Life":"Lost life"}"></span>`);
   const pct = Math.round(run.light/LIGHT_PER_BOON*100);
   return `<section class="status">
-    <div class="who el-${run.el}"><span class="lbl">${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
+    <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to next ability</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
     <div><span class="lbl">Events / Deaths</span><span class="val">${run.events.length} / ${run.deaths}</span></div>
@@ -664,11 +688,23 @@ function renderPending(run){
   }
   return html + `</div>`;
 }
-function renderEventForm(){
-  return `<form id="evform" class="panel" style="background:var(--panel-2)">
-    <h2>Log an event</h2>
+function renderDungeonPanel(run){
+  const B = window.D2R_BUNGIE, cur = B && B.current, d = run.dungeon;
+  const live = cur ? `<b>In ${esc(cur.name)}</b>${cur.diff?` · ${esc(DIFFS[cur.diff])}`:""}` : (B && B.connected() ? "Not in a dungeon right now. The app checks every 30 seconds." : "Connect Bungie to detect dungeons automatically.");
+  const n = d ? d.encounters : 0;
+  return `<section class="callout dungeon">
+    <div class="row between"><h2 style="color:var(--accent)">Dungeon tracker</h2><span class="help">${live}</span></div>
+    <p style="margin:0">${d ? `${esc(d.name)}: <b>${n}</b> encounter${n===1?"":"s"} cleared this clear.` : "Tap the button after each encounter you beat (bosses and major fights). Each one gives a loot pick and an ability unlock."}</p>
+    <div class="row"><button class="btn primary big" data-act="encounter">Encounter cleared</button>
+    <span class="help">When the dungeon ends, Bungie's record logs the full clear (bonus loot and Light) and any deaths.</span></div>
+  </section>`;
+}
+function renderEventForm(run){
+  const list = eventsFor(run);
+  return `${run && run.mode==="dungeon" ? renderDungeonPanel(run) : ""}<form id="evform" class="panel" style="background:var(--panel-2)">
+    <h2>${run && run.mode==="dungeon" ? "Log a dungeon result by hand" : "Log an event"}</h2>
     <div class="row" style="gap:12px;align-items:end">
-      <label class="field" for="event">Activity<select id="event" name="event">${EVENTS.map(e=>`<option value="${e.id}">${esc(e.name)} (tier ${e.tier})</option>`).join("")}</select></label>
+      <label class="field" for="event">Activity<select id="event" name="event">${list.map(e=>`<option value="${e.id}">${esc(e.name)} (tier ${e.tier})</option>`).join("")}</select></label>
       <label class="field" for="diff">Difficulty<select id="diff" name="diff">${DIFFS.map((d,i)=>`<option value="${i}">${d}</option>`).join("")}</select></label>
     </div>
     <div class="seg" role="radiogroup" aria-label="Outcome">
@@ -691,8 +727,8 @@ function renderHistory(){
   const h = state.history;
   return `<section class="panel">
     <div class="row between"><h2>Run history</h2><div class="row"><button class="btn" data-act="export" data-kind="csv">Export CSV</button><button class="btn" data-act="export" data-kind="json">Export JSON</button></div></div>
-    ${h.length ? `<div class="tablewrap"><table><thead><tr><th>Ended</th><th>Guardian</th><th>Result</th><th>Depth</th><th>Deaths</th><th>Top difficulty</th><th>Score</th><th>Length</th></tr></thead><tbody>
-      ${h.map(r=>`<tr><td>${fmtTime(r.endedAt)}</td><td><span class="chip el el-${r.el}">${ELEMENTS[r.el].name} ${r.cls}</span></td><td><span class="res ${r.result}">${r.result==="death"?"Died":"Extracted"}</span></td><td class="num">${r.depth}</td><td class="num">${r.deaths}</td><td>${esc(r.highestDiff)}</td><td class="num">${r.score}</td><td class="num">${fmtDur(r.endedAt-r.startedAt)}</td></tr>`).join("")}
+    ${h.length ? `<div class="tablewrap"><table><thead><tr><th>Ended</th><th>Run</th><th>Guardian</th><th>Result</th><th>Depth</th><th>Deaths</th><th>Top difficulty</th><th>Score</th><th>Length</th></tr></thead><tbody>
+      ${h.map(r=>`<tr><td>${fmtTime(r.endedAt)}</td><td>${r.mode==="dungeon"?"Dungeon":"Vanguard Ops"}</td><td><span class="chip el el-${r.el}">${ELEMENTS[r.el].name} ${r.cls}</span></td><td><span class="res ${r.result}">${r.result==="death"?"Died":"Extracted"}</span></td><td class="num">${r.depth}</td><td class="num">${r.deaths}</td><td>${esc(r.highestDiff)}</td><td class="num">${r.score}</td><td class="num">${fmtDur(r.endedAt-r.startedAt)}</td></tr>`).join("")}
     </tbody></table></div>` : `<div class="empty-note">Finished runs show up here with depth, deaths and score. Exports include every event you logged.</div>`}
   </section>`;
 }
@@ -712,7 +748,7 @@ function render(){
     html += renderStatus(run);
     html += renderBungie(run);
     html += `<div class="grid2">${renderLoadout(run)}<section class="panel"><div style="display:grid;gap:14px">
-      ${run.pending ? renderPending(run) : renderEventForm()}
+      ${run.pending ? renderPending(run) : renderEventForm(run)}
       <h2>Event log</h2>${renderEventLog(run.events)}
       <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
         ${ui.confirm==="extract" ? `<span>End the run and bank your score?</span><button class="btn primary" data-act="extract">Yes, extract</button><button class="btn ghost" data-act="cancel">Cancel</button>`
@@ -774,6 +810,12 @@ async function bungieSync(quiet){
   if(n){ processQueue(); save(); afterChange(); }
   render();
 }
+setInterval(async ()=>{ const B = window.D2R_BUNGIE, run = state.run;
+  if(!B || !B.connected() || !run || run.mode!=="dungeon" || run.status!=="active" || document.hidden) return;
+  B.pickChar(run); const before = B.current && B.current.started;
+  await B.pollCurrent(run);
+  if((B.current && B.current.started) !== before) render();
+}, 30000);
 setInterval(()=>{ const B = window.D2R_BUNGIE; if(B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && !document.hidden) bungieSync(true); }, 120000);
 document.addEventListener("visibilitychange", ()=>{ const B = window.D2R_BUNGIE; if(!document.hidden && B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && Date.now()-B.lastSync>60000) bungieSync(true); });
 
@@ -785,6 +827,7 @@ document.addEventListener("click", e=>{
   else if(act==="loot") takeLoot(parseInt(b.dataset.i,10));
   else if(act==="boon") takeBoon(parseInt(b.dataset.i,10));
   else if(act==="undo") undoLast();
+  else if(act==="encounter") encounterCleared();
   else if(act==="bLogin") window.D2R_BUNGIE.login();
   else if(act==="bLogout") window.D2R_BUNGIE.logout();
   else if(act==="bApply"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.applyRun(state.run); }
@@ -807,7 +850,7 @@ document.addEventListener("change", e=>{
   if(t.id==="bAutoSync"){ B.opts.autoSync = t.checked; B.saveOpts(); return; }
   if(t.id==="bDeath"){ B.opts.deathRule = t.value; B.saveOpts(); return; }
   if(t.id==="bChar"){ B.charId = t.value; render(); return; }
-  if(["cls","el","lives"].includes(t.name)){ ui.setup[t.name] = t.value; if(t.name!=="lives") render(); }
+  if(["cls","el","lives","mode"].includes(t.name)){ ui.setup[t.name] = t.value; if(t.name!=="lives") render(); }
 });
 document.addEventListener("submit", e=>{
   if(e.target.id==="evform"){ e.preventDefault(); logEvent(e.target); }
