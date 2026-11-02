@@ -146,7 +146,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=10"></script>
+<script src="bungie.js?v=11"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -713,7 +713,7 @@ function renderPending(run){
 }
 function renderDungeonPanel(run){
   const B = window.D2R_BUNGIE, cur = B && B.current, d = run.dungeon;
-  const live = cur ? `<b>In ${esc(cur.name)}</b>${cur.diff?` · ${esc(DIFFS[cur.diff])}`:""}` : (B && B.connected() ? "Not in a dungeon right now. The app checks every 30 seconds." : "Connect Bungie to detect dungeons automatically.");
+  const live = cur ? `<b>In ${esc(cur.name)}</b>${cur.diff?` · ${esc(DIFFS[cur.diff])}`:""}` : (B && B.connected() ? "Not in a dungeon right now. The app checks every 20 seconds." : "Connect Bungie to detect dungeons automatically.");
   const n = d ? d.encounters : 0;
   return `<section class="callout dungeon">
     <div class="row between"><h2 style="color:var(--accent)">Dungeon tracker</h2><span class="help">${live}</span></div>
@@ -818,7 +818,7 @@ function renderBungie(run){
     ${countHtml ? `<div><h3>Allowed gear you own</h3><div class="chips">${countHtml}</div></div>` : ""}
     ${run ? `<div class="row" style="gap:18px">
       <label class="tog"><input type="checkbox" id="bAutoEquip" ${B.opts.autoEquip?"checked":""}> Equip automatically after each reward</label>
-      <label class="tog"><input type="checkbox" id="bAutoSync" ${B.opts.autoSync?"checked":""}> Sync activities every 2 minutes</label>
+      <label class="tog"><input type="checkbox" id="bAutoSync" ${B.opts.autoSync?"checked":""}> Sync automatically (checks every 20 seconds)</label>
       <span class="help">${run.difficulty==="hardcore"?"Hardcore: any death costs a life and the looted gear you had equipped.":"Normal: only failing or wiping out of an activity costs a life."}</span>
       ${ago!=null?`<span class="help">Last sync ${ago} min ago${run.queue&&run.queue.length?` · ${run.queue.length} waiting`:""}</span>`:""}
     </div>` : ""}
@@ -834,14 +834,32 @@ async function bungieSync(quiet){
   if(n){ processQueue(); save(); afterChange(); }
   render();
 }
-setInterval(async ()=>{ const B = window.D2R_BUNGIE, run = state.run;
-  if(!B || !B.connected() || !run || run.mode!=="dungeon" || run.status!=="active" || document.hidden) return;
-  B.pickChar(run); const before = B.current && B.current.started;
+/* Fast sync: watch the current activity every 20 s (tiny request). When a counted activity ends,
+   sync right away and retry while Bungie posts the result (usually 30-90 s). Full sync every 60 s as a backup. */
+const RETRY_AFTER = [20000, 45000, 90000, 150000];
+let retryTimers = [];
+function syncSoon(){
+  retryTimers.forEach(clearTimeout);
+  retryTimers = RETRY_AFTER.map(ms=>setTimeout(async ()=>{
+    const B = window.D2R_BUNGIE, run = state.run;
+    if(!B || !run || run.status!=="active") return;
+    const before = run.events.length + (run.queue||[]).length;
+    await bungieSync(true);
+    if(run.events.length + (run.queue||[]).length > before){ retryTimers.forEach(clearTimeout); retryTimers = []; }
+  }, ms));
+}
+async function watchActivity(){
+  const B = window.D2R_BUNGIE, run = state.run;
+  if(!B || !B.connected() || !B.opts.autoSync || !run || run.status!=="active" || document.hidden) return;
+  B.pickChar(run);
+  const beforeDungeon = B.current && B.current.started, beforeLeft = B.justLeft;
   await B.pollCurrent(run);
-  if((B.current && B.current.started) !== before) render();
-}, 30000);
-setInterval(()=>{ const B = window.D2R_BUNGIE; if(B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && !document.hidden) bungieSync(true); }, 120000);
-document.addEventListener("visibilitychange", ()=>{ const B = window.D2R_BUNGIE; if(!document.hidden && B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && Date.now()-B.lastSync>60000) bungieSync(true); });
+  if(B.justLeft && B.justLeft !== beforeLeft){ B.note("Activity finished. Waiting for Bungie to post the result…"); syncSoon(); render(); }
+  else if((B.current && B.current.started) !== beforeDungeon) render();
+}
+setInterval(watchActivity, 20000);
+setInterval(()=>{ const B = window.D2R_BUNGIE; if(B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && !document.hidden) bungieSync(true); }, 60000);
+document.addEventListener("visibilitychange", ()=>{ const B = window.D2R_BUNGIE; if(!document.hidden && B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && Date.now()-B.lastSync>30000){ bungieSync(true); watchActivity(); } });
 
 /* ---------------- Events ---------------- */
 document.addEventListener("click", e=>{

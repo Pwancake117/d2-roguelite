@@ -352,7 +352,8 @@ B.sync = async (run, {quiet} = {}) => {
       added++;
     }
     // what's equipped right now (hardcore losses), and anything new picked up since the last sync
-    if(added || run.ownedAtStart){
+    if(added || (run.ownedAtStart && Date.now() - (B.lastLootCheck||0) > 300000)){
+      B.lastLootCheck = Date.now();
       await loadDefs(); await loadProfile();
       const eqLoot = B.equippedLoot(run);
       if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths) q.equippedLoot = eqLoot; });
@@ -411,6 +412,11 @@ B.pollCurrent = async run => {
     const ca = p.activities && p.activities.data;
     const hash = ca && ca.currentActivityHash;
     const info = hash ? await activityInfo(hash) : null;
+    const counted = info && (run.mode==="dungeon" ? info.type===DUNGEON_TYPE : !!classify(info));
+    const key = hash ? hash+"@"+ca.dateActivityStarted : "";
+    // left a counted activity since the last check: its result is about to post
+    if(B.lastAct && B.lastAct.counted && B.lastAct.key !== key) B.justLeft = Date.now();
+    B.lastAct = {key, counted};
     if(info && info.type===DUNGEON_TYPE){
       B.current = {hash, name:info.name.replace(/:\s*(Standard|Normal|Master|Legend|Expert|Advanced)\s*$/i,""), diff:difficulty(info.name), started:ca.dateActivityStarted};
     } else B.current = null;
