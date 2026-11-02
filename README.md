@@ -40,7 +40,7 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 3. **Play.** Finished PvE activities are synced from Bungie and logged automatically: clears earn loot and Light (every 4 Light unlocks an ability pick), deaths cost a life and a looted item.
 4. **Pick rewards in the app.** The app updates your loadout in game after each pick. Bungie only allows gear changes in orbit or social spaces.
 
-PvE only: Crucible and Gambit are not tracked.
+Only activities with a clear start and finish count as events: Lost Sectors, strikes, Nightfalls, Onslaught, story and exotic missions, dungeons and raids. Patrols, free roam and social spaces are ignored, and so are Crucible and Gambit.
 
 ## Export
 Download your runs as CSV (one row per event) or JSON from Run history. Run data is stored in your own browser.

@@ -143,7 +143,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=6"></script>
+<script src="bungie.js?v=7"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -189,7 +189,7 @@ const EXOTIC_ARMOR = {
   Warlock:["Sunbracers","Contraverse Hold","Geomag Stabilizers","Ophidian Aspect","Starfire Protocol","Phoenix Protocol","Transversive Steps","Getaway Artist","Necrotic Grip","Verity's Brow"]
 };
 const EVENTS = [
-  {id:"patrol",name:"Patrol / Public Event",tier:1},
+  {id:"story",name:"Story / Campaign Mission",tier:2},
   {id:"lost",name:"Lost Sector",tier:2},
   {id:"strike",name:"Strike",tier:2},
   {id:"onslaught",name:"Onslaught Run",tier:3},
@@ -197,7 +197,7 @@ const EVENTS = [
   {id:"exotic",name:"Exotic Mission",tier:3},
   {id:"dungeon",name:"Dungeon Encounter",tier:4},
   {id:"raid",name:"Raid / Raid Encounter",tier:5},
-  {id:"other",name:"Other PvE activity",tier:2}
+  {id:"other",name:"Other PvE activity (with a finish)",tier:2}
 ];
 const DIFFS = ["Normal","Advanced","Expert","Master","Grandmaster"];
 const RARITIES = ["uncommon","rare","legendary","exotic"];

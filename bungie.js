@@ -294,11 +294,15 @@ async function applySubclass(run, cid){
 }
 
 /* ---------- Activity sync ---------- */
-const MODE = {raid:4, dungeon:82, lost:87, strike:[3,18], nightfall:[16,17,46], patrol:6, story:2};
+const MODE = {raid:4, dungeon:82, lost:87, strike:[3,18], nightfall:[16,17,46], story:2};
+/* open-ended activities (patrol, free roam, social spaces) have no finish, so they never count as events */
+const OPEN_ENDED_MODES = [6, 40, 45];
+const OPEN_ENDED_NAME = /patrol|explore|free roam|\bthe tower\b|social|orbit|h\.e\.l\.m|the farm/i;
 function classify(act, name){
   const modes = (act.activityDetails.modes||[]).concat([act.activityDetails.mode]);
   const has = m => [].concat(m).some(x=>modes.includes(x));
   if(has([5,63,75,64,65,66,67])) return null; // PvP and Gambit are out of scope
+  if(has(OPEN_ENDED_MODES) || OPEN_ENDED_NAME.test(name)) return null; // no start/stop
   if(/onslaught/i.test(name)) return "onslaught";
   if(has(MODE.raid)) return "raid";
   if(has(MODE.dungeon)) return "dungeon";
@@ -306,7 +310,7 @@ function classify(act, name){
   if(has(MODE.nightfall) || /nightfall|grandmaster/i.test(name)) return "nightfall";
   if(has(MODE.strike)) return "strike";
   if(/exotic/i.test(name)) return "exotic";
-  if(has(MODE.patrol)) return "patrol";
+  if(has(MODE.story)) return "story";
   return "other";
 }
 function difficulty(name){
@@ -345,6 +349,7 @@ B.sync = async (run, {quiet} = {}) => {
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
       const deaths = val("deaths");
       let outcome = null;
+      if(type==="other" && !completed) continue; // unknown activity type: only count it once it is actually finished
       if(B.opts.deathRule==="any" && deaths>0) outcome = "death";
       else if(completed) outcome = "clear";
       else if(B.opts.deathRule==="fail" && val("activityDurationSeconds")>120) outcome = "death";
