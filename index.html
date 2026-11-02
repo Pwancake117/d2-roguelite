@@ -105,6 +105,10 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .guidecols ul.steps{list-style:disc}
 .callout.dungeon{border-color:#7a5cff;background:rgba(122,92,255,.08)}
 .btn.big{padding:12px 22px;font-size:1rem}
+.where{margin-left:6px;padding:1px 6px;border-radius:3px;font-size:.6rem;letter-spacing:.06em;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.where.w-postmaster,.where.w-other-postmaster{border-color:#8a6a1c;color:#f3c969}
+.where.w-gone{border-color:#6a3a3a;color:#ffb3b3}
+.where.w-equipped{border-color:#2f6b4b;color:var(--good)}
 .empty-note{color:var(--muted);font-size:.85rem}
 /* reward cards */
 .offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
@@ -146,7 +150,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=12"></script>
+<script src="bungie.js?v=13"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -575,9 +579,12 @@ function showText(title, text){
 
 /* ---------------- Rendering ---------------- */
 function elChip(el){ return `<span class="chip el el-${el}">${ELEMENTS[el].name}</span>`; }
+const WHERE_LABEL = {postmaster:"In Postmaster", "other postmaster":"In another character's Postmaster", equipped:"Equipped", character:"On character", vault:"In vault", other:"On another character", gone:"No longer in your inventory"};
 function itemRow(it){
   const sub = it.inst ? "Looted"+(it.source?" · "+it.source:"") : it.kind==="armor" ? "Exotic armor" : it.any ? (it.note || "Pull from Collections") : AMMO_LABEL[it.ammo]+" ammo";
-  return `<div class="item r-${it.rarity}"><div><div class="rtag">${it.rarity}</div><div class="nm">${esc(it.name)}</div></div><div class="meta">${esc(sub)}${it.inst?"":"<br>"+esc(it.source||"")}</div></div>`;
+  const B = window.D2R_BUNGIE, where = it.inst && B ? B.whereIs(it.inst) : null;
+  const tag = where ? `<span class="where w-${where.replace(/ /g,"-")}">${WHERE_LABEL[where]||where}</span>` : "";
+  return `<div class="item r-${it.rarity}"><div><div class="rtag">${it.rarity} ${tag}</div><div class="nm">${esc(it.name)}</div></div><div class="meta">${esc(sub)}${it.inst?"":"<br>"+esc(it.source||"")}</div></div>`;
 }
 function chipList(list, el, emptyText, slots){
   const chips = list.map(n=>`<span class="chip el el-${el}">${esc(n)}</span>`);
@@ -686,7 +693,8 @@ function renderLoadout(run){
   const slot = sl => `<div class="slotgroup"><h3>${SLOT_LABEL[sl]}</h3>${bySlot(sl).length ? `<div class="items">${bySlot(sl).map(itemRow).join("")}</div>` : `<div class="empty-note">No loot in this slot yet</div>`}</div>`;
   const a = run.ab;
   return `<section class="panel">
-    <h2>Loadout pool</h2>
+    <div class="row between"><h2>Loadout pool</h2>${(()=>{ const B = window.D2R_BUNGIE; const n = B && B.profile ? run.weapons.concat(run.armor).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
+      return n ? `<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${n} from Postmaster</button>` : ""; })()}</div>
     <p class="help" style="margin:0">You may equip anything listed here. Gear you pick up in game during the run is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>
     ${slot("kinetic")}${slot("energy")}${slot("power")}
     <div class="slotgroup"><h3>Armor</h3><div class="items">${itemRow({kind:"weapon",any:true,rarity:"common",name:"Any common "+run.cls+" armor",note:"Pull from Collections",source:"Starter"})}</div><h3>Looted armor</h3>${run.armor.length ? `<div class="items">${run.armor.map(itemRow).join("")}</div>` : `<div class="empty-note">Armor you pick up during the run appears here</div>`}</div>
@@ -875,6 +883,7 @@ document.addEventListener("click", e=>{
   else if(act==="bLogout") window.D2R_BUNGIE.logout();
   else if(act==="bApply"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.applyRun(state.run); }
   else if(act==="bSync") bungieSync(false);
+  else if(act==="bPull") window.D2R_BUNGIE.pullPostmaster(state.run);
   else if(act==="active") setActive(b.dataset.type, b.dataset.name);
   else if(act==="ask"){ ui.confirm=b.dataset.what; render(); }
   else if(act==="cancel"){ ui.confirm=null; render(); }

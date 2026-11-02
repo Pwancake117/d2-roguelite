@@ -406,6 +406,33 @@ function findLoot(run){
   return found;
 }
 B.findLoot = findLoot;
+/* Where is an item right now? postmaster | equipped | character | vault | other | null */
+B.whereIs = inst => {
+  if(!B.profile || !inst) return null;
+  const ci = B.profile.characterInventories.data||{}, ce = B.profile.characterEquipment.data||{};
+  for(const [cid,v] of Object.entries(ce)) if(v.items.some(i=>i.itemInstanceId===inst)) return cid===B.charId ? "equipped" : "other";
+  for(const [cid,v] of Object.entries(ci)){ const it = v.items.find(i=>i.itemInstanceId===inst); if(it) return it.bucketHash===215593132 ? (cid===B.charId ? "postmaster" : "other postmaster") : cid===B.charId ? "character" : "other"; }
+  if(((B.profile.profileInventory.data||{}).items||[]).some(i=>i.itemInstanceId===inst)) return "vault";
+  return "gone";
+};
+/* Pull every looted item waiting in the run character's Postmaster */
+B.pullPostmaster = async run => {
+  if(B.busy || !B.connected()) return;
+  B.busy = true; window.renderBungieSoon && window.renderBungieSoon();
+  let n = 0;
+  try {
+    await loadProfile();
+    const inv = (B.profile.characterInventories.data[B.charId]||{}).items||[];
+    const looted = new Set(run.weapons.concat(run.armor).map(x=>x.inst).filter(Boolean));
+    for(const it of inv.filter(i=>i.bucketHash===215593132 && looted.has(i.itemInstanceId))){
+      await api("/Destiny2/Actions/Items/PullFromPostmaster/", {method:"POST", body:{itemReferenceHash:it.itemHash, stackSize:1, itemId:it.itemInstanceId, characterId:B.charId, membershipType:B.account.type}});
+      n++; await sleep(300);
+    }
+    await sleep(2500); await loadProfile();
+    note(n ? "Pulled "+n+" looted item"+(n>1?"s":"")+" from the Postmaster." : "No looted items in your Postmaster.", n?"ok":"");
+  } catch(e){ note(friendly(e),"err"); }
+  finally { B.busy = false; window.render && window.render(); }
+};
 B.equippedLoot = run => {
   if(!B.profile || !B.charId) return [];
   const eq = ((B.profile.characterEquipment.data[B.charId]||{}).items||[]).map(i=>i.itemInstanceId);
