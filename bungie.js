@@ -485,7 +485,7 @@ B.equippedLoot = run => {
 /* Seasonal artifact: Bungie lets apps read perks (per character) but not change them. */
 B.artifact = null;
 /* Ability descriptions (aspects, fragments, abilities, artifact perks) from the public manifest, cached in localStorage. */
-const DESC_KEY = "d2r.desc2";
+const DESC_KEY = "d2r.desc3";
 const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
 B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
 const descBusy = new Set();
@@ -505,29 +505,28 @@ B.describe = async hashes => {
     const st = d.investmentStats||[];
     const cap = (st.find(x=>x.statTypeHash===2223994109)||{}).value;
     const stats = st.filter(x=>x.value && STAT_NAME[x.statTypeHash]).map(x=>(x.value>0?"+":"")+x.value+" "+STAT_NAME[x.statTypeHash]);
-    B.desc[h] = {d:texts.join(" "), s:stats, cap:cap||null};
+    B.desc[h] = {n:(d.displayProperties||{}).name||"", d:texts.join(" "), s:stats, cap:cap||null};
     got++;
   };
   await Promise.all(Array.from({length:Math.min(6,todo.length)}, async()=>{ while(i<todo.length){ const h = todo[i++]; try { await one(h); } catch(e){} descBusy.delete(h); } }));
   try { localStorage.setItem(DESC_KEY, JSON.stringify(B.desc)); } catch(e){}
   return got;
 };
-const ART_NAMES_KEY = "d2r.artNames";
-let artNames = {}; try { artNames = JSON.parse(localStorage.getItem(ART_NAMES_KEY)||"{}"); } catch(e){}
+/* The equipped artifact is an item in the artifact bucket; sockets 0-6 hold its mods (socket 7 is reset). */
+const ARTIFACT_BUCKET = 1506418338, EMPTY_ART_MOD = 1235188590;
 B.loadArtifact = async () => {
   if(!B.connected() || !B.charId) return null;
   try {
     const a = B.account;
-    const c = await api(`/Destiny2/${a.type}/Profile/${a.id}/Character/${B.charId}/?components=202`);
-    const art = c.progressions && c.progressions.data && c.progressions.data.seasonalArtifact;
-    if(!art || !art.tiers) { B.artifact = null; return null; }
-    const perks = [];
-    for(const [ti,t] of art.tiers.entries()) for(const it of t.items){
-      if(!artNames[it.itemHash]){ try { artNames[it.itemHash] = (await fullDef(it.itemHash)).displayProperties.name; } catch(e){ artNames[it.itemHash] = "Artifact perk"; } }
-      perks.push({h:it.itemHash, n:artNames[it.itemHash], active:!!it.isActive, tier:ti+1, unlocked:!!t.isUnlocked});
-    }
-    try { localStorage.setItem(ART_NAMES_KEY, JSON.stringify(artNames)); } catch(e){}
-    B.artifact = {hash:art.artifactHash, perks, charId:B.charId, at:Date.now()};
+    const c = await api(`/Destiny2/${a.type}/Profile/${a.id}/Character/${B.charId}/?components=205,305`);
+    const it = (c.equipment && c.equipment.data && c.equipment.data.items || []).find(i=>i.bucketHash===ARTIFACT_BUCKET);
+    if(!it){ B.artifact = null; return null; }
+    const d = await fullDef(it.itemHash);
+    const socks = (c.itemComponents && c.itemComponents.sockets && c.itemComponents.sockets.data || {})[it.itemInstanceId];
+    const slots = [];
+    for(let i=0;i<7;i++){ const p = socks && socks.sockets[i] && socks.sockets[i].plugHash; slots.push(p && p!==EMPTY_ART_MOD ? p : null); }
+    B.artifact = {hash:it.itemHash, inst:it.itemInstanceId, name:d.displayProperties.name, slots, charId:B.charId, at:Date.now()};
+    B.describe(slots.filter(Boolean)).then(n=>{ if(n && window.render) window.render(); });
     return B.artifact;
   } catch(e){ return B.artifact; }
 };

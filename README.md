@@ -35,7 +35,7 @@ Any white pieces work and can be mixed. The more you own, the more each run's st
 Once you're connected, the app's **Setup guide** shows which classes are ready and which pieces are missing.
 
 ## Playing
-**Recommended before each run:** move everything on that character except your common starter gear to the vault, empty its Postmaster, and switch off all seasonal artifact perks. Then anything that shows up on your character during the run is clearly run loot. Once a run has started, the **Move other gear to vault** button in the Bungie panel does this for you (it leaves run gear alone).
+**Recommended before each run:** move everything on that character except your common starter gear to the vault, empty its Postmaster, and clear your artifact's mod slots. Then anything that shows up on your character during the run is clearly run loot. Once a run has started, the **Move other gear to vault** button in the Bungie panel does this for you (it leaves run gear alone).
 
 1. **Connect your Bungie account.** Sign-in happens on bungie.net. The app asks to read your inventory and to move or equip gear.
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
@@ -43,7 +43,7 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
 5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, jump, melee, class ability, aspect, fragment, fragment slot or extra life; see Reward tiers below). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
 
-Artifact perks: every completed event earns artifact points by difficulty: 1 (Normal to Expert), 2 (Master), 3 (Grandmaster/Ultimate), +1 if flawless; dungeon encounters earn the same by difficulty. **+2 Artifact Points** is also a B-tier reward in ability picks. Resetting the artifact is free and refunds every point. Spend points in the Artifact perks panel: a perk costs its tier (tier 1 = 1 point, tier 2 = 2 points, ...), and a tier opens once you own a perk from the tier before it. Bungie doesn't let apps change artifact perks, so you switch unlocked perks on in game. The app checks your artifact and flags perks that are on but not unlocked in the run.
+Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Tablet of Ruin, Slayer Baron Apothecary Satchel, Implement of Curiosity, Encrypted Data Disk), one equipped at a time, each with 7 mod slots. You start a run with no artifact: after your first completed event you get a bonus pick of 3 artifacts. Swapping to a different artifact later is an S-tier reward (it frees all your points). Every completed event earns artifact points by difficulty: 1 (Normal to Expert), 2 (Master), 3 (Grandmaster/Ultimate), +1 if flawless; dungeon encounters earn the same by difficulty, and **+2 Artifact Points** is a B-tier reward. Spend points to fill slots: a mod costs its tier; slots 1-2 take tier 1 mods, slots 3-5 up to tier 2, slots 6-7 up to tier 3. Reset is free and refunds every point. Bungie doesn't let apps change artifact mods, so you set them in game; the app checks your equipped artifact and each slot.
 
 ### Reward tiers
 
@@ -51,7 +51,7 @@ Rewards are tiered by type (set in `tiers.js`):
 
 | Tier | Rewards |
 |---|---|
-| S | Supers |
+| S | Supers, swap to a different artifact |
 | A | Fragments, +1 fragment slot (a pick never offers more than one of these) |
 | B | Aspects, extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives), +2 artifact points |
 | C | Grenades, jumps, melees, class abilities |
