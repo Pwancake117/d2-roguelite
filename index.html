@@ -51,6 +51,9 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .btn.primary:hover{filter:brightness(1.1)}
 .btn.danger{border-color:#5a2a2a;color:#ffb3b3}
 .btn.danger:hover{border-color:var(--danger)}
+.btn.endrun{background:#b3261e;border-color:#d8453c;color:#fff}
+.btn.endrun:hover{background:#d8453c}
+.btn.endrun[disabled]{background:#4a1f1c;border-color:#5a2a2a;color:#c99}
 .btn.ghost{background:transparent}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -249,7 +252,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=56"></script>
+<script src="bungie.js?v=57"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1177,8 +1180,8 @@ function render(){
       ${run.pending ? renderPending(run) : renderEventForm(run)}
       <h2>Event log</h2>${renderEventLog(run.events)}
       <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
-        ${ui.confirm==="extract" ? `<span>End the run and save it to your history?</span><button class="btn danger" data-act="extract">Yes, end run</button><button class="btn ghost" data-act="cancel">Cancel</button>`
-        : `<button class="btn danger" data-act="ask" data-what="extract" ${run.pending?"disabled title=\"Take your reward picks first\"":""}>End run</button>`}
+        ${ui.confirm==="extract" ? `<span>End the run and save it to your history?</span><button class="btn endrun" data-act="extract">Yes, end run</button><button class="btn ghost" data-act="cancel">Cancel</button>`
+        : `<button class="btn endrun" data-act="ask" data-what="extract" ${run.pending?"disabled title=\"Take your reward picks first\"":""}>End run</button>`}
       </div></div></section></div>`;
   } else if(run && run.status!=="active"){
     html += renderEnded();
