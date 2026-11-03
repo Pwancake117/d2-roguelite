@@ -113,8 +113,9 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .ok-text{color:var(--good)!important;margin:4px 0 0}
 .empty-note{color:var(--muted);font-size:.85rem}
 /* reward cards */
-.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.offer{background:var(--panel-2);border:1px solid var(--line);border-top:4px solid var(--rc,var(--accent));border-radius:4px;padding:12px;text-align:left;cursor:pointer;display:grid;gap:4px;align-content:start}
+.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:8px}
+.offers.wide{grid-template-columns:1fr}
+.offer{min-width:0;overflow-wrap:anywhere;color:var(--ink);font:inherit;background:var(--panel-2);border:1px solid var(--line);border-top:4px solid var(--rc,var(--accent));border-radius:4px;padding:12px;text-align:left;cursor:pointer;display:grid;gap:4px;align-content:start}
 .offer:hover{border-color:var(--rc,var(--accent));transform:translateY(-1px)}
 .offer .nm{font-family:var(--display);font-weight:600;font-size:1rem}
 .offer .sub{font-size:.78rem;color:var(--muted)}
@@ -132,7 +133,8 @@ button.artslot:not([disabled]){cursor:pointer}.artslot.sel{border-color:var(--ac
 .artslot .desc{font-size:.75rem;opacity:.8}
 .offer .desc,.desclist{font-size:.8rem;color:var(--ink);opacity:.85;line-height:1.35}
 .desc.muted{opacity:.5}
-.dstat{color:var(--muted);white-space:nowrap}
+.dstat{color:var(--muted);font-size:.75rem}
+.offer .dstat{display:block;margin-top:2px}
 .desclist{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
 .callout{border:1px solid var(--accent);background:rgba(127,212,255,.06);border-radius:6px;padding:14px;display:grid;gap:10px}
 .callout.dead{border-color:var(--danger);background:rgba(255,93,93,.07)}
@@ -168,7 +170,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=5"></script>
-<script src="bungie.js?v=32"></script>
+<script src="bungie.js?v=33"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -916,7 +918,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
+    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
