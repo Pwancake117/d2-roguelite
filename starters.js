@@ -50,7 +50,7 @@ window.D2R_STARTERS = {
        melee: Threaded Spike, Combination Blow, Withering Blade, Knife Trick, Snare Bomb
        classAbility: Marksman's Dodge, Gambler's Dodge, Acrobat's Dodge
     */
-    "prismatic": {super: "Golden Gun: Marksman", grenade: "Grapple", jump: "High Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"}
+    "prismatic": {super: "Silkstrike", grenade: "Arcbolt", jump: "High Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"}
   },
   "Titan": {
     /* arc options
