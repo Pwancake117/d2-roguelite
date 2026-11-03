@@ -319,9 +319,21 @@ async function applySubclass(run, cid){
 const DUNGEON_TYPE = 608898761, DUNGEON_MODE = 82;
 const VO_TYPES = {1996806804:"fireteam", 2009300208:"arena", 3851289711:"solo", 3652020199:"pinnacle"};
 const VO_DESTS = {2171594315:"fireteam", 103806431:"arena", 4008773657:"solo"};
-function classify(info){
+/* Activities launched from the Vanguard Ops tabs that Bungie tags by their own type rather than an Ops type:
+   strikes/Nightfalls/Onslaught (Fireteam Ops), 6-player seasonal arenas (Arena Ops), exotic missions (Pinnacle Ops). */
+const FIRETEAM_MODES = [3, 18, 16, 17, 46];
+const ONSLAUGHT_TYPE = 2897687202, EXOTIC_MISSION_TYPE = 1227821118;
+const ARENA_TYPES = [102866517, 263019149, 904017341, 1728319841, 3481239102, 3565127261];
+function classify(info, act){
   if(!info) return null;
-  return VO_TYPES[info.type] || VO_DESTS[info.dest] || null;
+  const direct = VO_TYPES[info.type] || VO_DESTS[info.dest];
+  if(direct) return direct;
+  const d = act && act.activityDetails, modes = d ? (d.modes||[]).concat([d.mode]) : [];
+  if(modes.some(m=>[5,63,75].includes(m))) return null; // never PvP / Gambit
+  if(info.type===EXOTIC_MISSION_TYPE) return "pinnacle";
+  if(ARENA_TYPES.includes(info.type)) return "arena";
+  if(info.type===ONSLAUGHT_TYPE || modes.some(m=>FIRETEAM_MODES.includes(m))) return "fireteam";
+  return null;
 }
 function difficulty(name){
   if(/ultimate|grandmaster/i.test(name)) return 4;
@@ -356,7 +368,7 @@ B.sync = async (run, {quiet} = {}) => {
       const v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
       const info = await activityInfo(act.activityDetails.directorActivityHash || act.activityDetails.referenceId);
       const isDungeon = info && (info.type===DUNGEON_TYPE || (act.activityDetails.modes||[]).includes(DUNGEON_MODE) || act.activityDetails.mode===DUNGEON_MODE);
-      const type = run.mode==="dungeon" ? (isDungeon ? "dungeon" : null) : classify(info);
+      const type = run.mode==="dungeon" ? (isDungeon ? "dungeon" : null) : classify(info, act);
       if(!type) continue; // not an activity this run type counts
       const name = info.name;
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
@@ -476,7 +488,7 @@ B.pollCurrent = async run => {
     const ca = p.activities && p.activities.data;
     const hash = ca && ca.currentActivityHash;
     const info = hash ? await activityInfo(hash) : null;
-    const counted = info && (run.mode==="dungeon" ? info.type===DUNGEON_TYPE : !!classify(info));
+    const counted = info && (run.mode==="dungeon" ? info.type===DUNGEON_TYPE : !!classify(info, {activityDetails:{mode:ca.currentActivityModeType, modes:ca.currentActivityModeTypes||[]}}));
     const key = hash ? hash+"@"+ca.dateActivityStarted : "";
     // left a counted activity since the last check: its result is about to post
     if(B.lastAct && B.lastAct.counted && B.lastAct.key !== key) B.justLeft = Date.now();
