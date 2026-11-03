@@ -152,7 +152,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=24"></script>
+<script src="bungie.js?v=25"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -239,6 +239,8 @@ function normalize(){
   const r = state.run; if(!r || !r.ab) return;
   if(!r.ab.active) r.ab.active = {super:r.ab.supers[0], grenade:r.ab.grenades[0], melee:r.ab.melees[0], classAbility:r.ab.classAbilities[0]};
   if(!r.ab.artifact) r.ab.artifact = [];
+  if(!r.artPerks) r.artPerks = r.ab.artifact.map(n=>({n, tier:1}));
+  if(r.artPts===undefined) r.artPts = r.artPerks.reduce((t,p)=>t+p.tier,0);
 }
 normalize();
 let db=null, userId=null, downloads=null, saving=false, dirty=false;
@@ -340,11 +342,9 @@ function boonOffers(run){
   if(a.fragments.length<fragSlots(run)) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)),2);
   if(a.aspects.length>0 && fragSlots(run)<6) cands.push({type:"fragslot",label:"Fragment Slot",name:"+1 Fragment Slot",w:4});
   if(run.lives<run.maxLives+1) cands.push({type:"life",label:"Revive Token",name:"+1 Life",w:2});
-  const B = window.D2R_BUNGIE, art = B && B.artifact;
-  if(art) art.perks.filter(p=>p.unlocked && !(a.artifact||[]).includes(p.n)).forEach(p=>cands.push({type:"artifact",label:"Artifact Perk · Tier "+p.tier,name:p.n,w:4}));
   const out=[], pool=cands.slice();
-  // aspects, fragments and artifact perks are the heart of a build: up to two of them are always offered
-  for(const t of ["aspect","fragment","artifact"]){
+  // aspects and fragments are the heart of a build: one of each is always offered while available
+  for(const t of ["aspect","fragment"]){
     if(out.length>=2) break;
     const opts = pool.filter(o=>o.type===t);
     if(opts.length){ const choice = pick(opts); out.push(choice); pool.splice(pool.indexOf(choice),1); }
@@ -422,6 +422,8 @@ function logEventData(x, noRender){
     const gain = flawless ? power + FLAWLESS_LIGHT : hardcore ? power : Math.max(1, power - deaths);
     entry.lightGain = gain;
     run.light += gain;
+    entry.artPts = ART_PTS_CLEAR + (flawless ? ART_PTS_FLAWLESS : 0);
+    run.artPts = (run.artPts||0) + entry.artPts;
     run.score += power*10 + (flawless ? FLAWLESS_SCORE : -Math.min(power*10, 5*deaths));
   }
   // penalties
@@ -469,6 +471,19 @@ function afterChange(){
   applyTimer = setTimeout(()=>{ B.pickChar(run); B.applyRun(run, {quiet:true, subclassOnly:true}); }, 800);
 }
 /* Dungeon runs: each encounter cleared gives a loot pick and a guaranteed ability pick. */
+/* Artifact points: earned per completed event, spent on artifact perks. A perk costs its tier, and tier N opens once you own a tier N-1 perk. */
+const ART_PTS_CLEAR = 1, ART_PTS_FLAWLESS = 1;
+function artSpent(run){ return (run.artPerks||[]).reduce((t,p)=>t+p.tier,0); }
+function artLeft(run){ return (run.artPts||0) - artSpent(run); }
+function artTierOpen(run, tier){ return tier===1 || (run.artPerks||[]).some(p=>p.tier===tier-1); }
+function buyArtifact(name, tier){
+  const run = state.run; if(!run || run.status!=="active") return;
+  run.artPerks = run.artPerks||[];
+  if(run.artPerks.some(p=>p.n===name) || tier>artLeft(run) || !artTierOpen(run,tier)) return;
+  run.artPerks.push({n:name, tier});
+  run.ab.artifact = run.artPerks.map(p=>p.n);
+  save(); render(); toast(name+" unlocked. Switch it on in game.");
+}
 function encounterCleared(){
   const run = state.run; if(!run || run.mode!=="dungeon" || run.pending || run.status!=="active") return;
   const B = window.D2R_BUNGIE, cur = B && B.current;
@@ -479,6 +494,7 @@ function encounterCleared(){
   const entry = {n:run.events.length+1, at:Date.now(), eventId:"encounter", event:"Encounter "+run.dungeon.encounters+" · "+dname, diff, diffName:DIFFS[diff], power, outcome:"clear", note:"", source:"encounter", loot:null, boons:[], lost:null, lightBefore:run.light};
   run.events.push(entry);
   run.depth++; run.score += power*10;
+  entry.artPts = ART_PTS_CLEAR; run.artPts = (run.artPts||0) + entry.artPts;
   run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run)};
   save(); render();
 }
@@ -530,6 +546,7 @@ function undoLast(){
   if(!run.pending || run.pending.eventN!==ev.n || ev.boons.length) return;
   run.events.pop(); if(ev.outcome!=="death") run.depth--; run.score = ev.scoreBefore ?? (run.score - ev.power*10); run.deaths -= ev.deaths||0; if(ev.lifeLost) run.lives++;
   run.light = ev.lightBefore ?? 0;
+  if(ev.artPts) run.artPts = Math.max(0, (run.artPts||0) - ev.artPts);
   run.pending = null;
   save(); render(); toast("Last event removed");
 }
@@ -696,16 +713,25 @@ function renderSetup(){
   </section>`;
 }
 function renderArtifact(run){
-  const B = window.D2R_BUNGIE, art = B && B.artifact, mine = run.ab.artifact||[];
-  let check = "";
+  const B = window.D2R_BUNGIE, art = B && B.artifact, mine = run.ab.artifact||[], left = artLeft(run);
+  let check = "", shop = "";
   if(art && art.charId===B.charId){
     const extra = art.perks.filter(p=>p.active && !mine.includes(p.n)).map(p=>p.n);
     const off = mine.filter(n=>!art.perks.some(p=>p.n===n && p.active));
     check = (extra.length ? `<p class="help warn-text">Active in game but not unlocked in this run, turn off: ${esc(extra.join(", "))}</p>` : "")
       + (off.length ? `<p class="help">Unlocked, switch on in game: ${esc(off.join(", "))}</p>` : "")
       + (!extra.length && !off.length ? `<p class="help ok-text">Your artifact matches the run.</p>` : "");
+    if(run.status==="active"){
+      const tiers = [...new Set(art.perks.map(p=>p.tier))].sort((x,y)=>x-y);
+      shop = `<details ${left>0?"open":""}><summary>Spend artifact points (${left} available)</summary>` + tiers.map(t=>{
+        const open = artTierOpen(run,t);
+        return `<p class="help"><b>Tier ${t}</b> · costs ${t} point${t>1?"s":""}${open?"":` · unlock a tier ${t-1} perk first`}</p><div class="chips">`
+          + art.perks.filter(p=>p.tier===t).map(p=>{ const own = mine.includes(p.n), ok = open && !own && t<=left;
+            return `<button class="chip pickchip ${own?"on":""}" data-act="artBuy" data-name="${esc(p.n)}" data-tier="${t}" ${ok?"":"disabled"}>${esc(p.n)}${own?" · owned":""}</button>`; }).join("") + `</div>`;
+      }).join("") + `</details>`;
+    }
   } else check = `<p class="help">Connect Bungie to see your artifact.</p>`;
-  return `<div class="slotgroup"><h3>Artifact perks (${mine.length})</h3>${chipList(mine, run.el, "None unlocked yet. Bungie doesn't let apps change artifact perks, so you set them in game.")}${check}</div>`;
+  return `<div class="slotgroup"><h3>Artifact perks (${mine.length}) · ${left} point${left===1?"":"s"} to spend</h3>${chipList(mine, run.el, "None unlocked yet. Earn 1 artifact point per completed event (+1 if flawless) and spend it below. Bungie doesn't let apps change artifact perks, so you set them in game.")}${check}${shop}</div>`;
 }
 function renderStatus(run){
   const pips = [];
@@ -912,6 +938,7 @@ document.addEventListener("click", e=>{
   else if(act==="boon") takeBoon(parseInt(b.dataset.i,10));
   else if(act==="undo") undoLast();
   else if(act==="encounter") encounterCleared();
+  else if(act==="artBuy") buyArtifact(b.dataset.name, parseInt(b.dataset.tier,10));
   else if(act==="bLogin") window.D2R_BUNGIE.login();
   else if(act==="bLogout") window.D2R_BUNGIE.logout();
   else if(act==="bApply"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.applyRun(state.run); }
