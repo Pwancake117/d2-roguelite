@@ -207,7 +207,23 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .toast.show{opacity:1}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:16px;z-index:5}
 .modal .panel{max-width:640px;width:100%}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}.offer:hover{transform:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.offer:hover{transform:none}}
+@keyframes hotpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 0%,transparent),0 0 18px color-mix(in srgb,var(--accent) 45%,transparent)}}
+.stat-hot{all:unset;cursor:pointer;background:color-mix(in srgb,var(--accent) 22%,var(--panel));padding:12px 14px;display:grid;gap:2px;align-content:center;box-shadow:inset 0 0 0 2px var(--accent);animation:hotpulse 2.2s ease-in-out infinite}
+.stat-hot .val{color:#fff;font-size:1.9rem}
+.stat-hot:focus-visible{outline:2px solid #fff;outline-offset:-4px}
+.hotcta{font-family:var(--display);font-weight:700;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.tabbadge{display:inline-grid;place-items:center;min-width:1.5em;padding:1px 7px;margin-left:6px;border-radius:999px;background:var(--accent);color:#06121b;font-weight:800;font-size:.75rem;letter-spacing:0;animation:hotpulse 2.2s ease-in-out infinite}
+.ptsbanner{display:flex;align-items:center;gap:12px;padding:10px 14px;border:2px solid var(--accent);border-radius:6px;background:color-mix(in srgb,var(--accent) 14%,var(--panel-2));animation:hotpulse 2.2s ease-in-out infinite}
+.ptsbanner b{font-family:var(--display);font-size:2rem;line-height:1;color:#fff}
+.ptsbanner span{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.artslot.canfill{border:2px solid var(--accent);border-style:solid;background:color-mix(in srgb,var(--accent) 10%,var(--panel-2));animation:hotpulse 2.2s ease-in-out infinite}
+.artslot.canfill .ph{color:var(--accent);font-size:1.6rem}
+.artslot.canfill:hover{background:color-mix(in srgb,var(--accent) 22%,var(--panel-2))}
+.pickbanner{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 16px;border-radius:6px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel));animation:hotpulse 2.2s ease-in-out infinite}
+.pickbanner b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.08em;color:#fff}
+.pickhead{display:flex;align-items:center;gap:8px}
+.pickhead b{font-family:var(--display);font-size:1.2rem;text-transform:uppercase;letter-spacing:.1em;color:#fff}
 </style>
 </head>
 <body>
@@ -222,7 +238,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=9"></script>
-<script src="bungie.js?v=41"></script>
+<script src="bungie.js?v=42"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -923,7 +939,7 @@ function renderArtifact(run){
     const max = ART_SLOT_MAX[i];
     if(m){ const d = descOf(run,"artmod",m.h); return `<div class="artslot on" title="${esc((d&&d.d)||"")}">${d&&d.i?`<img src="${ICON_ROOT+d.i}" alt="">`:""}<span class="help">Slot ${i+1} · tier ${m.t}</span><b>${esc(artName(m.h))}</b></div>`; }
     const open = run.status==="active" && left>0;
-    return `<button class="artslot ${ui.artSlot===i?"sel":""}" data-act="artSlot" data-i="${i}" ${open?"":"disabled"}><span class="ph">+</span><span class="help">Slot ${i+1}</span></button>`;
+    return `<button class="artslot ${ui.artSlot===i?"sel":""} ${open?"canfill":""}" data-act="artSlot" data-i="${i}" ${open?"":"disabled"}><span class="ph">+</span><span class="help">Slot ${i+1}</span></button>`;
   }).join("<!--s-->");
   let picker = "";
   if(ui.artSlot!=null && !slots[ui.artSlot]){
@@ -932,7 +948,7 @@ function renderArtifact(run){
     picker = `<h3>Choose a mod for slot ${ui.artSlot+1}</h3><div class="offers">${opts.map(([h,t])=>{ const d = descOf(run,"artmod",h), ok = t<=left;
       return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}>${d&&d.i?`<img class="modicon" src="${ICON_ROOT+d.i}" alt="">`:""}<span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
   }
-  return `<div class="slotgroup"><h3>Artifact · ${esc(art.n)} · ${left} point${left===1?"":"s"} to spend</h3>
+  return `<div class="slotgroup"><h3>Artifact · ${esc(art.n)}</h3>${left>0?`<div class="ptsbanner"><b>${left}</b><span>point${left===1?"":"s"} to spend: tap a glowing slot</span></div>`:`<p class="help">No points to spend. Complete events to earn more.</p>`}
     <p class="help">${artInfoHtml(run, art.n)}</p>
     <p class="help">Each completed event earns points (1, Master 2, Grandmaster 3, +1 if flawless). A mod costs its tier. Slots 1-2 take tier 1, slots 3-5 up to tier 2, slots 6-7 up to tier 3. The app equips the artifact and its mods for you when "Equip subclass picks automatically" is on, or use Set artifact in game.</p>
     <div class="artrow"><div class="artgroup"><span class="glabel">Tier 1</span><div class="artslots">${slotHtml.split("<!--s-->").slice(0,2).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 2</span><div class="artslots">${slotHtml.split("<!--s-->").slice(2,5).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 3</span><div class="artslots">${slotHtml.split("<!--s-->").slice(5,7).join("")}</div></div></div>${picker}${check}
@@ -942,11 +958,14 @@ function renderStatus(run){
   const pips = [];
   for(let i=0;i<Math.max(run.maxLives,run.lives);i++) pips.push(`<span class="pip ${i<run.lives?"on":"lost"}" title="${i<run.lives?"Life":"Lost life"}"></span>`);
   const pct = Math.round(run.light/LIGHT_PER_BOON*100);
-  return `<section class="status">
+  const picks = run.pending ? (run.pending.boonsLeft||0) + (run.pending.loot&&run.pending.loot.length?1:0) : 0;
+  return `${picks?`<div class="pickbanner" role="status"><b>${picks} reward pick${picks>1?"s":""} waiting</b><span>Choose ${picks>1?"them":"it"} in the Ability unlock panel before logging your next event.</span></div>`:""}<section class="status">
     <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to bonus pick</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
-    <div><span class="lbl">Artifact points</span><span class="val">${artLeft(run)}</span><span class="lbl">${run.artifact?esc(run.artifact.n):"No artifact yet"}</span></div>
+    ${(()=>{ const pts = artLeft(run), can = run.artifact && pts>0;
+      return can ? `<button class="stat-hot" data-act="tab" data-tab="artifact" title="Open the Artifact tab to spend"><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="hotcta">Spend now ›</span></button>`
+        : `<div><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="lbl">${run.artifact?esc(run.artifact.n):"No artifact yet"}</span></div>`; })()}
     <div><span class="lbl">Events / Deaths</span><span class="val">${run.events.length} / ${run.deaths}</span></div>
     <div><span class="lbl">Score</span><span class="val">${run.score}</span></div>
   </section>`;
@@ -1004,7 +1023,7 @@ function renderSubclassTab(run){
 }
 function renderLoadout(run){
   const tab = ui.tab || "subclass";
-  const tabs = [["character","Character"],["subclass","Subclass"],["artifact","Artifact"+(run.artifact&&artLeft(run)>0?` · ${artLeft(run)}`:"")]];
+  const tabs = [["character","Character"],["subclass","Subclass"],["artifact","Artifact"+(run.artifact&&artLeft(run)>0?` <span class="tabbadge">${artLeft(run)}</span>`:"")]];
   const body = tab==="character" ? renderCharacterTab(run) : tab==="artifact" ? renderArtifact(run) : renderSubclassTab(run);
   return `<section class="panel guardian">
     <div class="row between"><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab ${tab===k?"on":""}" role="tab" aria-selected="${tab===k}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div><button class="btn ghost" data-act="tierList">Reward tier list</button></div>
@@ -1019,7 +1038,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}</div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
