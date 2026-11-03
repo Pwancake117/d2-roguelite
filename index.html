@@ -51,6 +51,10 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .btn.primary:hover{filter:brightness(1.1)}
 .btn.danger{border-color:#5a2a2a;color:#ffb3b3}
 .btn.danger:hover{border-color:var(--danger)}
+.btn.savebtn{background:#1f7a43;border-color:#2e9c5a;color:#fff}
+.btn.savebtn:hover{background:#2e9c5a}
+.btn.dlbtn{background:#c99a12;border-color:#e3b51f;color:#111}
+.btn.dlbtn:hover{background:#e3b51f}
 .btn.endrun{background:#b3261e;border-color:#d8453c;color:#fff}
 .btn.endrun:hover{background:#d8453c}
 .btn.endrun[disabled]{background:#4a1f1c;border-color:#5a2a2a;color:#c99}
@@ -254,7 +258,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=59"></script>
+<script src="bungie.js?v=60"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -823,7 +827,7 @@ function renderSaved(){
   const rows = list.map(x=>{ const r = x.run, conf = ui.confirm==="del:"+r.id;
     return `<div class="saverow"><div><b>${esc(runLabel(r))}</b><span class="help">${r.lives} lives · score ${r.score} · saved ${fmtTime(x.savedAt)}</span></div><div class="row">
       ${conf ? `<span class="help">Delete this save?</span><button class="btn endrun" data-act="delSaved" data-id="${esc(r.id)}">Delete</button><button class="btn ghost" data-act="cancel">Cancel</button>`
-      : `<button class="btn primary" data-act="resume" data-id="${esc(r.id)}">Resume</button><button class="btn" data-act="dlSaved" data-id="${esc(r.id)}">Download run file</button><button class="btn ghost" data-act="ask" data-what="del:${esc(r.id)}">Delete</button>`}</div></div>`; }).join("");
+      : `<button class="btn primary" data-act="resume" data-id="${esc(r.id)}">Resume</button><button class="btn dlbtn" data-act="dlSaved" data-id="${esc(r.id)}">Download run file</button><button class="btn ghost" data-act="ask" data-what="del:${esc(r.id)}">Delete</button>`}</div></div>`; }).join("");
   return `<section class="panel"><div class="row between"><h2>Saved runs</h2><label class="btn">Load run file<input type="file" accept=".json,application/json" data-act="loadFile" hidden></label></div>
     ${rows || `<div class="empty-note">No saved runs. Use Save & exit during a run to park it here.</div>`}</section>`;
 }
@@ -1232,7 +1236,7 @@ function render(){
       <h2>Event log</h2>${renderEventLog(run.events)}
       <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
         ${ui.confirm==="extract" ? `<span>End the run and save it to your history?</span><button class="btn endrun" data-act="extract">Yes, end run</button><button class="btn ghost" data-act="cancel">Cancel</button>`
-        : `<button class="btn" data-act="saveExit">Save &amp; exit</button><button class="btn ghost" data-act="dlRun">Download run file</button><button class="btn endrun" data-act="ask" data-what="extract" ${run.pending?"disabled title=\"Take your reward picks first\"":""}>End run</button>`}
+        : `<button class="btn savebtn" data-act="saveExit">Save &amp; exit</button><button class="btn dlbtn" data-act="dlRun">Download run file</button><button class="btn endrun" data-act="ask" data-what="extract" ${run.pending?"disabled title=\"Take your reward picks first\"":""}>End run</button>`}
       </div></div></section></div>`;
   } else if(run && run.status!=="active"){
     html += renderEnded();
