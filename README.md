@@ -57,7 +57,7 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 
 1. **Connect your Bungie account.** Sign-in happens on bungie.net. The app asks to read your inventory and to move or equip gear.
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
-3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops) **or dungeons**. Each finished op or dungeon is synced from Bungie and logged automatically; in a Vanguard Ops Run a full dungeon clear counts as one event.
+3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops) **or dungeons**. Each finished op or dungeon is synced from Bungie and logged automatically; dungeons give the same rewards in both run types (Encounter cleared after each encounter, plus the full clear as one more event).
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
 5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, jump, melee, class ability, aspect, fragment, extra life; see Reward tiers below). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
 
