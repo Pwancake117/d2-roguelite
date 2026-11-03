@@ -241,7 +241,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=43"></script>
+<script src="bungie.js?v=44"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -739,7 +739,7 @@ function takeBoon(i){
   run.boons++; run.score += 5;
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   p.boonsLeft--;
-  p.boon = p.boonsLeft>0 ? boonOffers(run, p.lvl, p.diff) : null;
+  p.boon = p.boonsLeft>0 ? ((p.next && p.next.length) ? p.next.shift() : boonOffers(run, p.lvl, p.diff)) : null;
   if(p.boon && !p.boon.length){ p.boon = null; p.boonsLeft = 0; }
   if(!p.boonsLeft && !p.loot.length) run.pending = null;
   save(); afterChange(); render();
