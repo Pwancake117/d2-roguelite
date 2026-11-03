@@ -76,7 +76,7 @@ window.D2R_STARTERS = {
        melee: Shield Throw, Shield Bash
        classAbility: Towering Barricade, Rally Barricade
     */
-    "void": {super: "Sentinel Shield", grenade: "Suppressor", jump: "Strafe Lift", melee: "Shield Bash", classAbility: "Towering Barricade"},
+    "void": {super: "Ward of Dawn", grenade: "Magnetic", jump: "Strafe Lift", melee: "Shield Bash", classAbility: "Towering Barricade"},
     /* stasis options
        super: Glacial Quake
        grenade: Duskfield, Glacier, Shatter, Coldsnap
