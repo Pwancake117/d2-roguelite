@@ -35,13 +35,15 @@ Any white pieces work and can be mixed. The more you own, the more each run's st
 Once you're connected, the app's **Setup guide** shows which classes are ready and which pieces are missing.
 
 ## Playing
-**Recommended before each run:** move everything on that character except your common starter gear to the vault, and empty its Postmaster. Then anything that shows up on your character during the run is clearly run loot. Once a run has started, the **Move other gear to vault** button in the Bungie panel does this for you (it leaves run gear alone).
+**Recommended before each run:** move everything on that character except your common starter gear to the vault, empty its Postmaster, and switch off all seasonal artifact perks. Then anything that shows up on your character during the run is clearly run loot. Once a run has started, the **Move other gear to vault** button in the Bungie panel does this for you (it leaves run gear alone).
 
 1. **Connect your Bungie account.** Sign-in happens on bungie.net. The app asks to read your inventory and to move or equip gear.
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
 3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is synced from Bungie and logged automatically.
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
-5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, melee, class ability, aspect, fragment or extra life). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
+5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, melee, class ability, aspect, fragment, artifact perk or extra life; every pick includes aspect, fragment or artifact options while any are left). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
+
+Artifact perks: Bungie doesn't let apps change them, so you switch unlocked perks on in game. The app checks your artifact and flags perks that are on but not unlocked in the run.
 
 ## Modes and deaths
 | | Normal | Hardcore |

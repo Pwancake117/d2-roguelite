@@ -386,6 +386,7 @@ B.sync = async (run, {quiet} = {}) => {
       await loadDefs(); await loadProfile();
       const eqLoot = B.equippedLoot(run);
       if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths || !q.completed) q.equippedLoot = eqLoot; });
+      await B.loadArtifact();
       const loot = findLoot(run);
       if(loot.length){
         loot.forEach(x=>{ x.source = added ? run.queue[run.queue.length-1].note : "Found during the run"; (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
@@ -479,6 +480,28 @@ B.equippedLoot = run => {
   if(!B.profile || !B.charId) return [];
   const eq = ((B.profile.characterEquipment.data[B.charId]||{}).items||[]).map(i=>i.itemInstanceId);
   return run.weapons.concat(run.armor).filter(x=>x.inst && eq.includes(x.inst)).map(x=>x.inst);
+};
+
+/* Seasonal artifact: Bungie lets apps read perks (per character) but not change them. */
+B.artifact = null;
+const ART_NAMES_KEY = "d2r.artNames";
+let artNames = {}; try { artNames = JSON.parse(localStorage.getItem(ART_NAMES_KEY)||"{}"); } catch(e){}
+B.loadArtifact = async () => {
+  if(!B.connected() || !B.charId) return null;
+  try {
+    const a = B.account;
+    const c = await api(`/Destiny2/${a.type}/Profile/${a.id}/Character/${B.charId}/?components=202`);
+    const art = c.progressions && c.progressions.data && c.progressions.data.seasonalArtifact;
+    if(!art || !art.tiers) { B.artifact = null; return null; }
+    const perks = [];
+    for(const [ti,t] of art.tiers.entries()) for(const it of t.items){
+      if(!artNames[it.itemHash]){ try { artNames[it.itemHash] = (await fullDef(it.itemHash)).displayProperties.name; } catch(e){ artNames[it.itemHash] = "Artifact perk"; } }
+      perks.push({h:it.itemHash, n:artNames[it.itemHash], active:!!it.isActive, tier:ti+1, unlocked:!!t.isUnlocked});
+    }
+    try { localStorage.setItem(ART_NAMES_KEY, JSON.stringify(artNames)); } catch(e){}
+    B.artifact = {hash:art.artifactHash, perks, charId:B.charId, at:Date.now()};
+    return B.artifact;
+  } catch(e){ return B.artifact; }
 };
 
 /* Which activity is the run's character in right now? Used to detect dungeons live. */

@@ -109,6 +109,8 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .where.w-postmaster,.where.w-other-postmaster{border-color:#8a6a1c;color:#f3c969}
 .where.w-gone{border-color:#6a3a3a;color:#ffb3b3}
 .where.w-equipped{border-color:#2f6b4b;color:var(--good)}
+.warn-text{color:#ffb3b3!important;margin:4px 0 0}
+.ok-text{color:var(--good)!important;margin:4px 0 0}
 .empty-note{color:var(--muted);font-size:.85rem}
 /* reward cards */
 .offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
@@ -150,7 +152,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=22"></script>
+<script src="bungie.js?v=24"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -236,6 +238,7 @@ try { const raw = localStorage.getItem(LS_KEY); if(raw){ const s = JSON.parse(ra
 function normalize(){
   const r = state.run; if(!r || !r.ab) return;
   if(!r.ab.active) r.ab.active = {super:r.ab.supers[0], grenade:r.ab.grenades[0], melee:r.ab.melees[0], classAbility:r.ab.classAbilities[0]};
+  if(!r.ab.artifact) r.ab.artifact = [];
 }
 normalize();
 let db=null, userId=null, downloads=null, saving=false, dirty=false;
@@ -337,8 +340,17 @@ function boonOffers(run){
   if(a.fragments.length<fragSlots(run)) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)),2);
   if(a.aspects.length>0 && fragSlots(run)<6) cands.push({type:"fragslot",label:"Fragment Slot",name:"+1 Fragment Slot",w:4});
   if(run.lives<run.maxLives+1) cands.push({type:"life",label:"Revive Token",name:"+1 Life",w:2});
+  const B = window.D2R_BUNGIE, art = B && B.artifact;
+  if(art) art.perks.filter(p=>p.unlocked && !(a.artifact||[]).includes(p.n)).forEach(p=>cands.push({type:"artifact",label:"Artifact Perk · Tier "+p.tier,name:p.n,w:4}));
   const out=[], pool=cands.slice();
-  // spread across types: weight each type once, then pick a name inside it
+  // aspects, fragments and artifact perks are the heart of a build: up to two of them are always offered
+  for(const t of ["aspect","fragment","artifact"]){
+    if(out.length>=2) break;
+    const opts = pool.filter(o=>o.type===t);
+    if(opts.length){ const choice = pick(opts); out.push(choice); pool.splice(pool.indexOf(choice),1); }
+  }
+  if(!out.some(o=>o.type==="fragment")){ const slot = pool.find(o=>o.type==="fragslot"); if(slot && out.length<2){ out.push(slot); pool.splice(pool.indexOf(slot),1); } }
+  // fill the rest, spread across the other types: weight each type once, then pick a name inside it
   while(out.length<3 && pool.length){
     const types = {}; pool.forEach(o=>{ (types[o.type] = types[o.type]||[]).push(o); });
     const typeList = Object.keys(types).filter(t=>!out.some(o=>o.type===t));
@@ -361,7 +373,7 @@ function starterGear(){
 }
 function baseAbilities(cls, el){
   const [sup, gren, mel, ca] = BASE[cls][el];
-  return { supers:[sup], grenades:[gren], melees:[mel], classAbilities:[ca], aspects:[], fragments:[], fragBonus:0,
+  return { supers:[sup], grenades:[gren], melees:[mel], classAbilities:[ca], aspects:[], fragments:[], artifact:[], fragBonus:0,
     active:{super:sup, grenade:gren, melee:mel, classAbility:ca} };
 }
 function startRun(){
@@ -486,7 +498,8 @@ function takeLoot(i){
 function takeBoon(i){
   const run = state.run, p = run.pending; if(!p || !p.boon) return;
   const b = p.boon[i], a = run.ab;
-  const map = {grenade:"grenades",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
+  const map = {grenade:"grenades",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments",artifact:"artifact"};
+  if(!a.artifact) a.artifact = [];
   if(map[b.type]){ a[map[b.type]].push(b.name); if(a.active && b.type in a.active) a.active[b.type] = b.name; }
   else if(b.type==="fragslot") a.fragBonus++;
   else if(b.type==="life") run.lives++;
@@ -620,7 +633,7 @@ function baseBuildHTML(cls, el){
 function pullSteps(cls){
   return `<ol class="steps">
     <li><b>Once per account, in game:</b> open Collections and pull one common (white) <b>kinetic</b> weapon (e.g. ${PULL_SUGGEST.kinetic}), one common <b>energy</b> weapon (e.g. ${PULL_SUGGEST.energy}), one uncommon (green) <b>power</b> weapon (e.g. ${PULL_SUGGEST.power}), and a common armor set for your ${cls} (e.g. ${PULL_SUGGEST.armor[cls]}). D2 has no white heavy weapon, so power starts at green. Any common items work, and more of them gives each run more variety.</li>
-    <li><b>Recommended: clear your ${cls} first.</b> Move everything except your common starter gear to the vault, and empty the Postmaster, so anything on your character during the run is clearly run loot. After starting, the <b>Move other gear to vault</b> button in the Bungie panel does this for you.</li>
+    <li><b>Recommended: clear your ${cls} first.</b> Move everything except your common starter gear to the vault, empty the Postmaster, and switch off all seasonal artifact perks, so anything on your character during the run is clearly run loot. After starting, the <b>Move other gear to vault</b> button in the Bungie panel does this for you.</li>
     <li><b>Connect Bungie and start the run.</b> The app moves your common gear to your ${cls}, equips it and sets your subclass. From then on, every weapon or armor piece you pick up is yours to use for the run.</li>
     <li><b>Play Vanguard Ops</b> (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is logged for you. Other activities don't count.</li>
   </ol>`;
@@ -682,6 +695,18 @@ function renderSetup(){
     </div>
   </section>`;
 }
+function renderArtifact(run){
+  const B = window.D2R_BUNGIE, art = B && B.artifact, mine = run.ab.artifact||[];
+  let check = "";
+  if(art && art.charId===B.charId){
+    const extra = art.perks.filter(p=>p.active && !mine.includes(p.n)).map(p=>p.n);
+    const off = mine.filter(n=>!art.perks.some(p=>p.n===n && p.active));
+    check = (extra.length ? `<p class="help warn-text">Active in game but not unlocked in this run, turn off: ${esc(extra.join(", "))}</p>` : "")
+      + (off.length ? `<p class="help">Unlocked, switch on in game: ${esc(off.join(", "))}</p>` : "")
+      + (!extra.length && !off.length ? `<p class="help ok-text">Your artifact matches the run.</p>` : "");
+  } else check = `<p class="help">Connect Bungie to see your artifact.</p>`;
+  return `<div class="slotgroup"><h3>Artifact perks (${mine.length})</h3>${chipList(mine, run.el, "None unlocked yet. Bungie doesn't let apps change artifact perks, so you set them in game.")}${check}</div>`;
+}
 function renderStatus(run){
   const pips = [];
   for(let i=0;i<Math.max(run.maxLives,run.lives);i++) pips.push(`<span class="pip ${i<run.lives?"on":"lost"}" title="${i<run.lives?"Life":"Lost life"}"></span>`);
@@ -711,6 +736,7 @@ function renderLoadout(run){
     <div class="slotgroup"><h3>Class ability</h3>${pickList(run,"classAbility")}</div>
     <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}</div>
     <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens 2 fragment slots", fragSlots(run))}</div>
+    ${renderArtifact(run)}
   </section>`;
 }
 function renderPending(run){
@@ -921,6 +947,7 @@ render();
 initCapabilities();
 if(window.D2R_BUNGIE) window.D2R_BUNGIE.init().then(async ()=>{
   const B = window.D2R_BUNGIE, run = state.run;
+  if(run && run.status==="active" && B.connected()){ B.pickChar(run); B.loadArtifact().then(()=>render()); }
   if(run && run.status==="active" && B.connected() && !run.ownedAtStart){ B.pickChar(run); try { await B.snapshot(run); save(); B.note("Loot tracking started: anything you pick up from now on is usable."); render(); } catch(e){} } if(state.run && state.run.status==="active" && window.D2R_BUNGIE.connected() && window.D2R_BUNGIE.opts.autoSync) bungieSync(true); });
 </script>
 </body>
