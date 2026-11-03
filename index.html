@@ -150,7 +150,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=21"></script>
+<script src="bungie.js?v=22"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -387,7 +387,7 @@ function logEvent(form){
   const o = form.outcome.value;
   logEventData({eventId:form.event.value, diff:parseInt(form.diff.value,10), completed:o!=="fail", deaths:o==="flawless"?0:Math.max(1,parseInt(form.mdeaths.value,10)||1), note:form.note.value.trim().slice(0,140)});
 }
-const FLAWLESS_LIGHT = 2, FLAWLESS_SCORE = 25;
+const FLAWLESS_LIGHT = 2, FLAWLESS_SCORE = 25, GUARANTEED_PICKS = 1;
 /* x: {eventId, diff, completed, deaths, note, at, instanceId, loot:[names], equippedLoot:[instance ids]} */
 function logEventData(x, noRender){
   const run = state.run; if(!run || run.pending || run.status!=="active") return;
@@ -429,9 +429,12 @@ function logEventData(x, noRender){
   if(loseLife){ run.lives--; entry.lifeLost = true; }
   if(run.lives<=0){ endRun("death"); }
   else {
-    let boonCount = 0;
+    // every completed event guarantees one ability pick; Light adds bonus picks on top
+    let boonCount = completed ? GUARANTEED_PICKS : 0;
     while(run.light >= LIGHT_PER_BOON){ run.light -= LIGHT_PER_BOON; boonCount++; }
-    run.pending = boonCount ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:boonOffers(run)} : null;
+    entry.picks = boonCount;
+    const offers = boonCount ? boonOffers(run) : [];
+    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers} : null;
   }
   if(!noRender){ save(); afterChange(); render(); }
 }
@@ -491,6 +494,7 @@ function takeBoon(i){
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   p.boonsLeft--;
   p.boon = p.boonsLeft>0 ? boonOffers(run) : null;
+  if(p.boon && !p.boon.length){ p.boon = null; p.boonsLeft = 0; }
   if(!p.boonsLeft && !p.loot.length) run.pending = null;
   save(); afterChange(); render();
 }
@@ -663,7 +667,7 @@ function renderSetup(){
   return `<section class="panel">
     <div><h2>New run</h2><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's base build with common gear only. Anything you pick up in game during the run becomes usable, and clears unlock new abilities, aspects and fragments.</p></div>
     <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
-      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives an ability unlock, and finishing the dungeon earns Light. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Each finished op earns Light toward ability unlocks."}</p></div>
+      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives an ability unlock, and finishing the dungeon earns Light. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Every finished op gives an ability pick, and Light from harder or flawless clears earns bonus picks."}</p></div>
     <div><h3>Mode</h3>${seg("difficulty", [["normal","Normal"],["hardcore","Hardcore"]], s.difficulty||"normal")}
       <p class="help" style="margin:6px 0 0">${(s.difficulty||"normal")==="hardcore" ? "Any death, or leaving an activity after 5 minutes, costs a life and every looted item you had equipped. Your starter commons are never lost." : "Clearing with no deaths earns bonus Light. Dying only reduces the Light you earn; failing an activity, or leaving after 5 minutes, costs a life."} Flawless clears earn +${2} Light and +25 score in both modes.</p></div>
     <div><h3>Class</h3>${seg("cls", CLASSES.map(c=>[c,c]), s.cls)}</div>
@@ -685,7 +689,7 @@ function renderStatus(run){
   return `<section class="status">
     <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
-    <div><span class="lbl">Light to next ability</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
+    <div><span class="lbl">Light to bonus pick</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
     <div><span class="lbl">Events / Deaths</span><span class="val">${run.events.length} / ${run.deaths}</span></div>
     <div><span class="lbl">Score</span><span class="val">${run.score}</span></div>
   </section>`;
