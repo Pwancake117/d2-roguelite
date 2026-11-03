@@ -18,3 +18,7 @@ window.D2R_REWARD_ODDS = [
   {upTo: 7,        S: 20, A: 30, B: 30, C: 20},
   {upTo: Infinity, S: 30, A: 30, B: 30, C: 10}
 ];
+
+/* Difficulty floor for S tier: chance that a pick includes at least one S reward, by difficulty
+   (0 Normal, 1 Advanced/Hero, 2 Expert/Legend, 3 Master, 4 Grandmaster/Ultimate). */
+window.D2R_S_FLOOR = {3: 0.5, 4: 0.95};

@@ -161,8 +161,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=2"></script>
-<script src="bungie.js?v=28"></script>
+<script src="tiers.js?v=3"></script>
+<script src="bungie.js?v=29"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -372,8 +372,10 @@ function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
 const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1};
 const FRAG_TYPES = {fragment:1, fragslot:1};
-function boonOffers(run, lvl){
+function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
+function boonOffers(run, lvl, diff){
   if(lvl==null) lvl = (run.pending && run.pending.lvl) || 3;
+  if(diff==null) diff = (run.pending && run.pending.diff) || 0;
   const a = run.ab, c = run.cls, e = run.el, cands = [];
   const add = (type,label,list) => list.forEach(name=>cands.push({type,label,name}));
   add("super","Super",P.supers(c,e).filter(n=>!a.supers.includes(n)));
@@ -389,6 +391,9 @@ function boonOffers(run, lvl){
   if(run.lives+2<=run.maxLives+2 && Math.random()<0.35) cands.push({type:"life",label:"Revive Tokens",name:"+2 Lives",n:2});
   const odds = oddsFor(lvl), out = [];
   let pool = cands.slice();
+  // Master / Grandmaster: chance that one choice is guaranteed S tier (tiers.js D2R_S_FLOOR)
+  const sPool = pool.filter(o=>tierOfType(o.type)==="S");
+  if(sPool.length && Math.random() < sFloor(diff)){ const choice = pick(sPool); out.push(choice); pool.splice(pool.indexOf(choice),1); }
   while(out.length<3 && pool.length){
     const byTier = {}; pool.forEach(o=>{ const t = tierOfType(o.type); (byTier[t] = byTier[t]||[]).push(o); });
     const tiers = Object.keys(byTier).map(t=>({t, w:odds[t]||0}));
@@ -492,8 +497,8 @@ function logEventData(x, noRender){
     entry.picks = boonCount;
     const lvl = power + (flawless ? 1 : 0);
     entry.rewardLvl = lvl;
-    const offers = boonCount ? boonOffers(run, lvl) : [];
-    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers, lvl} : null;
+    const offers = boonCount ? boonOffers(run, lvl, diff) : [];
+    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers, lvl, diff} : null;
   }
   if(!noRender){ save(); afterChange(); render(); }
 }
@@ -541,7 +546,7 @@ function encounterCleared(){
   run.depth++; run.score += power*10;
   entry.artPts = ART_PTS_CLEAR; run.artPts = (run.artPts||0) + entry.artPts;
   entry.rewardLvl = power;
-  run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run, power), lvl:power};
+  run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run, power, diff), lvl:power, diff};
   save(); render();
 }
 function itemLabel(it){ return it.kind==="armor" || it.rarity==="exotic" ? it.name : cap(it.rarity)+" "+it.name; }
@@ -568,7 +573,7 @@ function takeBoon(i){
   run.boons++; run.score += 5;
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   p.boonsLeft--;
-  p.boon = p.boonsLeft>0 ? boonOffers(run, p.lvl) : null;
+  p.boon = p.boonsLeft>0 ? boonOffers(run, p.lvl, p.diff) : null;
   if(p.boon && !p.boon.length){ p.boon = null; p.boonsLeft = 0; }
   if(!p.boonsLeft && !p.loot.length) run.pending = null;
   save(); afterChange(); render();
@@ -683,7 +688,7 @@ function showTierList(){
     <div class="row between"><h2>Reward tier list · ${esc(c)} ${esc(cap(e))}</h2><button class="btn ghost" data-act="closeModal">Close</button></div>
     <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick never offers more than one fragment. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
     ${rows}
-    <h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
+    <p class="help">Master: ${Math.round(sFloor(3)*100)}% chance a pick includes an S reward. Grandmaster/Ultimate: ${Math.round(sFloor(4)*100)}%. On top of that, every choice rolls the odds below.</p><h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
   </div></div>`;
 }
 function chipList(list, el, emptyText, slots){
@@ -840,7 +845,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):""}</button>`).join("")}</div>`;
+    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }

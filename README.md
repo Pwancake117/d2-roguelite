@@ -65,6 +65,8 @@ Each of the 3 choices in a pick rolls a tier, then a reward inside it, so a pick
 | 6–7 | 20% | 30% | 30% | 20% |
 | 8+ (e.g. Grandmaster) | 30% | 30% | 30% | 10% |
 
+Master and Grandmaster boost S: on Master, half of all picks include a guaranteed S reward (about 80% of picks end up with one), and on Grandmaster/Ultimate 95% do (about 98% overall).
+
 Each pick card shows its tier, and the **Reward tier list** button shows everything for your subclass. To change tiers or odds, edit `tiers.js`.
 
 ## Modes and deaths
