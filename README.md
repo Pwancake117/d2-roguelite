@@ -4,6 +4,19 @@ A roguelite run tracker for Destiny 2. Each run starts on a fixed base build wit
 
 **Play:** https://pwancake117.github.io/d2-roguelite/
 
+## What is D2 Roguelite?
+
+D2 Roguelite turns Destiny 2 into a roguelite. You start a run as a stripped-down Guardian with only common (white) gear and a basic starter build, then earn your way back up by playing.
+
+**How a run works**
+1. **Start weak.** Pick a class and subclass. You begin with common weapons and armor and a fixed starter build: no aspects, no fragments, no artifact.
+2. **Play events.** Run Vanguard Ops or dungeons in game. The app connects to your Bungie account and logs each finished activity automatically.
+3. **Loot and unlock.** Any gear that drops during the run is yours to use. Every clear also gives reward picks: choose new supers, grenades, melees, aspects, fragments, artifacts or even other subclasses. Harder and cleaner clears earn more.
+4. **Don't run out of lives.** Failing an event costs a life. In Hardcore, dying costs a life and your looted gear too. At 0 lives the run is over.
+5. **See how far you got.** Every run is saved to your history with events cleared, deaths and score, and you can export it.
+
+Between activities, check in to pick your rewards. Putting your new subclass abilities and artifact mods on in game is optional: turn on "Equip subclass picks automatically" and the app does it for you, or set them yourself.
+
 ## About this project
 
 I started on this idea a while back, but was recently inspired by Lep's Dungeon Crawler Carl dungeon runs. For all I know someone has already made something like this; if so, I didn't copy it on purpose. I made this for fun, and I'm not a developer.

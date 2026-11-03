@@ -253,6 +253,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .starteredit label{display:grid;gap:3px}
 .starteredit select{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px}
 .about p{max-width:80ch;margin:8px 0}
+.overview .lead{font-size:1.02rem;max-width:80ch;margin:0;color:#eef3f9}
+.ovsteps{max-width:90ch}
 .about summary{cursor:pointer}
 .startnote{margin:6px 0 4px;padding:6px 10px;border-left:3px solid var(--accent);background:rgba(127,212,255,.07);font-size:.85rem}
 .dlist{display:grid;gap:6px}
@@ -366,7 +368,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=108"></script>
+<script src="bungie.js?v=109"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -994,6 +996,19 @@ async function loadRunFile(file){
     save(); render(); toast("Save file loaded into Saved runs.");
   } catch(e){ toast("Couldn't load that file: "+(e.message||e)); }
 }
+function renderOverview(){
+  return `<section class="panel overview"><h2>What is D2 Roguelite?</h2>
+    <p class="lead">D2 Roguelite turns Destiny 2 into a roguelite. You start a run as a stripped-down Guardian with only common (white) gear and a basic starter build, then earn your way back up by playing.</p>
+    <ol class="steps ovsteps">
+      <li><b>Start weak.</b> Pick a class and subclass. You begin with common weapons and armor and a fixed starter build: no aspects, no fragments, no artifact.</li>
+      <li><b>Play events.</b> Run Vanguard Ops or dungeons in game. The app connects to your Bungie account and logs each finished activity automatically.</li>
+      <li><b>Loot and unlock.</b> Any gear that drops during the run is yours to use. Every clear also gives reward picks: choose new supers, grenades, melees, aspects, fragments, artifacts or even other subclasses. Harder and cleaner clears earn more.</li>
+      <li><b>Don't run out of lives.</b> Failing an event costs a life. In Hardcore, dying costs a life and your looted gear too. At 0 lives the run is over.</li>
+      <li><b>See how far you got.</b> Every run is saved to your history with events cleared, deaths and score, and you can export it.</li>
+    </ol>
+    <p class="help">Between activities, check in to pick your rewards. Putting your new subclass abilities and artifact mods on in game is optional: turn on "Equip subclass picks automatically" and the app does it for you, or set them yourself.</p>
+  </section>`;
+}
 function renderAbout(){
   return `<section class="panel about"><details ${(()=>{ try { return localStorage.getItem("d2r.aboutClosed")==="1" ? "" : "open"; } catch(e){ return "open"; } })()} data-act="aboutToggle">
     <summary><h2 style="display:inline">About this project</h2></summary>
@@ -1444,6 +1459,7 @@ function render(){
   } else if(run && run.status!=="active"){
     html += renderEnded();
   } else {
+    html += renderOverview();
     html += renderAbout();
     html += renderGuide();
     html += renderBungie(null);
