@@ -52,7 +52,7 @@ Rewards are tiered by type (set in `tiers.js`):
 | Tier | Rewards |
 |---|---|
 | S | Supers, swap to a different artifact |
-| A | Fragments (a pick never offers more than one) |
+| A | Fragments (at most 2 per pick, and only as many as you have open fragment slots) |
 | B | Aspects, extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives), +2 artifact points |
 | C | Grenades, jumps, melees, class abilities |
 
