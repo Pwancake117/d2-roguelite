@@ -249,7 +249,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=55"></script>
+<script src="bungie.js?v=56"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1177,8 +1177,8 @@ function render(){
       ${run.pending ? renderPending(run) : renderEventForm(run)}
       <h2>Event log</h2>${renderEventLog(run.events)}
       <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
-        ${ui.confirm==="extract" ? `<span>End the run and save it to your history?</span><button class="btn primary" data-act="extract">Yes, end run</button><button class="btn ghost" data-act="cancel">Cancel</button>`
-        : `<button class="btn" data-act="ask" data-what="extract" ${run.pending?"disabled title=\"Take your reward picks first\"":""}>End run</button>`}
+        ${ui.confirm==="extract" ? `<span>End the run and save it to your history?</span><button class="btn danger" data-act="extract">Yes, end run</button><button class="btn ghost" data-act="cancel">Cancel</button>`
+        : `<button class="btn danger" data-act="ask" data-what="extract" ${run.pending?"disabled title=\"Take your reward picks first\"":""}>End run</button>`}
       </div></div></section></div>`;
   } else if(run && run.status!=="active"){
     html += renderEnded();
