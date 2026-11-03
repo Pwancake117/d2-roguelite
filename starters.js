@@ -10,7 +10,7 @@ window.D2R_STARTERS = {
        melee: Disorienting Blow, Combination Blow
        classAbility: Marksman's Dodge, Gambler's Dodge
     */
-    "arc": {super: "Gathering Storm", grenade: "Flashbang", jump: "Triple Jump", melee: "Combination Blow", classAbility: "Marksman's Dodge"},
+    "arc": {super: "Arc Staff", grenade: "Flashbang", jump: "High Jump", melee: "Disorienting Blow", classAbility: "Marksman's Dodge"},
     /* solar options
        super: Golden Gun: Marksman, Golden Gun: Deadshot, Blade Barrage
        grenade: Fusion, Healing, Firebolt, Solar, Incendiary, Tripmine, Swarm, Thermite
@@ -18,7 +18,7 @@ window.D2R_STARTERS = {
        melee: Knife Trick, Proximity Explosive Knife, Lightweight Knife, Weighted Throwing Knife
        classAbility: Acrobat's Dodge, Marksman's Dodge, Gambler's Dodge
     */
-    "solar": {super: "Golden Gun: Deadshot", grenade: "Incendiary", jump: "Triple Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"},
+    "solar": {super: "Golden Gun: Deadshot", grenade: "Incendiary", jump: "High Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"},
     /* void options
        super: Shadowshot: Moebius Quiver, Spectral Blades, Shadowshot: Deadfall
        grenade: Vortex, Void Spike, Scatter, Magnetic, Suppressor, Void Wall, Axion Bolt
@@ -26,7 +26,7 @@ window.D2R_STARTERS = {
        melee: Phantom Surge, Snare Bomb
        classAbility: Marksman's Dodge, Gambler's Dodge
     */
-    "void": {super: "Shadowshot: Deadfall", grenade: "Vortex", jump: "Triple Jump", melee: "Snare Bomb", classAbility: "Marksman's Dodge"},
+    "void": {super: "Shadowshot: Deadfall", grenade: "Vortex", jump: "High Jump", melee: "Snare Bomb", classAbility: "Marksman's Dodge"},
     /* stasis options
        super: Silence and Squall
        grenade: Duskfield, Glacier, Shatter, Coldsnap
@@ -42,7 +42,7 @@ window.D2R_STARTERS = {
        melee: Threaded Spike
        classAbility: Gambler's Dodge, Marksman's Dodge
     */
-    "strand": {super: "Silkstrike", grenade: "Grapple", jump: "Triple Jump", melee: "Threaded Spike", classAbility: "Marksman's Dodge"},
+    "strand": {super: "Silkstrike", grenade: "Grapple", jump: "High Jump", melee: "Threaded Spike", classAbility: "Marksman's Dodge"},
     /* prismatic options
        super: Silkstrike, Storm's Edge, Shadowshot: Deadfall, Golden Gun: Marksman, Silence and Squall
        grenade: Magnetic, Swarm, Arcbolt, Duskfield, Grapple
@@ -50,7 +50,7 @@ window.D2R_STARTERS = {
        melee: Threaded Spike, Combination Blow, Withering Blade, Knife Trick, Snare Bomb
        classAbility: Marksman's Dodge, Gambler's Dodge, Acrobat's Dodge
     */
-    "prismatic": {super: "Golden Gun: Marksman", grenade: "Grapple", jump: "Triple Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"}
+    "prismatic": {super: "Golden Gun: Marksman", grenade: "Grapple", jump: "High Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"}
   },
   "Titan": {
     /* arc options
