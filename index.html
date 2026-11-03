@@ -19,7 +19,7 @@
   --accent:#7fd4ff;
   --danger:#ff5d5d;
   --good:#5fe39a;
-  --r-common:#c9c9c9; --r-uncommon:#4f9d5d; --r-rare:#5b8fd0; --r-legendary:#9b6bc4; --r-exotic:#e2c044;
+  --r-common:#c3bcb4; --r-uncommon:#3d8a4e; --r-rare:#5076a3; --r-legendary:#8a5ab0; --r-exotic:#ceae33;
   --e-arc:#79e6f2; --e-solar:#ff8a3d; --e-void:#b48cf0; --e-stasis:#5a8cff; --e-strand:#3fe07a; --e-prismatic:#ff7fd8;
   --display:"Inter Tight", "Helvetica Neue", Arial, sans-serif;
   --body:"Inter", "Helvetica Neue", Arial, sans-serif;
@@ -267,6 +267,37 @@ h3{font-size:.74rem;letter-spacing:.2em;font-weight:600;color:#a9b0b8}
 .tab.on{border-bottom-color:#fff}
 .tabbadge{letter-spacing:0}
 body{letter-spacing:.005em}
+
+/* ---- Destiny theme pass: Director-style backdrop, corner brackets, header markers, glowing pips ---- */
+html,body{background:
+  radial-gradient(1200px 600px at 85% -10%, rgba(127,212,255,.10), transparent 60%),
+  radial-gradient(900px 500px at -10% 110%, rgba(155,107,196,.10), transparent 60%),
+  radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.35) 50%, transparent 51%),
+  radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,.25) 50%, transparent 51%),
+  radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,.2) 50%, transparent 51%),
+  var(--bg);background-attachment:fixed;background-size:auto,auto,320px 320px,260px 260px,410px 410px,auto}
+.panel,.status,.callout{position:relative}
+.panel::before,.panel::after,.status::before,.status::after{content:"";position:absolute;width:12px;height:12px;pointer-events:none;border-color:rgba(255,255,255,.55);border-style:solid;z-index:1}
+.panel::before,.status::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.panel::after,.status::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+h2{display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:6px;height:6px;background:currentColor;flex:none;transform:rotate(45deg);opacity:.85}
+summary h2{display:inline-flex}
+.row > h2,.row > div > h2{border-bottom:0;padding-bottom:0}
+.pip{border-color:#e9e3cf;box-shadow:0 0 6px rgba(233,227,207,.25)}
+.pip.on{background:#e9e3cf;box-shadow:0 0 10px rgba(233,227,207,.6)}
+.lighticon{width:.8em;height:.8em;fill:#e9e3cf;margin-right:6px;vertical-align:-.05em;filter:drop-shadow(0 0 4px rgba(233,227,207,.6))}
+.meter{border-radius:0;height:4px}
+.meter b{background:linear-gradient(90deg,#c9b66b,#f5ecc8)}
+.status{background:rgba(255,255,255,.08)}
+.status > div,.status > .stat-hot{background:rgba(13,19,29,.92)}
+.status .who b{font-size:1.25rem;letter-spacing:.1em}
+.callout{border-radius:2px;border-color:rgba(127,212,255,.5);background:linear-gradient(180deg,rgba(127,212,255,.08),rgba(127,212,255,0) 140px),var(--panel)}
+.offer{border-top-width:3px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0)),var(--panel-2)}
+.rtag{font-weight:700}
+.gicon,.atile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.r-exotic .gicon{box-shadow:0 0 8px rgba(206,174,51,.45)}
+table thead th{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;color:#a9b0b8}
 </style>
 </head>
 <body>
@@ -282,7 +313,7 @@ body{letter-spacing:.005em}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=83"></script>
+<script src="bungie.js?v=84"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1111,7 +1142,7 @@ function renderStatus(run){
   return `${picks?`<div class="pickbanner" role="status"><b>${picks} reward pick${picks>1?"s":""} waiting</b><span>Choose ${picks>1?"them":"it"} in the Ability unlock panel before logging your next event.</span></div>`:""}<section class="status">
     <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>${run.depth} event${run.depth===1?"":"s"} cleared</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
-    <div><span class="lbl">Light to bonus pick</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
+    <div><span class="lbl">Light to bonus pick</span><span class="val"><svg class="lighticon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z"/></svg>${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
     ${(()=>{ const pts = artLeft(run), can = run.artifact && pts>0;
       return can ? `<button class="stat-hot" data-act="tab" data-tab="artifact" title="Open the Artifact tab to spend"><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="hotcta">Spend now ›</span></button>`
         : `<div><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="lbl">${run.artifact?esc(run.artifact.n):"No artifact yet"}</span></div>`; })()}
