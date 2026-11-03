@@ -68,7 +68,7 @@ window.D2R_STARTERS = {
        melee: Hammer Strike, Throwing Hammer
        classAbility: Towering Barricade, Rally Barricade
     */
-    "solar": {super: "Hammer of Sol", grenade: "Thermite", jump: "Strafe Lift", melee: "Hammer Strike", classAbility: "Towering Barricade"},
+    "solar": {super: "Hammer of Sol", grenade: "Solar", jump: "Strafe Lift", melee: "Hammer Strike", classAbility: "Towering Barricade"},
     /* void options
        super: Sentinel Shield, Ward of Dawn, Twilight Arsenal
        grenade: Vortex, Void Spike, Scatter, Magnetic, Suppressor, Void Wall, Axion Bolt
