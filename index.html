@@ -241,7 +241,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=44"></script>
+<script src="bungie.js?v=45"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -380,6 +380,8 @@ function normalize(){
   if(!r.subs) r.subs = {};
   if(r.subs[r.el]) r.ab = r.subs[r.el]; else r.subs[r.el] = r.ab;
   if(!r.artifacts) r.artifacts = r.artifact ? [r.artifact.n] : [];
+  if(!r.artSlotsBy) r.artSlotsBy = {};
+  if(r.artifact) r.artSlotsBy[r.artifact.n] = r.artSlots;   // keep the current artifact's slots linked
 }
 normalize();
 let db=null, userId=null, downloads=null, saving=false, dirty=false;
@@ -647,8 +649,12 @@ const ART_PTS_FLAWLESS = 1, ART_PTS_REWARD = 2;
 function artPtsFor(diff){ return diff>=4 ? 3 : diff===3 ? 2 : 1; }
 /* Artifact: chosen as an extra pick after the first completed event; swapping is an S-tier reward.
    Points fill the 7 slots: a mod costs its tier, and each slot only takes mods up to its tier limit. Reset is free. */
-function artSpent(run){ return (run.artSlots||[]).reduce((t,m)=>t+(m?m.t:0),0); }
-function artLeft(run){ return (run.artPts||0) - artSpent(run); }
+/* each artifact remembers its own mods (run.artSlotsBy[name]); run.artSlots is the current artifact's.
+   Points spent on any artifact stay spent; only resetting an artifact frees its points. */
+const slotCost = sl => (sl||[]).reduce((t,m)=>t+(m?m.t:0),0);
+function artSpent(run){ return slotCost(run.artSlots); }
+function artSpentAll(run){ let t = slotCost(run.artSlots); for(const [n,sl] of Object.entries(run.artSlotsBy||{})) if(!run.artifact || n!==run.artifact.n) t += slotCost(sl); return t; }
+function artLeft(run){ return (run.artPts||0) - artSpentAll(run); }
 function modTier(art, h){ const m = art && art.m.find(x=>x[0]===h); return m ? m[1] : 0; }
 function artName(h){ const B = window.D2R_BUNGIE, d = B && B.desc && B.desc[h]; if(!d) wantDesc.add(h); return d && d.n ? d.n : "Loading…"; }
 function switchSubclass(el){
@@ -663,14 +669,16 @@ function unlockSubclass(run, el){
 }
 function switchArtifact(name){
   const run = state.run; if(!run || run.status!=="active" || !(run.artifacts||[]).includes(name) || (run.artifact&&run.artifact.n===name)) return;
-  const back = artSpent(run);
   setArtifact(run, name);
-  save(); afterChange(); render(); toast("Switched to "+name+(back?": "+back+" point"+(back>1?"s":"")+" refunded":"")+".");
+  save(); afterChange(); render(); toast("Switched to "+name+". Its mods are restored.");
 }
 function setArtifact(run, name){
   if(!(run.artifacts = run.artifacts||[]).includes(name)) run.artifacts.push(name);
+  run.artSlotsBy = run.artSlotsBy||{};
+  if(run.artifact) run.artSlotsBy[run.artifact.n] = run.artSlots;
   run.artifact = {n:name, at:Date.now()};
-  run.artSlots = [null,null,null,null,null,null,null];
+  run.artSlots = run.artSlotsBy[name] || [null,null,null,null,null,null,null];
+  run.artSlotsBy[name] = run.artSlots;
   run.artSwaps = (run.artSwaps||0) + (run.artHistory && run.artHistory.length ? 1 : 0);
   (run.artHistory = run.artHistory||[]).push(name);
 }
@@ -684,6 +692,7 @@ function resetArtifact(){
   const run = state.run; if(!run || run.status!=="active" || !artSpent(run)) return;
   const back = artSpent(run);
   run.artSlots = [null,null,null,null,null,null,null];
+  if(run.artifact) (run.artSlotsBy = run.artSlotsBy||{})[run.artifact.n] = run.artSlots;
   run.artResets = (run.artResets||0) + 1;
   save(); afterChange(); render(); toast("Artifact reset: "+back+" point"+(back===1?"":"s")+" refunded.");
 }
@@ -976,12 +985,12 @@ function renderArtifact(run){
       return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}>${d&&d.i?`<img class="modicon" src="${ICON_ROOT+d.i}" alt="">`:""}<span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
   }
   const owned = run.artifacts||[art.n];
-  const aswitch = `<div class="switcher"><span class="glabel">Your artifacts</span>${owned.map(n=>`<button class="swbtn ${n===art.n?"on":""}" data-act="artSwitch" data-name="${esc(n)}">${esc(n)}</button>`).join("")}${owned.length<2?`<span class="help">Get more as S-tier rewards.</span>`:`<span class="help">Switching refunds all spent points.</span>`}</div>`;
+  const aswitch = `<div class="switcher"><span class="glabel">Your artifacts</span>${owned.map(n=>`<button class="swbtn ${n===art.n?"on":""}" data-act="artSwitch" data-name="${esc(n)}">${esc(n)}</button>`).join("")}${owned.length<2?`<span class="help">Get more as S-tier rewards.</span>`:`<span class="help">Each artifact keeps its own mods.</span>`}</div>`;
   return `<div class="slotgroup">${aswitch}<h3>Artifact · ${esc(art.n)}</h3>${left>0?`<div class="ptsbanner"><b>${left}</b><span>point${left===1?"":"s"} to spend: tap a glowing slot</span></div>`:`<p class="help">No points to spend. Complete events to earn more.</p>`}
     <p class="help">${artInfoHtml(run, art.n)}</p>
     <p class="help">Each completed event earns points (1, Master 2, Grandmaster 3, +1 if flawless). A mod costs its tier. Slots 1-2 take tier 1, slots 3-5 up to tier 2, slots 6-7 up to tier 3. The app equips the artifact and its mods for you when "Equip subclass picks automatically" is on, or use Set artifact in game.</p>
     <div class="artrow"><div class="artgroup"><span class="glabel">Tier 1</span><div class="artslots">${slotHtml.split("<!--s-->").slice(0,2).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 2</span><div class="artslots">${slotHtml.split("<!--s-->").slice(2,5).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 3</span><div class="artslots">${slotHtml.split("<!--s-->").slice(5,7).join("")}</div></div></div>${picker}${check}
-    ${artSpent(run)?`<div class="row"><button class="btn ghost" data-act="artReset">Reset artifact (free, refunds all points)</button></div>`:""}</div>`;
+    ${artSpent(run)?`<div class="row"><button class="btn ghost" data-act="artReset">Reset this artifact (free, refunds its points)</button></div>`:""}</div>`;
 }
 function renderStatus(run){
   const pips = [];
@@ -1069,7 +1078,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}</div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime (switching refunds your points).</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}</div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
