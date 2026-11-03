@@ -41,7 +41,7 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
 3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is synced from Bungie and logged automatically.
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
-5. **Unlock abilities.** Clears earn Light; every 4 Light unlocks a pick of a new super, grenade, melee, class ability, aspect, fragment or extra life. The app sets it on your subclass in game. Bungie only allows gear changes in orbit or social spaces.
+5. **Unlock abilities.** Clears earn Light; every 4 Light unlocks a pick of a new super, grenade, melee, class ability, aspect, fragment or extra life. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
 
 ## Modes and deaths
 | | Normal | Hardcore |
