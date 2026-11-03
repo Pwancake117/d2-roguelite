@@ -360,9 +360,9 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=10"></script>
+<script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=97"></script>
+<script src="bungie.js?v=98"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -601,10 +601,10 @@ const TIER_ORDER = ["S","A","B","C"];
 const TIER_OF_TYPE = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.forEach(t=>(T[t]||[]).forEach(k=>m[k]=t)); return m; })();
 function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
-const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,artpts:1,artswap:1,subclass:1};
+const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,life2:1,artpts:1,artswap:1,subclass:1};
 const MAX_FRAGMENTS = 6;
 const ONE_PER_PICK = window.D2R_ONE_PER_PICK || ["S","A"];
-const TYPE_WEIGHT = {artswap:0.2, subclass:0.3};   // inside its tier, an artifact swap comes up less often than a super
+const TYPE_WEIGHT = {artswap:0.2, subclass:0.3, life:0.45, life2:0.35, artpts:0.5};   // inside A, aspects stay the most common   // inside its tier, an artifact swap comes up less often than a super
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
 function boonOffers(run, lvl, diff){
   if(lvl==null) lvl = (run.pending && run.pending.lvl) || 3;
@@ -624,7 +624,7 @@ function boonOffers(run, lvl, diff){
   Object.keys(ELEMENTS).filter(e=>KIT[c][e] && !(run.subs||{})[e]).forEach(e=>cands.push({type:"subclass",label:"Unlock Subclass",name:ELEMENTS[e].name,el:e}));
   cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
   if(run.lives<run.maxLives+2) cands.push({type:"life",label:"Revive Token",name:"+1 Life",n:1});
-  if(run.lives+2<=run.maxLives+2 && Math.random()<0.35) cands.push({type:"life",label:"Revive Tokens",name:"+2 Lives",n:2});
+  if(run.lives+2<=run.maxLives+2) cands.push({type:"life2",label:"Revive Tokens",name:"+2 Lives",n:2});
   const odds = oddsFor(lvl), out = []
   let pool = cands.slice();
   // Master / Grandmaster: chance that one choice is guaranteed S tier (tiers.js D2R_S_FLOOR)
@@ -885,7 +885,7 @@ function takeBoon(i){
   if(!a.artifact) a.artifact = [];
   if(map[b.type]){ a[map[b.type]].push(b.name); if(a.active && b.type in a.active) a.active[b.type] = b.name; }
   else if(b.type==="fragslot") a.fragBonus++;
-  else if(b.type==="life") run.lives += b.n||1;
+  else if(b.type==="life" || b.type==="life2") run.lives += b.n||1;
   else if(b.type==="artpts") run.artPts = (run.artPts||0) + ART_PTS_REWARD;
   else if(b.type==="artpick" || b.type==="artswap") setArtifact(run, b.name);
   else if(b.type==="subclass") unlockSubclass(run, b.el);
@@ -1058,7 +1058,7 @@ function itemRow(it){
 function showTierList(){
   const run = state.run; if(!run) return;
   const c = run.cls, e = run.el;
-  const LABEL = {super:"Supers",fragment:"Fragments",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)",artpts:"+2 Artifact Points",artswap:"New artifact (added to your collection)",subclass:"Unlock another subclass"};
+  const LABEL = {super:"Supers",fragment:"Fragments",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"+1 Life",life2:"+2 Lives",artpts:"+2 Artifact Points",artswap:"New artifact (added to your collection)",subclass:"Unlock another subclass"};
   const owned = n => Object.values(run.ab).some(v=>Array.isArray(v) && v.includes(n));
   const rows = TIER_ORDER.map(t=>{
     const cells = ((window.D2R_TIERS||{})[t]||[]).map(k=>{
