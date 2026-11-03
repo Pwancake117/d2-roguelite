@@ -150,6 +150,6 @@ window.D2R_STARTERS = {
        melee: Arcane Needle, Chain Lightning, Incinerator Snap, Pocket Singularity, Penumbral Blast
        classAbility: Healing Rift, Empowering Rift, Phoenix Dive
     */
-    "prismatic": {super: "Winter's Wrath", grenade: "Coldsnap", jump: "Strafe Glide", melee: "Chain Lightning", classAbility: "Healing Rift"}
+    "prismatic": {super: "Winter's Wrath", grenade: "Vortex", jump: "Strafe Glide", melee: "Chain Lightning", classAbility: "Healing Rift"}
   }
 };
