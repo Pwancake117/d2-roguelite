@@ -51,6 +51,9 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 
 **Saving runs:** your active run saves automatically. **Save & exit** parks it in **Saved runs** (on the start screen) so you can start or resume another one, such as a run per character; activities and loot from while it was parked don't count when you resume. **Download run file** gives you a file; **Load run file** brings it back on any browser or device.
 
+
+**Starter builds:** on the start screen, pick your class and subclass and set its starter build (super, grenade, jump, melee and class ability) from the dropdowns. Your choice is saved and used for every run with that subclass, including subclasses you unlock mid-run. Pick abilities your character has unlocked in game. **Reset to default** restores the built-in build.
+
 ### Reward tiers
 
 Rewards are tiered by type (set in `tiers.js`):

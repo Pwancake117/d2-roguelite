@@ -233,6 +233,9 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .pickhead{display:flex;align-items:center;gap:8px}
 .synccard{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}
 .synccard > div{display:grid;gap:2px}
+.starteredit{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.starteredit label{display:grid;gap:3px}
+.starteredit select{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px}
 .saverow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .saverow > div:first-child{display:grid;gap:2px}
 .manualoff{display:grid;gap:4px;padding:10px 12px;border:1px dashed var(--line);border-radius:6px}
@@ -258,7 +261,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=64"></script>
+<script src="bungie.js?v=65"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -556,9 +559,24 @@ function starterGear(){
     {id:uid6(),kind:"weapon",any:true,rarity:"uncommon",name:"Any uncommon power weapon",slot:"power",ammo:"heavy",source:"Starter",note:"No white heavy exists in D2"}
   ];
 }
+/* Starter builds: the default per class/subclass, or the player's own choice (saved in state.starters) */
+const STARTER_TYPES = [["super","Super"],["grenade","Grenade"],["jump","Jump"],["melee","Melee"],["classAbility","Class ability"]];
+function defaultBase(cls, el){ const [sup,gren,mel,ca] = BASE[cls][el]; return {super:sup, grenade:gren, jump:BASE_JUMP(cls,el), melee:mel, classAbility:ca}; }
+function getBase(cls, el){
+  const d = defaultBase(cls, el), o = ((state.starters||{})[cls]||{})[el]||{}, out = {};
+  for(const [t] of STARTER_TYPES){ const ok = (KIT[cls][el][t]||[]).some(x=>x.n===o[t]); out[t] = ok ? o[t] : d[t]; }
+  return out;
+}
+function isCustomBase(cls, el){ const d = defaultBase(cls,el), g = getBase(cls,el); return STARTER_TYPES.some(([t])=>d[t]!==g[t]); }
+function setStarter(cls, el, type, name){
+  state.starters = state.starters||{}; state.starters[cls] = state.starters[cls]||{};
+  const cur = state.starters[cls][el] = state.starters[cls][el]||{};
+  if(name===defaultBase(cls,el)[type]) delete cur[type]; else cur[type] = name;
+  save(); render();
+}
+function resetStarter(cls, el){ if(state.starters && state.starters[cls]) delete state.starters[cls][el]; save(); render(); }
 function baseAbilities(cls, el){
-  const [sup, gren, mel, ca] = BASE[cls][el];
-  const jmp = BASE_JUMP(cls, el);
+  const b = getBase(cls, el), sup = b.super, gren = b.grenade, mel = b.melee, ca = b.classAbility, jmp = b.jump;
   return { supers:[sup], grenades:[gren], jumps:[jmp], melees:[mel], classAbilities:[ca], aspects:[], fragments:[], artifact:[], fragBonus:0,
     active:{super:sup, grenade:gren, jump:jmp, melee:mel, classAbility:ca} };
 }
@@ -950,12 +968,15 @@ const PULL_SUGGEST = {
 };
 function baseBuildHTML(cls, el){
   if(el==="random") return `<p class="help">The subclass is rolled when the run starts. Its base build is listed below once you begin.</p>`;
-  const [sup,gren,mel,ca] = BASE[cls][el], k = KIT[cls][el];
-  const unlocks = ABILITY_TYPES.reduce((n,t)=>n+k[t].length,0) - 4;
+  const k = KIT[cls][el], b = getBase(cls, el), custom = isCustomBase(cls, el);
+  const unlocks = ABILITY_TYPES.reduce((n,t)=>n+k[t].length,0) - 5;
+  const editor = `<div class="starteredit">${STARTER_TYPES.map(([t,l])=>`<label><span class="glabel">${l}</span><select data-act="starter" data-cls="${cls}" data-el="${el}" data-type="${t}">${k[t].map(x=>`<option ${x.n===b[t]?"selected":""}>${esc(x.n)}</option>`).join("")}</select></label>`).join("")}</div>`;
   return `<div class="basebuild el-${el}">
-    <div class="row between"><h3>Base build: ${ELEMENTS[el].name} ${cls}</h3><span class="help">${unlocks} unlock options</span></div>
-    <div class="chips"><span class="chip el el-${el}">Super: ${esc(sup)}</span><span class="chip el el-${el}">Grenade: ${esc(gren)}</span><span class="chip el el-${el}">Melee: ${esc(mel)}</span><span class="chip el el-${el}">${esc(ca)}</span><span class="chip empty">0 aspects</span><span class="chip empty">0 fragments</span></div>
-    <p class="help" style="margin:0">Unlockable: ${k.super.length-1} supers, ${k.grenade.length-1} grenades, ${k.melee.length-1} melees, ${k.classAbility.length-1} class abilities, ${k.aspect.length} aspects (2 max), ${k.fragment.length} fragments.</p>
+    <div class="row between"><h3>Starter build: ${ELEMENTS[el].name} ${cls} ${custom?`<span class="tabbadge" style="animation:none">Custom</span>`:""}</h3><span class="help">${unlocks} unlock options</span></div>
+    ${editor}
+    <div class="row"><span class="help">Pick what this subclass starts with in every run. Choose abilities your character has unlocked in game, or the app can't equip them.</span>${custom?`<button type="button" class="btn ghost" data-act="starterReset" data-cls="${cls}" data-el="${el}">Reset to default</button>`:""}</div>
+    <div class="chips"><span class="chip empty">0 aspects</span><span class="chip empty">0 fragments</span></div>
+    <p class="help" style="margin:0">Unlockable: ${k.super.length-1} supers, ${k.grenade.length-1} grenades, ${k.jump.length-1} jumps, ${k.melee.length-1} melees, ${k.classAbility.length-1} class abilities, ${k.aspect.length} aspects (2 max), ${k.fragment.length} fragments.</p>
   </div>`;
 }
 function pullSteps(cls){
@@ -1325,6 +1346,7 @@ document.addEventListener("visibilitychange", ()=>{ const B = window.D2R_BUNGIE;
 /* ---------------- Events ---------------- */
 document.addEventListener("change", e=>{
   const t = e.target;
+  if(t && t.dataset.act==="starter"){ setStarter(t.dataset.cls, t.dataset.el, t.dataset.type, t.value); return; }
   if(t && t.dataset.act==="loadFile"){ if(t.files && t.files[0]) loadRunFile(t.files[0]); t.value = ""; return; }
   if(!t || t.dataset.act!=="manualMode") return;
   try { localStorage.setItem(MANUAL_KEY, t.checked ? "1" : "0"); } catch(err){}
@@ -1341,6 +1363,7 @@ document.addEventListener("click", e=>{
   else if(act==="artReset") resetArtifact();
   else if(act==="tab"){ ui.tab = b.dataset.tab; render(); }
   else if(act==="saveExit") saveAndExit();
+  else if(act==="starterReset") resetStarter(b.dataset.cls, b.dataset.el);
   else if(act==="dlRun"){ if(state.run) downloadRun(state.run); }
   else if(act==="resume") resumeRun(b.dataset.id);
   else if(act==="dlSaved"){ const x = (state.saved||[]).find(x=>x.run.id===b.dataset.id); if(x) downloadRun(x.run); }
