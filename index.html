@@ -161,8 +161,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=3"></script>
-<script src="bungie.js?v=29"></script>
+<script src="tiers.js?v=4"></script>
+<script src="bungie.js?v=30"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -370,7 +370,7 @@ const TIER_ORDER = ["S","A","B","C"];
 const TIER_OF_TYPE = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.forEach(t=>(T[t]||[]).forEach(k=>m[k]=t)); return m; })();
 function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
-const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1};
+const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,artpts:1};
 const FRAG_TYPES = {fragment:1, fragslot:1};
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
 function boonOffers(run, lvl, diff){
@@ -387,6 +387,7 @@ function boonOffers(run, lvl, diff){
   if(a.fragments.length<fragSlots(run)) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
   if(a.aspects.length>0 && fragSlots(run)<6) cands.push({type:"fragslot",label:"Fragment Slot",name:"+1 Fragment Slot"});
   // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
+  cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
   if(run.lives<run.maxLives+2) cands.push({type:"life",label:"Revive Token",name:"+1 Life",n:1});
   if(run.lives+2<=run.maxLives+2 && Math.random()<0.35) cands.push({type:"life",label:"Revive Tokens",name:"+2 Lives",n:2});
   const odds = oddsFor(lvl), out = [];
@@ -470,7 +471,7 @@ function logEventData(x, noRender){
     const gain = flawless ? power + FLAWLESS_LIGHT : hardcore ? power : Math.max(1, power - deaths);
     entry.lightGain = gain;
     run.light += gain;
-    entry.artPts = ART_PTS_CLEAR + (flawless ? ART_PTS_FLAWLESS : 0);
+    entry.artPts = artPtsFor(diff) + (flawless ? ART_PTS_FLAWLESS : 0);
     run.artPts = (run.artPts||0) + entry.artPts;
     run.score += power*10 + (flawless ? FLAWLESS_SCORE : -Math.min(power*10, 5*deaths));
   }
@@ -522,7 +523,16 @@ function afterChange(){
 }
 /* Dungeon runs: each encounter cleared gives a loot pick and a guaranteed ability pick. */
 /* Artifact points: earned per completed event, spent on artifact perks. A perk costs its tier, and tier N opens once you own a tier N-1 perk. */
-const ART_PTS_CLEAR = 1, ART_PTS_FLAWLESS = 1;
+/* points per clear by difficulty (0 Normal … 3 Master, 4 Grandmaster/Ultimate): harder content has more champions */
+const ART_PTS_FLAWLESS = 1, ART_PTS_REWARD = 2;
+function artPtsFor(diff){ return diff>=4 ? 3 : diff===3 ? 2 : 1; }
+function resetArtifact(){
+  const run = state.run; if(!run || run.status!=="active" || !(run.artPerks||[]).length) return;
+  const back = artSpent(run);
+  run.artPerks = []; run.ab.artifact = [];
+  run.artResets = (run.artResets||0) + 1;
+  save(); render(); toast("Artifact reset: "+back+" point"+(back===1?"":"s")+" refunded. Switch those perks off in game.");
+}
 function artSpent(run){ return (run.artPerks||[]).reduce((t,p)=>t+p.tier,0); }
 function artLeft(run){ return (run.artPts||0) - artSpent(run); }
 function artTierOpen(run, tier){ return tier===1 || (run.artPerks||[]).some(p=>p.tier===tier-1); }
@@ -544,7 +554,7 @@ function encounterCleared(){
   const entry = {n:run.events.length+1, at:Date.now(), eventId:"encounter", event:"Encounter "+run.dungeon.encounters+" · "+dname, diff, diffName:DIFFS[diff], power, outcome:"clear", note:"", source:"encounter", loot:null, boons:[], lost:null, lightBefore:run.light};
   run.events.push(entry);
   run.depth++; run.score += power*10;
-  entry.artPts = ART_PTS_CLEAR; run.artPts = (run.artPts||0) + entry.artPts;
+  entry.artPts = artPtsFor(diff); run.artPts = (run.artPts||0) + entry.artPts;
   entry.rewardLvl = power;
   run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run, power, diff), lvl:power, diff};
   save(); render();
@@ -570,6 +580,7 @@ function takeBoon(i){
   if(map[b.type]){ a[map[b.type]].push(b.name); if(a.active && b.type in a.active) a.active[b.type] = b.name; }
   else if(b.type==="fragslot") a.fragBonus++;
   else if(b.type==="life") run.lives += b.n||1;
+  else if(b.type==="artpts") run.artPts = (run.artPts||0) + ART_PTS_REWARD;
   run.boons++; run.score += 5;
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   p.boonsLeft--;
@@ -675,7 +686,7 @@ function itemRow(it){
 function showTierList(){
   const run = state.run; if(!run) return;
   const c = run.cls, e = run.el;
-  const LABEL = {super:"Supers",fragment:"Fragments",fragslot:"+1 Fragment Slot",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)"};
+  const LABEL = {super:"Supers",fragment:"Fragments",fragslot:"+1 Fragment Slot",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)",artpts:"+2 Artifact Points"};
   const owned = n => Object.values(run.ab).some(v=>Array.isArray(v) && v.includes(n));
   const rows = TIER_ORDER.map(t=>{
     const cells = ((window.D2R_TIERS||{})[t]||[]).map(k=>{
@@ -798,10 +809,10 @@ function renderArtifact(run){
         return `<p class="help"><b>Tier ${t}</b> · costs ${t} point${t>1?"s":""}${open?"":` · unlock a tier ${t-1} perk first`}</p><div class="chips">`
           + art.perks.filter(p=>p.tier===t).map(p=>{ const own = mine.includes(p.n), ok = open && !own && t<=left;
             return `<button class="chip pickchip ${own?"on":""}" data-act="artBuy" data-name="${esc(p.n)}" data-tier="${t}" title="${esc((descOf(run,"artifact",p.n)||{}).d||"")}" ${ok?"":"disabled"}>${esc(p.n)}${own?" · owned":""}</button>`; }).join("") + `</div>`;
-      }).join("") + `</details>`;
+      }).join("") + ((run.artPerks||[]).length ? `<div class="row"><button class="btn ghost" data-act="artReset">Reset artifact (free, refunds all points)</button></div>` : "") + `</details>`;
     }
   } else check = `<p class="help">Connect Bungie to see your artifact.</p>`;
-  return `<div class="slotgroup"><h3>Artifact perks (${mine.length}) · ${left} point${left===1?"":"s"} to spend</h3>${chipList(mine, run.el, "None unlocked yet. Earn 1 artifact point per completed event (+1 if flawless) and spend it below. Bungie doesn't let apps change artifact perks, so you set them in game.")}${descList(run,"artifact",mine)}${check}${shop}</div>`;
+  return `<div class="slotgroup"><h3>Artifact perks (${mine.length}) · ${left} point${left===1?"":"s"} to spend</h3>${chipList(mine, run.el, "None unlocked yet. Each completed event earns artifact points (1, Master 2, Grandmaster 3, +1 if flawless), and +2 Artifact Points can come up as a B-tier reward. Spend them below. Bungie doesn't let apps change artifact perks, so you set them in game.")}${descList(run,"artifact",mine)}${check}${shop}</div>`;
 }
 function renderStatus(run){
   const pips = [];
@@ -1011,6 +1022,7 @@ document.addEventListener("click", e=>{
   else if(act==="boon") takeBoon(parseInt(b.dataset.i,10));
   else if(act==="undo") undoLast();
   else if(act==="encounter") encounterCleared();
+  else if(act==="artReset") resetArtifact();
   else if(act==="artBuy") buyArtifact(b.dataset.name, parseInt(b.dataset.tier,10));
   else if(act==="bLogin") window.D2R_BUNGIE.login();
   else if(act==="bLogout") window.D2R_BUNGIE.logout();

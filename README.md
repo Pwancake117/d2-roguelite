@@ -43,7 +43,7 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
 5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, jump, melee, class ability, aspect, fragment, fragment slot or extra life; see Reward tiers below). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
 
-Artifact perks: every completed event earns 1 artifact point (+1 if flawless; dungeon encounters earn 1). Spend points in the Artifact perks panel: a perk costs its tier (tier 1 = 1 point, tier 2 = 2 points, ...), and a tier opens once you own a perk from the tier before it. Bungie doesn't let apps change artifact perks, so you switch unlocked perks on in game. The app checks your artifact and flags perks that are on but not unlocked in the run.
+Artifact perks: every completed event earns artifact points by difficulty: 1 (Normal to Expert), 2 (Master), 3 (Grandmaster/Ultimate), +1 if flawless; dungeon encounters earn the same by difficulty. **+2 Artifact Points** is also a B-tier reward in ability picks. Resetting the artifact is free and refunds every point. Spend points in the Artifact perks panel: a perk costs its tier (tier 1 = 1 point, tier 2 = 2 points, ...), and a tier opens once you own a perk from the tier before it. Bungie doesn't let apps change artifact perks, so you switch unlocked perks on in game. The app checks your artifact and flags perks that are on but not unlocked in the run.
 
 ### Reward tiers
 
@@ -53,7 +53,7 @@ Rewards are tiered by type (set in `tiers.js`):
 |---|---|
 | S | Supers |
 | A | Fragments, +1 fragment slot (a pick never offers more than one of these) |
-| B | Aspects, extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives) |
+| B | Aspects, extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives), +2 artifact points |
 | C | Grenades, jumps, melees, class abilities |
 
 Each of the 3 choices in a pick rolls a tier, then a reward inside it, so a pick can offer two aspects or two supers. Harder events roll higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
