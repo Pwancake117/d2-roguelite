@@ -374,7 +374,8 @@ B.sync = async (run, {quiet} = {}) => {
       const v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
       const info = await activityInfo(act.activityDetails.directorActivityHash || act.activityDetails.referenceId);
       const isDungeon = info && (info.type===DUNGEON_TYPE || (act.activityDetails.modes||[]).includes(DUNGEON_MODE) || act.activityDetails.mode===DUNGEON_MODE);
-      const type = run.mode==="dungeon" ? (isDungeon ? "dungeon" : null) : classify(info, act);
+      // dungeons count in both run types: Vanguard Ops runs log a full dungeon clear as one event
+      const type = isDungeon ? "dungeon" : run.mode==="dungeon" ? null : classify(info, act);
       if(!type) continue; // not an activity this run type counts
       const name = info.name;
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
@@ -608,7 +609,7 @@ B.pollCurrent = async run => {
     const ca = p.activities && p.activities.data;
     const hash = ca && ca.currentActivityHash;
     const info = hash ? await activityInfo(hash) : null;
-    const counted = info && (run.mode==="dungeon" ? info.type===DUNGEON_TYPE : !!classify(info, {activityDetails:{mode:ca.currentActivityModeType, modes:ca.currentActivityModeTypes||[]}}));
+    const counted = info && (info.type===DUNGEON_TYPE || (run.mode!=="dungeon" && !!classify(info, {activityDetails:{mode:ca.currentActivityModeType, modes:ca.currentActivityModeTypes||[]}})));
     const key = hash ? hash+"@"+ca.dateActivityStarted : "";
     // left a counted activity since the last check: its result is about to post
     if(B.lastAct && B.lastAct.counted && B.lastAct.key !== key) B.justLeft = Date.now();
