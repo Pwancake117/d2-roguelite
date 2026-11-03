@@ -149,9 +149,10 @@ button.atile{cursor:pointer}button.atile:hover{border-color:var(--el)}
 .aothers{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .aslots{display:grid;gap:8px}
 .aslot{display:flex;gap:10px;align-items:center;background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--el);border-radius:4px;padding:8px}
+.aslot b,.aslot .capline{display:block}.aslot .capline{font-size:.75rem;margin-top:2px}
 .aslot.empty{border-style:dashed;border-left-width:1px;min-height:82px}
 .aslot.empty .ph{width:64px;height:64px;border:1px dashed var(--line);border-radius:3px}
-.fslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.fslots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .fslot{display:grid;justify-items:center;gap:4px;text-align:center;font-size:.72rem;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:6px}
 .fslot.empty{border-style:dashed;color:var(--muted);min-height:76px;align-content:center}
 .fslot.empty .ph{width:44px;height:44px;border:1px dashed var(--line);border-radius:3px}
@@ -221,7 +222,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=9"></script>
-<script src="bungie.js?v=40"></script>
+<script src="bungie.js?v=41"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
