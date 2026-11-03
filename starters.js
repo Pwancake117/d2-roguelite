@@ -60,7 +60,7 @@ window.D2R_STARTERS = {
        melee: Ballistic Slam, Seismic Strike, Thunderclap
        classAbility: Towering Barricade, Rally Barricade, Thruster
     */
-    "arc": {super: "Fists of Havoc", grenade: "Pulse", jump: "Strafe Lift", melee: "Ballistic Slam", classAbility: "Towering Barricade"},
+    "arc": {super: "Fists of Havoc", grenade: "Flashbang", jump: "Strafe Lift", melee: "Ballistic Slam", classAbility: "Towering Barricade"},
     /* solar options
        super: Burning Maul, Hammer of Sol
        grenade: Fusion, Healing, Firebolt, Solar, Incendiary, Tripmine, Swarm, Thermite
@@ -76,7 +76,7 @@ window.D2R_STARTERS = {
        melee: Shield Throw, Shield Bash
        classAbility: Towering Barricade, Rally Barricade
     */
-    "void": {super: "Sentinel Shield", grenade: "Suppressor", jump: "Catapult Lift", melee: "Shield Bash", classAbility: "Towering Barricade"},
+    "void": {super: "Sentinel Shield", grenade: "Suppressor", jump: "Strafe Lift", melee: "Shield Bash", classAbility: "Towering Barricade"},
     /* stasis options
        super: Glacial Quake
        grenade: Duskfield, Glacier, Shatter, Coldsnap
@@ -84,7 +84,7 @@ window.D2R_STARTERS = {
        melee: Shiver Strike
        classAbility: Towering Barricade, Rally Barricade
     */
-    "stasis": {super: "Glacial Quake", grenade: "Glacier", jump: "High Lift", melee: "Shiver Strike", classAbility: "Towering Barricade"},
+    "stasis": {super: "Glacial Quake", grenade: "Glacier", jump: "Strafe Lift", melee: "Shiver Strike", classAbility: "Towering Barricade"},
     /* strand options
        super: Bladefury
        grenade: Slicewire, Grapple, Shackle, Threadling
@@ -92,7 +92,7 @@ window.D2R_STARTERS = {
        melee: Frenzied Blade
        classAbility: Rally Barricade, Towering Barricade
     */
-    "strand": {super: "Bladefury", grenade: "Shackle", jump: "Catapult Lift", melee: "Frenzied Blade", classAbility: "Towering Barricade"},
+    "strand": {super: "Bladefury", grenade: "Shackle", jump: "Strafe Lift", melee: "Frenzied Blade", classAbility: "Towering Barricade"},
     /* prismatic options
        super: Thundercrash, Hammer of Sol, Twilight Arsenal, Glacial Quake, Bladefury
        grenade: Pulse, Thermite, Suppressor, Glacier, Shackle
