@@ -258,7 +258,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=63"></script>
+<script src="bungie.js?v=64"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1208,7 +1208,7 @@ function renderEventLog(events){
 function renderHistory(){
   const h = state.history;
   return `<section class="panel">
-    <div class="row between"><h2>Run history</h2><div class="row"><button class="btn" data-act="export" data-kind="csv">Export CSV</button><button class="btn" data-act="export" data-kind="json">Export JSON</button></div></div>
+    <div class="row between"><h2>Run history</h2><div class="row"><button class="btn dlbtn" data-act="export" data-kind="csv">Export CSV</button><button class="btn dlbtn" data-act="export" data-kind="json">Export JSON</button></div></div>
     ${h.length ? `<div class="tablewrap"><table><thead><tr><th>Ended</th><th>Run</th><th>Guardian</th><th>Result</th><th>Events cleared</th><th>Deaths</th><th>Top difficulty</th><th>Score</th><th>Length</th></tr></thead><tbody>
       ${h.map(r=>`<tr><td>${fmtTime(r.endedAt)}</td><td>${r.mode==="dungeon"?"Dungeon":"Vanguard Ops"}</td><td><span class="chip el el-${r.el}">${ELEMENTS[r.el].name} ${r.cls}</span></td><td><span class="res ${r.result}">${r.result==="death"?"Died":"Ended"}</span></td><td class="num">${r.depth}</td><td class="num">${r.deaths}</td><td>${esc(r.highestDiff)}</td><td class="num">${r.score}</td><td class="num">${fmtDur(r.endedAt-r.startedAt)}</td></tr>`).join("")}
     </tbody></table></div>` : `<div class="empty-note">Finished runs show up here with events cleared, deaths and score. Exports include every event you logged.</div>`}
@@ -1220,7 +1220,7 @@ function renderEnded(){
   return `<section class="callout ${dead?"dead":""}">
     <h2 style="color:${dead?"var(--danger)":"var(--accent)"}">${dead?"Run over: your Light fades":"Run ended"}</h2>
     <p style="margin:0">${ELEMENTS[r.el].name} ${r.cls} cleared <b>${r.depth}</b> event${r.depth===1?"":"s"} (of ${r.events.length} played) with a score of <b>${r.score}</b>. Highest difficulty cleared: ${esc(r.highestDiff)}.</p>
-    <div class="row"><button class="btn primary" data-act="dismiss">Set up next run</button><button class="btn" data-act="export" data-kind="csv">Export CSV</button></div>
+    <div class="row"><button class="btn primary" data-act="dismiss">Set up next run</button><button class="btn dlbtn" data-act="export" data-kind="csv">Export CSV</button></div>
   </section>`;
 }
 function render(){
