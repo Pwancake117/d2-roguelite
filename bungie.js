@@ -115,7 +115,7 @@ async function loadDefs(){
   const man = await api("/Destiny2/Manifest/");
   const paths = man.jsonWorldComponentContentPaths && man.jsonWorldComponentContentPaths.en || {};
   const path = paths.DestinyInventoryItemLiteDefinition || paths.DestinyInventoryItemDefinition;
-  const cacheKey = "defs:" + path;
+  const cacheKey = "defs2:" + path;
   const cached = await idbGet("defs");
   if(cached && cached.key === cacheKey){ B.defs = cached.data; return B.defs; }
   B.manifestState = "Downloading Destiny item data (first time only)…"; window.renderBungieSoon && window.renderBungieSoon();
@@ -125,7 +125,7 @@ async function loadDefs(){
   for(const h in raw){
     const d = raw[h], inv = d.inventory || {};
     if(d.itemType!==2 && d.itemType!==3 && d.itemType!==16) continue;
-    slim[h] = {n:d.displayProperties && d.displayProperties.name, t:d.itemType, st:d.itemSubType, c:d.classType, tier:inv.tierType, b:inv.bucketTypeHash};
+    slim[h] = {n:d.displayProperties && d.displayProperties.name, i:d.displayProperties && d.displayProperties.icon, t:d.itemType, st:d.itemSubType, c:d.classType, tier:inv.tierType, b:inv.bucketTypeHash};
   }
   B.defs = slim; B.manifestState = "";
   await idbSet("defs", {key:cacheKey, data:slim});
@@ -485,7 +485,7 @@ B.equippedLoot = run => {
 /* Seasonal artifact: Bungie lets apps read perks (per character) but not change them. */
 B.artifact = null;
 /* Ability descriptions (aspects, fragments, abilities, artifact perks) from the public manifest, cached in localStorage. */
-const DESC_KEY = "d2r.desc3";
+const DESC_KEY = "d2r.desc4";
 const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
 B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
 const descBusy = new Set();
@@ -505,7 +505,7 @@ B.describe = async hashes => {
     const st = d.investmentStats||[];
     const cap = (st.find(x=>x.statTypeHash===2223994109)||{}).value;
     const stats = st.filter(x=>x.value && STAT_NAME[x.statTypeHash]).map(x=>(x.value>0?"+":"")+x.value+" "+STAT_NAME[x.statTypeHash]);
-    B.desc[h] = {n:(d.displayProperties||{}).name||"", d:texts.join(" "), s:stats, cap:cap||null};
+    B.desc[h] = {n:(d.displayProperties||{}).name||"", i:(d.displayProperties||{}).icon||"", d:texts.join(" "), s:stats, cap:cap||null};
     got++;
   };
   await Promise.all(Array.from({length:Math.min(6,todo.length)}, async()=>{ while(i<todo.length){ const h = todo[i++]; try { await one(h); } catch(e){} descBusy.delete(h); } }));

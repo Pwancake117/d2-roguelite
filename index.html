@@ -32,7 +32,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:.02em;margin:0;text-wrap:balance}
 h2{font-size:1rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500}
-.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.wrap{max-width:1440px;margin:0 auto;padding:16px;display:grid;gap:16px}
 header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
 .brand{display:flex;align-items:baseline;gap:10px}
 .brand h1{font-size:1.45rem;text-transform:uppercase;letter-spacing:.08em}
@@ -41,7 +41,7 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .sync i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
 .sync.ok i{background:var(--good)} .sync.err i{background:var(--danger)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:14px;align-content:start}
-.grid2{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px}
 @media (max-width:820px){.grid2{grid-template-columns:1fr}}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .between{justify-content:space-between}
@@ -65,7 +65,7 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .el-arc{--el:var(--e-arc)} .el-solar{--el:var(--e-solar)} .el-void{--el:var(--e-void)} .el-stasis{--el:var(--e-stasis)} .el-strand{--el:var(--e-strand)} .el-prismatic{--el:var(--e-prismatic)}
 .seg label.elem{border-left:3px solid var(--el)}
 /* status strip */
-.status{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.status{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .status > div{background:var(--panel);padding:12px 14px;display:grid;gap:2px;align-content:center}
 .status .who{border-left:4px solid var(--el);min-width:190px}
 .status .who b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.06em}
@@ -125,10 +125,59 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .t-S{background:#ff7f7f}.t-A{background:#ffbf7f}.t-B{background:#ffdf7f}.t-C{background:#bfff7f}.t-D{background:#7fbfff}
 .tierrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)}
 .tiercells{display:grid;gap:4px}
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font-family:var(--display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 14px;cursor:pointer;font-size:.9rem}
+.tab.on{color:#fff;border-bottom-color:var(--accent)}
+.guardian{display:grid;gap:14px;align-content:start}
+/* icons */
+.ph{display:grid;place-items:center;width:100%;height:100%;color:var(--muted);font-weight:700}
+.atile{width:44px;height:44px;border:1px solid var(--line);background:#0c1117;border-radius:3px;padding:0;display:inline-grid;place-items:center;overflow:hidden;cursor:default;flex:none}
+button.atile{cursor:pointer}button.atile:hover{border-color:var(--el)}
+.atile img{width:100%;height:100%;object-fit:cover}
+.atile.big{width:64px;height:64px}
+.atile.on{border:2px solid var(--el);box-shadow:0 0 12px color-mix(in srgb,var(--el) 45%,transparent)}
+.atile.diamond{width:96px;height:96px;transform:rotate(45deg);margin:18px auto}
+.atile.diamond img{transform:rotate(-45deg) scale(1.42)}
+/* subclass screen */
+.subscreen{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(160px,.8fr) minmax(0,1.1fr);gap:18px;align-items:start}
+.scol,.scenter{display:grid;gap:10px;align-content:start}
+.scenter{justify-items:center;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 12px}
+.supername{font-family:var(--display);font-size:1.05rem;letter-spacing:.04em}
+.arow{display:grid;gap:4px}.alabel,.glabel{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.aequip{display:flex;gap:10px;align-items:center}
+.aothers{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.aslots{display:grid;gap:8px}
+.aslot{display:flex;gap:10px;align-items:center;background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--el);border-radius:4px;padding:8px}
+.aslot.empty{border-style:dashed;border-left-width:1px;min-height:82px}
+.aslot.empty .ph{width:64px;height:64px;border:1px dashed var(--line);border-radius:3px}
+.fslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.fslot{display:grid;justify-items:center;gap:4px;text-align:center;font-size:.72rem;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:6px}
+.fslot.empty{border-style:dashed;color:var(--muted);min-height:76px;align-content:center}
+.fslot.empty .ph{width:44px;height:44px;border:1px dashed var(--line);border-radius:3px}
+.descs summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+/* character screen */
+.charscreen{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.6fr) minmax(0,1fr);gap:18px;align-items:start}
+.gcol{display:grid;gap:10px;align-content:start}
+.gslot{display:grid;gap:4px}
+.gtile{display:flex;gap:10px;align-items:center;background:var(--panel-2);border:1px solid var(--line);border-left:4px solid var(--rc,var(--line));border-radius:4px;padding:6px;min-width:0}
+.gtile.any{border-style:dashed;border-left-style:solid}
+.gicon{width:52px;height:52px;flex:none;border:1px solid var(--rc,var(--line));background:#0c1117;border-radius:2px;overflow:hidden}
+.gicon img{width:100%;height:100%;object-fit:cover}
+.gtext{display:grid;min-width:0}.gtext .nm{font-weight:600;overflow-wrap:anywhere}.gtext .sub{font-size:.72rem;color:var(--muted)}
+.gcenter{display:grid;justify-items:center;text-align:center;gap:8px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 12px}
+.emblem{width:90px;height:90px;transform:rotate(45deg);border:2px solid var(--el);display:grid;place-items:center;margin:20px;background:color-mix(in srgb,var(--el) 18%,#0c1117)}
+.emblem span{transform:rotate(-45deg);font-family:var(--display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem}
+.gclass{font-family:var(--display);font-size:1.3rem;text-transform:uppercase;letter-spacing:.1em}
+@media (max-width:900px){.subscreen,.charscreen{grid-template-columns:1fr}.scenter,.gcenter{border:0;padding:0}}
 .fitbadge{display:inline-block;justify-self:start;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:3px;background:var(--good,#3c9);color:#111}
 .help .desc,.help .dstat{display:block}
-.artslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:6px 0}
-.artslot{background:var(--panel-2);border:1px dashed var(--line);border-radius:4px;padding:8px;text-align:left;display:grid;gap:2px;color:var(--ink);font:inherit}
+.artrow{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0}
+.artgroup{display:grid;gap:4px}
+.artslots{display:flex;gap:6px}
+.artslot{width:110px;min-height:110px;background:var(--panel-2);border:1px dashed var(--line);border-radius:4px;padding:8px;text-align:center;display:grid;gap:4px;justify-items:center;align-content:center;color:var(--ink);font:inherit;font-size:.8rem}
+.artslot img{width:48px;height:48px;border-radius:3px}
+.modicon{width:40px;height:40px;border-radius:3px}
 button.artslot:not([disabled]){cursor:pointer}.artslot.sel{border-color:var(--accent)}.artslot.on{border-style:solid;border-color:var(--accent)}
 .artslot .desc{font-size:.75rem;opacity:.8}
 .offer .desc,.desclist{font-size:.8rem;color:var(--ink);opacity:.85;line-height:1.35}
@@ -172,7 +221,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=9"></script>
-<script src="bungie.js?v=39"></script>
+<script src="bungie.js?v=40"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -871,21 +920,21 @@ function renderArtifact(run){
   } else check = `<p class="help">Connect Bungie to check your artifact in game.</p>`;
   const slotHtml = slots.map((m,i)=>{
     const max = ART_SLOT_MAX[i];
-    if(m){ const d = descOf(run,"artmod",m.h); return `<div class="artslot on"><span class="help">Slot ${i+1} · tier ${m.t}</span><b>${esc(artName(m.h))}</b>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</div>`; }
+    if(m){ const d = descOf(run,"artmod",m.h); return `<div class="artslot on" title="${esc((d&&d.d)||"")}">${d&&d.i?`<img src="${ICON_ROOT+d.i}" alt="">`:""}<span class="help">Slot ${i+1} · tier ${m.t}</span><b>${esc(artName(m.h))}</b></div>`; }
     const open = run.status==="active" && left>0;
-    return `<button class="artslot ${ui.artSlot===i?"sel":""}" data-act="artSlot" data-i="${i}" ${open?"":"disabled"}><span class="help">Slot ${i+1} · up to tier ${max}</span><b>Empty</b></button>`;
-  }).join("");
+    return `<button class="artslot ${ui.artSlot===i?"sel":""}" data-act="artSlot" data-i="${i}" ${open?"":"disabled"}><span class="ph">+</span><span class="help">Slot ${i+1}</span></button>`;
+  }).join("<!--s-->");
   let picker = "";
   if(ui.artSlot!=null && !slots[ui.artSlot]){
     const max = ART_SLOT_MAX[ui.artSlot], used = new Set(slots.filter(Boolean).map(m=>m.h));
     const opts = art.m.filter(([h,t])=>t<=max && !used.has(h)).sort((x,y)=>x[1]-y[1]);
     picker = `<h3>Choose a mod for slot ${ui.artSlot+1}</h3><div class="offers">${opts.map(([h,t])=>{ const d = descOf(run,"artmod",h), ok = t<=left;
-      return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}><span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
+      return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}>${d&&d.i?`<img class="modicon" src="${ICON_ROOT+d.i}" alt="">`:""}<span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
   }
   return `<div class="slotgroup"><h3>Artifact · ${esc(art.n)} · ${left} point${left===1?"":"s"} to spend</h3>
     <p class="help">${artInfoHtml(run, art.n)}</p>
     <p class="help">Each completed event earns points (1, Master 2, Grandmaster 3, +1 if flawless). A mod costs its tier. Slots 1-2 take tier 1, slots 3-5 up to tier 2, slots 6-7 up to tier 3. The app equips the artifact and its mods for you when "Equip subclass picks automatically" is on, or use Set artifact in game.</p>
-    <div class="artslots">${slotHtml}</div>${picker}${check}
+    <div class="artrow"><div class="artgroup"><span class="glabel">Tier 1</span><div class="artslots">${slotHtml.split("<!--s-->").slice(0,2).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 2</span><div class="artslots">${slotHtml.split("<!--s-->").slice(2,5).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 3</span><div class="artslots">${slotHtml.split("<!--s-->").slice(5,7).join("")}</div></div></div>${picker}${check}
     ${artSpent(run)?`<div class="row"><button class="btn ghost" data-act="artReset">Reset artifact (free, refunds all points)</button></div>`:""}</div>`;
 }
 function renderStatus(run){
@@ -896,30 +945,69 @@ function renderStatus(run){
     <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to bonus pick</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
+    <div><span class="lbl">Artifact points</span><span class="val">${artLeft(run)}</span><span class="lbl">${run.artifact?esc(run.artifact.n):"No artifact yet"}</span></div>
     <div><span class="lbl">Events / Deaths</span><span class="val">${run.events.length} / ${run.deaths}</span></div>
     <div><span class="lbl">Score</span><span class="val">${run.score}</span></div>
   </section>`;
 }
-function renderLoadout(run){
+/* ---------- Guardian panel: Character / Subclass / Artifact tabs, laid out like the in-game screens ---------- */
+const ICON_ROOT = "https://www.bungie.net";
+function iconOf(run, type, name){ const d = descOf(run, type, name); return d && d.i ? ICON_ROOT + d.i : ""; }
+function abilityTile(run, type, name, opts={}){
+  const ic = iconOf(run, type, name), d = descOf(run, type, name);
+  const tip = esc(name + (d && d.d ? " — " + d.d : ""));
+  const inner = ic ? `<img src="${ic}" alt="" loading="lazy">` : `<span class="ph">${esc(name.slice(0,2))}</span>`;
+  const cls = `atile ${opts.big?"big":""} ${opts.diamond?"diamond":""} ${opts.on?"on":""} el-${run.el}`;
+  return opts.act
+    ? `<button class="${cls}" data-act="active" data-type="${type}" data-name="${esc(name)}" title="${tip}" aria-pressed="${!!opts.on}">${inner}</button>`
+    : `<span class="${cls}" title="${tip}">${inner}</span>`;
+}
+function abilityRow(run, type, label){
+  const list = run.ab[LIST_KEY[type]]||[], act = (run.ab.active||{})[type];
+  const others = list.filter(n=>n!==act);
+  return `<div class="arow"><div class="alabel">${label}</div><div class="aequip">${act?abilityTile(run,type,act,{big:true,on:true}):""}<div><b>${esc(act||"None")}</b>${others.length?`<div class="aothers">${others.map(n=>abilityTile(run,type,n,{act:true})).join("")}</div>`:`<div class="help">No other unlocks yet</div>`}</div></div></div>`;
+}
+function gearTile(run, it){
+  const B = window.D2R_BUNGIE, d = it.hash && B && B.defs && B.defs[it.hash];
+  const where = it.inst && B ? B.whereIs(it.inst) : null;
+  const tag = where ? `<span class="where w-${where.replace(/ /g,"-")}">${WHERE_LABEL[where]||where}</span>` : "";
+  const img = d && d.i ? `<img src="${ICON_ROOT+d.i}" alt="" loading="lazy">` : `<span class="ph">${it.any?"?":esc((it.name||"").slice(0,2))}</span>`;
+  const sub = it.any ? (it.note || "Pull from Collections") : it.inst ? "Looted"+(it.source?" · "+it.source:"") : "";
+  return `<div class="gtile r-${it.rarity} ${it.any?"any":""}" title="${esc(it.name+(sub?" — "+sub:""))}"><div class="gicon">${img}</div><div class="gtext"><span class="rtag">${esc(it.rarity)} ${tag}</span><span class="nm">${esc(it.name)}</span><span class="sub">${esc(sub)}</span></div></div>`;
+}
+const ARMOR_ORDER = [["helmet","Helmet"],["gauntlets","Arms"],["chest","Chest"],["legs","Legs"],["classitem","Class item"]];
+function renderCharacterTab(run){
   const bySlot = sl => run.weapons.filter(w=>slotOf(w)===sl);
-  const slot = sl => `<div class="slotgroup"><h3>${SLOT_LABEL[sl]}</h3>${bySlot(sl).length ? `<div class="items">${bySlot(sl).map(itemRow).join("")}</div>` : `<div class="empty-note">No loot in this slot yet</div>`}</div>`;
-  const a = run.ab;
-  return `<section class="panel">
-    <div class="row between"><h2>Loadout pool</h2>${(()=>{ const B = window.D2R_BUNGIE; const n = B && B.profile ? run.weapons.concat(run.armor).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
-      return n ? `<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${n} from Postmaster</button>` : ""; })()}</div>
-    <p class="help" style="margin:0">You may equip anything listed here. Gear you pick up in game during the run is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>
-    ${slot("kinetic")}${slot("energy")}${slot("power")}
-    <div class="slotgroup"><h3>Armor</h3><div class="items">${itemRow({kind:"weapon",any:true,rarity:"common",name:"Any common "+run.cls+" armor",note:"Pull from Collections",source:"Starter"})}</div><h3>Looted armor</h3>${run.armor.length ? `<div class="items">${run.armor.map(itemRow).join("")}</div>` : `<div class="empty-note">Armor you pick up during the run appears here</div>`}</div>
-    <p class="help" style="margin:0">Tap an unlocked ability to switch to it in game.</p>
-    <div class="slotgroup"><h3>Super</h3>${pickList(run,"super")}</div>
-    <div class="slotgroup"><h3>Grenade</h3>${pickList(run,"grenade")}</div>
-    <div class="slotgroup"><h3>Jump</h3>${pickList(run,"jump")}</div>
-    <div class="slotgroup"><h3>Melee</h3>${pickList(run,"melee")}</div>
-    <div class="slotgroup"><h3>Class ability</h3>${pickList(run,"classAbility")}</div>
-    <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}${descList(run,"aspect",a.aspects)}</div>
-    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments.slice(0,fragSlots(run)), run.el, "Each aspect opens fragment slots (most open 2, some 3)", fragSlots(run))}${a.fragments.length>fragSlots(run)?`<p class="help warn-text">Waiting for a slot (not equipped): ${esc(a.fragments.slice(fragSlots(run)).join(", "))}</p>`:""}${descList(run,"fragment",a.fragments)}</div>
-    ${renderArtifact(run)}
-    <div class="row"><button class="btn ghost" data-act="tierList">Reward tier list</button></div>
+  const wcol = ["kinetic","energy","power"].map(sl=>`<div class="gslot"><div class="glabel">${SLOT_LABEL[sl]}</div>${bySlot(sl).map(w=>gearTile(run,w)).join("")||`<div class="empty-note">Nothing yet</div>`}</div>`).join("");
+  const anyArmor = {kind:"armor",any:true,rarity:"common",name:"Any common "+run.cls+" armor",note:"Pull from Collections"};
+  const acol = `<div class="gslot"><div class="glabel">Starter armor</div>${gearTile(run,anyArmor)}</div>` + ARMOR_ORDER.map(([k,l])=>{ const list = run.armor.filter(a=>a.piece===k); return list.length ? `<div class="gslot"><div class="glabel">${l}</div>${list.map(a=>gearTile(run,a)).join("")}</div>` : ""; }).join("")
+    + (run.armor.length ? "" : `<div class="empty-note">Armor you pick up during the run shows here</div>`);
+  const B = window.D2R_BUNGIE, pm = B && B.profile ? run.weapons.concat(run.armor).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
+  const center = `<div class="gcenter el-${run.el}"><div class="emblem"><span>${esc(ELEMENTS[run.el].name)}</span></div><b class="gclass">${esc(run.cls)}</b><span class="help">Depth ${run.depth} · ${run.lives} ${run.lives===1?"life":"lives"}</span>${pm?`<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${pm} from Postmaster</button>`:""}<p class="help">Equip anything shown here. Gear you pick up in game is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p></div>`;
+  return `<div class="charscreen"><div class="gcol"><h3>Weapons</h3>${wcol}</div>${center}<div class="gcol"><h3>Armor</h3>${acol}</div></div>`;
+}
+function renderSubclassTab(run){
+  const a = run.ab, act = a.active||{}, slots = fragSlots(run);
+  const supers = a.supers.filter(n=>n!==act.super);
+  const aspects = [0,1].map(i=>{ const n = a.aspects[i]; if(!n) return `<div class="aslot empty"><span class="ph">+</span><span class="help">Aspect slot</span></div>`;
+    const d = descOf(run,"aspect",n); return `<div class="aslot">${abilityTile(run,"aspect",n,{big:true})}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></div>`; }).join("");
+  const frags = []; for(let i=0;i<Math.max(slots,1);i++){ const n = a.fragments[i]; frags.push(n && i<slots ? `<div class="fslot">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></div>` : `<div class="fslot empty">${i<slots?"<span class='ph'>+</span><span>Open</span>":"<span class='help'>Get an aspect to open fragment slots</span>"}</div>`); }
+  const waiting = a.fragments.slice(slots);
+  return `<div class="subscreen el-${run.el}">
+    <div class="scol"><h3>Abilities</h3>${abilityRow(run,"classAbility","Class ability")}${abilityRow(run,"jump","Jump")}${abilityRow(run,"melee","Melee")}${abilityRow(run,"grenade","Grenade")}</div>
+    <div class="scenter"><h3>Super</h3>${act.super?abilityTile(run,"super",act.super,{big:true,diamond:true,on:true}):""}<b class="supername">${esc(act.super||"")}</b>${supers.length?`<div class="aothers">${supers.map(n=>abilityTile(run,"super",n,{act:true})).join("")}</div>`:""}<span class="help">${esc(ELEMENTS[run.el].name)} ${esc(run.cls)}</span></div>
+    <div class="scol"><h3>Aspects (${a.aspects.length}/2)</h3><div class="aslots">${aspects}</div><h3>Fragments (${Math.min(a.fragments.length,slots)}/${slots})</h3><div class="fslots">${frags.join("")}</div>${waiting.length?`<p class="help warn-text">Waiting for a slot (not equipped): ${esc(waiting.join(", "))}</p>`:""}</div>
+  </div>
+  <details class="descs"><summary>Ability descriptions</summary>${descList(run,"aspect",a.aspects)}${descList(run,"fragment",a.fragments)}${descList(run,"super",a.supers)}${descList(run,"classAbility",a.classAbilities)}${descList(run,"jump",a.jumps||[])}${descList(run,"melee",a.melees)}${descList(run,"grenade",a.grenades)}</details>
+  <p class="help">Tap a small icon to switch to it; ${window.D2R_BUNGIE&&window.D2R_BUNGIE.opts&&window.D2R_BUNGIE.opts.autoSubclass?"the app sets it in game for you.":"then equip it in game."} Hover for details.</p>`;
+}
+function renderLoadout(run){
+  const tab = ui.tab || "subclass";
+  const tabs = [["character","Character"],["subclass","Subclass"],["artifact","Artifact"+(run.artifact&&artLeft(run)>0?` · ${artLeft(run)}`:"")]];
+  const body = tab==="character" ? renderCharacterTab(run) : tab==="artifact" ? renderArtifact(run) : renderSubclassTab(run);
+  return `<section class="panel guardian">
+    <div class="row between"><div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab ${tab===k?"on":""}" role="tab" aria-selected="${tab===k}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div><button class="btn ghost" data-act="tierList">Reward tier list</button></div>
+    ${body}
   </section>`;
 }
 function renderPending(run){
@@ -1097,6 +1185,7 @@ document.addEventListener("click", e=>{
   else if(act==="undo") undoLast();
   else if(act==="encounter") encounterCleared();
   else if(act==="artReset") resetArtifact();
+  else if(act==="tab"){ ui.tab = b.dataset.tab; render(); }
   else if(act==="artApply"){ const B = window.D2R_BUNGIE; B.pickChar(state.run); B.applyArtifact(state.run).then(()=>render()); }
   else if(act==="artSlot"){ const i = parseInt(b.dataset.i,10); ui.artSlot = i<0 ? null : i; render(); }
   else if(act==="artMod") slotMod(parseInt(b.dataset.slot,10), parseInt(b.dataset.h,10));
