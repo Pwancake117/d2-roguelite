@@ -243,6 +243,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .artslot.canfill:hover{background:color-mix(in srgb,var(--accent) 22%,var(--panel-2))}
 .pickbanner{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 16px;border-radius:6px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel));animation:hotpulse 2.2s ease-in-out infinite}
 .pickbanner b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.08em;color:#fff}
+.spilltag{display:inline-block;justify-self:start;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:1px 6px;border:1px solid var(--el);color:var(--el)}
 .pickhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .btn.reroll{margin-left:auto;border-color:var(--accent);color:var(--accent)}
 .btn.reroll[disabled]{opacity:.45;cursor:not-allowed}
@@ -362,7 +363,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=98"></script>
+<script src="bungie.js?v=99"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -407,12 +408,12 @@ function plugHash(c,e,type,name){ const f = (KIT[c]&&KIT[c][e]&&KIT[c][e][type]|
 /* descriptions: hash for an offer/owned item, text from the Bungie manifest (loaded on demand) */
 const DESC_TYPES = {jump:"jump",grenade:"grenade",melee:"melee",super:"super",classAbility:"classAbility",aspect:"aspect",fragment:"fragment"};
 const wantDesc = new Set();
-function descHash(run, type, name){
+function descHash(run, type, name, el){
   if(type==="artmod") return +name;
-  return DESC_TYPES[type] ? plugHash(run.cls, run.el, type, name) : null;
+  return DESC_TYPES[type] ? plugHash(run.cls, el||run.el, type, name) : null;
 }
-function descOf(run, type, name){
-  const h = descHash(run, type, name), B = window.D2R_BUNGIE;
+function descOf(run, type, name, el){
+  const h = descHash(run, type, name, el), B = window.D2R_BUNGIE;
   if(!h) return null;
   const d = B && B.desc && B.desc[h];
   if(!d){ wantDesc.add(h); return null; }
@@ -593,8 +594,9 @@ function lootOffers(run, power){
   return offers;
 }
 /* fragment slots = each owned aspect's real fragment capacity from Bungie (2 until its data loads) */
-function aspectCap(run, name){ const d = descOf(run, "aspect", name); return d && d.cap ? d.cap : 2; }
-function fragSlots(run){ return run.ab.aspects.reduce((t,n)=>t+aspectCap(run,n),0) + (run.ab.fragBonus||0); }
+function aspectCap(run, name, el){ const d = descOf(run, "aspect", name, el); return d && d.cap ? d.cap : 2; }
+function fragSlotsFor(run, el){ const ab = el && run.subs && run.subs[el] ? run.subs[el] : run.ab; return ab.aspects.reduce((t,n)=>t+aspectCap(run,n,el),0) + (ab.fragBonus||0); }
+function fragSlots(run){ return fragSlotsFor(run, null); }
 /* Reward tiers (tiers.js) are by reward type. Each offered choice rolls a tier by the event's reward level,
    then a reward inside it. At most one fragment (or fragment slot) per pick; aspects and supers can repeat. */
 const TIER_ORDER = ["S","A","B","C"];
@@ -649,7 +651,24 @@ function boonOffers(run, lvl, diff){
     const ct = tierOfType(choice.type);
     if(ONE_PER_PICK.includes(ct)) pool = pool.filter(o=>tierOfType(o.type)!==ct);
   }
-  return out;
+  return spillover(run, out);
+}
+/* Spillover: with more than one unlocked subclass, about 1 in 5 ability/aspect/fragment choices is for one of the
+   other unlocked subclasses instead (same type, labeled with that subclass). Never for subclasses you haven't unlocked. */
+const SPILL_CHANCE = 0.2, SPILL_TYPES = {super:"supers",grenade:"grenades",jump:"jumps",melee:"melees",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
+const SPILL_LIST = {super:"super",grenade:"grenade",jump:"jump",melee:"melee",classAbility:"classAbility",aspect:"aspect",fragment:"fragment"};
+function spillover(run, out){
+  const others = Object.keys(run.subs||{}).filter(e=>e!==run.el);
+  if(!others.length) return out;
+  return out.map(o=>{
+    if(!SPILL_TYPES[o.type] || Math.random() >= SPILL_CHANCE) return o;
+    const el = pick(others), ab = run.subs[el], key = SPILL_TYPES[o.type];
+    if(o.type==="aspect" && ab.aspects.length>=2) return o;
+    if(o.type==="fragment" && ab.fragments.length>=MAX_FRAGMENTS) return o;
+    const names = (KIT[run.cls][el][SPILL_LIST[o.type]]||[]).map(x=>x.n).filter(n=>!(ab[key]||[]).includes(n) && !out.some(x=>x.el===el && x.name===n));
+    if(!names.length) return o;
+    return {type:o.type, label:o.label+" ("+ELEMENTS[el].name+")", name:pick(names), el, spill:true};
+  });
 }
 /* Starter gear is a rule, not a specific item: any common item in the slot, pulled from Collections.
    Destiny 2 has no common (white) power weapon, so the power slot starts at uncommon (green). */
@@ -880,7 +899,7 @@ function rerollPick(){
 }
 function takeBoon(i){
   const run = state.run, p = run.pending; if(!p || !p.boon) return;
-  const b = p.boon[i], a = run.ab;
+  const b = p.boon[i], a = (b.spill && b.el && run.subs && run.subs[b.el]) ? run.subs[b.el] : run.ab;
   const map = {grenade:"grenades",jump:"jumps",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
   if(!a.artifact) a.artifact = [];
   if(map[b.type]){ a[map[b.type]].push(b.name); if(a.active && b.type in a.active) a.active[b.type] = b.name; }
@@ -1292,7 +1311,7 @@ function renderPending(run){
   }
   if(p.boon){
     const canReroll = p.rerollAt!==p.boonsLeft && artLeft(run)>=REROLL_COST;
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.spill?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${b.spill?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
