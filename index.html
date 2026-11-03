@@ -35,7 +35,7 @@ h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--mut
 .wrap{max-width:1440px;margin:0 auto;padding:16px;display:grid;gap:16px}
 header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
 .brand{display:flex;align-items:center;gap:14px}
-.brandmark{width:52px;height:52px;flex:none;filter:drop-shadow(0 0 8px rgba(63,224,234,.5))}
+.brandmark{width:52px;height:52px;flex:none;filter:drop-shadow(0 0 8px rgba(127,212,255,.45))}
 .bm-ring{transform-origin:32px 32px;animation:bmspin 24s linear infinite}
 @keyframes bmspin{to{transform:rotate(360deg)}}
 .brandtext{display:grid;gap:4px}
@@ -359,23 +359,12 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
   <header class="top">
     <div class="brand">
       <svg class="brandmark" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="bmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5fe8f0"/><stop offset="1" stop-color="#e9e3cf"/></linearGradient>
-          <radialGradient id="bmglow" cx="50%" cy="60%" r="50%"><stop offset="0" stop-color="#3fe0ea" stop-opacity=".55"/><stop offset="1" stop-color="#3fe0ea" stop-opacity="0"/></radialGradient>
-          <linearGradient id="bmlight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bff8ff"/><stop offset="1" stop-color="#3fe0ea" stop-opacity=".2"/></linearGradient>
-        </defs>
+        <defs><linearGradient id="bmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fd4ff"/><stop offset="1" stop-color="#e9e3cf"/></linearGradient></defs>
         <circle cx="32" cy="32" r="29" fill="none" stroke="url(#bmg)" stroke-width="1.5" stroke-dasharray="3 5" class="bm-ring"/>
-        <circle cx="32" cy="32" r="23" fill="url(#bmglow)" stroke="rgba(95,232,240,.35)" stroke-width="1"/>
-        <!-- an arched double gate standing slightly open, light spilling through the gap -->
-        <path d="M18.5 48 V29 A13.5 13.5 0 0 1 45.5 29 V48" fill="none" stroke="url(#bmg)" stroke-width="2.6" stroke-linejoin="round"/>
-        <path d="M31 48 V17.6 A11 11 0 0 0 21.5 29 V48 Z" fill="#06202a" stroke="#5fe8f0" stroke-width="1.4"/>
-        <path d="M33 48 V17.6 A11 11 0 0 1 42.5 29 V48 Z" fill="#06202a" stroke="#5fe8f0" stroke-width="1.4"/>
-        <path d="M31 48 V17.8 L33 17.8 V48 Z" fill="url(#bmlight)"/>
-        <path d="M22.5 31 H30 M22.5 40 H30 M34 31 H41.5 M34 40 H41.5" stroke="#9fefff" stroke-width="1.6" stroke-linecap="square" opacity=".8"/>
-        <circle cx="28.4" cy="35.5" r="1.4" fill="none" stroke="#e9e3cf" stroke-width="1.1"/>
-        <circle cx="35.6" cy="35.5" r="1.4" fill="none" stroke="#e9e3cf" stroke-width="1.1"/>
-        <path d="M32 10.5 L34 13.6 L32 16.7 L30 13.6 Z" fill="#e9e3cf"/>
-        <path d="M13.5 48 H50.5" stroke="url(#bmg)" stroke-width="1.6" opacity=".75"/>
+        <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(127,212,255,.35)" stroke-width="1"/>
+        <path d="M32 10 L50 42 L14 42 Z" fill="none" stroke="url(#bmg)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M32 22 L40 36 L24 36 Z" fill="url(#bmg)" opacity=".9"/>
+        <path d="M32 46 L35 52 L32 58 L29 52 Z" fill="#e9e3cf"/>
       </svg>
       <div class="brandtext">
         <h1 class="title" data-text="D2 ROGUELITE">D2 <b>ROGUELITE</b></h1>
@@ -392,7 +381,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=115"></script>
+<script src="bungie.js?v=116"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
