@@ -169,8 +169,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=5"></script>
-<script src="bungie.js?v=33"></script>
+<script src="tiers.js?v=6"></script>
+<script src="bungie.js?v=34"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -416,7 +416,6 @@ function boonOffers(run, lvl, diff){
   add("classAbility","Class Ability",P.classAbilities(c,e).filter(n=>!a.classAbilities.includes(n)));
   if(a.aspects.length<2) add("aspect","Aspect",P.aspects(c,e).filter(n=>!a.aspects.includes(n)));
   if(a.fragments.length<fragSlots(run)) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
-  if(a.aspects.length>0 && fragSlots(run)<6) cands.push({type:"fragslot",label:"Fragment Slot",name:"+1 Fragment Slot"});
   // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
   if(run.artifact) artifactOffers(run, 6).forEach(o=>cands.push({type:"artswap",label:"Swap Artifact",name:o.name}));
   cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
@@ -736,7 +735,7 @@ function itemRow(it){
 function showTierList(){
   const run = state.run; if(!run) return;
   const c = run.cls, e = run.el;
-  const LABEL = {super:"Supers",fragment:"Fragments",fragslot:"+1 Fragment Slot",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)",artpts:"+2 Artifact Points",artswap:"Swap to a different artifact (frees all points)"};
+  const LABEL = {super:"Supers",fragment:"Fragments",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)",artpts:"+2 Artifact Points",artswap:"Swap to a different artifact (frees all points)"};
   const owned = n => Object.values(run.ab).some(v=>Array.isArray(v) && v.includes(n));
   const rows = TIER_ORDER.map(t=>{
     const cells = ((window.D2R_TIERS||{})[t]||[]).map(k=>{
