@@ -340,6 +340,18 @@ details[open] > summary::after{content:"Hide"}
 summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 .descs summary{font-family:var(--display);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;color:var(--ink)}
 .descs summary::before{width:22px;height:22px;background-size:13px}
+
+/* test backdrop (?theme=dungeon): deep blue top-left, teal glow centre, ember red bottom-right */
+html.theme-dungeon,html.theme-dungeon body{background:
+  radial-gradient(1000px 760px at 50% 35%, rgba(32,215,225,.34), transparent 64%),
+  radial-gradient(1200px 850px at 5% 0%, rgba(30,100,220,.55), transparent 62%),
+  radial-gradient(1100px 760px at 100% 100%, rgba(240,75,30,.5), transparent 60%),
+  radial-gradient(700px 500px at 0% 100%, rgba(0,0,0,.55), transparent 70%),
+  radial-gradient(1px 1px at 20% 30%, rgba(180,255,255,.35) 50%, transparent 51%),
+  radial-gradient(1px 1px at 70% 80%, rgba(255,200,170,.25) 50%, transparent 51%),
+  #061016;background-attachment:fixed;background-size:auto,auto,auto,auto,320px 320px,260px 260px,auto}
+html.theme-dungeon .panel{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0) 120px),rgba(6,18,26,.66);backdrop-filter:blur(3px);border-color:rgba(120,230,240,.16)}
+html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{background:rgba(6,16,22,.88)}
 </style>
 </head>
 <body>
@@ -366,9 +378,10 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
+<script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme");if(t&&t!=="default")document.documentElement.classList.add("theme-"+t);}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=112"></script>
+<script src="bungie.js?v=113"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
