@@ -22,7 +22,7 @@ const CLASS_NAME = {0:"Titan",1:"Hunter",2:"Warlock"};
 const B = window.D2R_BUNGIE = {
   auth:null, account:null, profile:null, defs:null, chars:[], charId:null,
   busy:false, log:[], manifestState:"", lastSync:0,
-  opts:{autoEquip:true, autoSync:true}
+  opts:{autoEquip:false, autoSync:true}
 };
 try { const a = JSON.parse(localStorage.getItem(AUTH_KEY)||"null"); if(a && a.expiresAt > Date.now()+60000) B.auth = a; } catch(e){}
 try { Object.assign(B.opts, JSON.parse(localStorage.getItem(OPT_KEY)||"{}")); } catch(e){}
