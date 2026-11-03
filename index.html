@@ -312,6 +312,22 @@ summary h2{display:inline-flex}
 .gicon,.atile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
 .r-exotic .gicon{box-shadow:0 0 8px rgba(206,174,51,.45)}
 table thead th{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;color:#a9b0b8}
+
+/* dropdowns: big chevron toggle so it's obvious they open */
+summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";flex:none;width:26px;height:26px;border:1px solid var(--accent);background:
+  linear-gradient(45deg,transparent 46%,var(--accent) 46%,var(--accent) 54%,transparent 54%) 0 0/50% 100% no-repeat,
+  rgba(127,212,255,.1);
+  -webkit-mask:none;transition:transform .2s ease,background-color .2s;box-shadow:0 0 10px rgba(127,212,255,.25)}
+summary::before{background:rgba(127,212,255,.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 5l7 7-7 7' fill='none' stroke='%237fd4ff' stroke-width='3' stroke-linecap='square'/%3E%3C/svg%3E") center/16px no-repeat}
+details[open] > summary::before{transform:rotate(90deg);background-color:rgba(127,212,255,.22)}
+summary:hover::before{background-color:rgba(127,212,255,.3)}
+summary::after{content:"Show";margin-left:auto;font-family:var(--display);font-weight:700;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+details[open] > summary::after{content:"Hide"}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.descs summary{font-family:var(--display);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;color:var(--ink)}
+.descs summary::before{width:22px;height:22px;background-size:13px}
 </style>
 </head>
 <body>
@@ -340,7 +356,7 @@ table thead th{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;co
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=86"></script>
+<script src="bungie.js?v=87"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
