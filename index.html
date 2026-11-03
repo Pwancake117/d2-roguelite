@@ -6,7 +6,7 @@
 <title>D2 Roguelite Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Layout: status strip on top, loadout left / event console right, Bungie panel above, history below. Single dark theme by choice: a game companion screen. */
@@ -34,9 +34,22 @@ h2{font-size:1rem;text-transform:uppercase;letter-spacing:.12em;color:var(--mute
 h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500}
 .wrap{max-width:1440px;margin:0 auto;padding:16px;display:grid;gap:16px}
 header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
-.brand{display:flex;align-items:baseline;gap:10px}
-.brand h1{font-size:1.45rem;text-transform:uppercase;letter-spacing:.08em}
-.brand span{color:var(--muted);font-size:.85rem}
+.brand{display:flex;align-items:center;gap:14px}
+.brandmark{width:52px;height:52px;flex:none;filter:drop-shadow(0 0 8px rgba(127,212,255,.45))}
+.bm-ring{transform-origin:32px 32px;animation:bmspin 24s linear infinite}
+@keyframes bmspin{to{transform:rotate(360deg)}}
+.brandtext{display:grid;gap:4px}
+.brand h1.title{position:relative;font-family:"Orbitron",var(--display);font-weight:800;font-size:1.75rem;letter-spacing:.22em;line-height:1;margin:0;padding:0;border:0;
+  background:linear-gradient(180deg,#ffffff 0%,#cfe9ff 45%,#7fd4ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:none;filter:drop-shadow(0 0 10px rgba(127,212,255,.35))}
+.brand h1.title b{font-weight:900}
+.brand h1.title::before{display:none}
+.brand h1.title::after{content:attr(data-text);position:absolute;left:0;top:0;color:transparent;-webkit-text-stroke:1px rgba(127,212,255,.35);transform:translate(2px,2px);pointer-events:none;z-index:-1;font-weight:900}
+.tagline{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.72rem;letter-spacing:.24em;color:#8fb6cc}
+.tagline i{width:7px;height:7px;background:var(--good);box-shadow:0 0 8px var(--good);animation:blink 1.6s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+header.top{position:relative;padding:6px 0 16px;border-bottom:1px solid rgba(127,212,255,.25)}
+header.top::after{content:"";position:absolute;left:0;bottom:-1px;width:180px;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
 .sync{font-family:var(--mono);font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:6px}
 .sync i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
 .sync.ok i{background:var(--good)} .sync.err i{background:var(--danger)}
@@ -304,7 +317,20 @@ table thead th{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;co
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>D2 Roguelite</h1><span>Roguelite runs for Destiny 2</span></div>
+    <div class="brand">
+      <svg class="brandmark" viewBox="0 0 64 64" aria-hidden="true">
+        <defs><linearGradient id="bmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fd4ff"/><stop offset="1" stop-color="#e9e3cf"/></linearGradient></defs>
+        <circle cx="32" cy="32" r="29" fill="none" stroke="url(#bmg)" stroke-width="1.5" stroke-dasharray="3 5" class="bm-ring"/>
+        <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(127,212,255,.35)" stroke-width="1"/>
+        <path d="M32 10 L50 42 L14 42 Z" fill="none" stroke="url(#bmg)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M32 22 L40 36 L24 36 Z" fill="url(#bmg)" opacity=".9"/>
+        <path d="M32 46 L35 52 L32 58 L29 52 Z" fill="#e9e3cf"/>
+      </svg>
+      <div class="brandtext">
+        <h1 class="title" data-text="D2 ROGUELITE">D2 <b>ROGUELITE</b></h1>
+        <span class="tagline"><i></i>// GUARDIAN RUN TRACKER · DESTINY 2</span>
+      </div>
+    </div>
     <div class="sync" id="sync"><i></i><span>Saved on this device</span></div>
   </header>
   <main id="app" class="wrap" style="padding:0;width:100%;max-width:none"></main>
@@ -314,7 +340,7 @@ table thead th{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;co
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=85"></script>
+<script src="bungie.js?v=86"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
