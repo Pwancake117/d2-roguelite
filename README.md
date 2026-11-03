@@ -49,7 +49,7 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 **Engrams:** engrams you don't pick up in time go to the Postmaster. The app tracks every engram that drops during the run along with the event it came from, shows them in the Character tab with where they are, and **Pull from Postmaster** pulls them too. Decrypt them in game; the gear that comes out is added to your run and credited to the engram's event.
 
 
-**Saving runs:** your active run saves automatically. **Save & exit** parks it in **Saved runs** (on the start screen) so you can start or resume another one, such as a run per character; activities and loot from while it was parked don't count when you resume. **Download save** (and Download in Saved runs) gives you a file; **Load save file** brings it back on any browser or device.
+**Saving runs:** your active run saves automatically. **Save & exit** parks it in **Saved runs** (on the start screen) so you can start or resume another one, such as a run per character; activities and loot from while it was parked don't count when you resume. **Download run file** gives you a file; **Load run file** brings it back on any browser or device.
 
 ### Reward tiers
 
