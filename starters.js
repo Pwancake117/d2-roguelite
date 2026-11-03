@@ -18,7 +18,7 @@ window.D2R_STARTERS = {
        melee: Knife Trick, Proximity Explosive Knife, Lightweight Knife, Weighted Throwing Knife
        classAbility: Acrobat's Dodge, Marksman's Dodge, Gambler's Dodge
     */
-    "solar": {super: "Golden Gun: Deadshot", grenade: "Incendiary", jump: "High Jump", melee: "Knife Trick", classAbility: "Marksman's Dodge"},
+    "solar": {super: "Golden Gun: Deadshot", grenade: "Solar", jump: "High Jump", melee: "Lightweight Knife", classAbility: "Marksman's Dodge"},
     /* void options
        super: Shadowshot: Moebius Quiver, Spectral Blades, Shadowshot: Deadfall
        grenade: Vortex, Void Spike, Scatter, Magnetic, Suppressor, Void Wall, Axion Bolt
