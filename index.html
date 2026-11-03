@@ -6,7 +6,7 @@
 <title>D2 Roguelite Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Layout: status strip on top, loadout left / event console right, Bungie panel above, history below. Single dark theme by choice: a game companion screen. */
@@ -21,8 +21,8 @@
   --good:#5fe39a;
   --r-common:#c9c9c9; --r-uncommon:#4f9d5d; --r-rare:#5b8fd0; --r-legendary:#9b6bc4; --r-exotic:#e2c044;
   --e-arc:#79e6f2; --e-solar:#ff8a3d; --e-void:#b48cf0; --e-stasis:#5a8cff; --e-strand:#3fe07a; --e-prismatic:#ff7fd8;
-  --display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --display:"Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  --body:"Inter", "Helvetica Neue", Arial, sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
   color-scheme:dark;
 }
@@ -249,6 +249,24 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .swbtn{font:inherit;font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem;padding:6px 12px;border-radius:4px;border:1px solid var(--line);border-left:3px solid var(--el,var(--accent));background:var(--panel-2);color:var(--muted);cursor:pointer}
 .swbtn.on{color:#fff;border-color:var(--el,var(--accent));background:color-mix(in srgb,var(--el,var(--accent)) 22%,var(--panel-2))}
 .pickhead b{font-family:var(--display);font-size:1.2rem;text-transform:uppercase;letter-spacing:.1em;color:#fff}
+
+/* ---- Destiny-style look: Neue Haas-like grotesk (Inter), uppercase tracked headings, square edges, thin rules ---- */
+h1,h2,h3{font-weight:700}
+h2{font-size:.95rem;letter-spacing:.18em;color:#f2f2f2;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.14)}
+summary h2{border-bottom:0;padding-bottom:0}
+h3{font-size:.74rem;letter-spacing:.2em;font-weight:600;color:#a9b0b8}
+.panel{border-radius:2px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 120px),var(--panel);border-color:rgba(255,255,255,.1)}
+.btn{border-radius:2px;letter-spacing:.14em;font-weight:700;font-size:.78rem;padding:9px 16px}
+.btn:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.75)}
+.offer,.gtile,.aslot,.fslot,.artslot,.item,.chip,.swbtn,.synccard,.ptsbanner,.pickbanner,.saverow,.basebuild,.callout,.status,.manualoff,.seg label,.starteredit select{border-radius:2px}
+.offer:hover,.gtile:hover,button.artslot:not([disabled]):hover,.swbtn:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
+.status .val{font-family:var(--display);font-weight:800;letter-spacing:.02em}
+.status .lbl,.glabel,.alabel,.rtag{letter-spacing:.18em}
+.offer .nm,.gtext .nm,.supername,.gclass{font-family:var(--display);font-weight:700;letter-spacing:.03em}
+.tab{letter-spacing:.2em;font-weight:700;font-size:.82rem}
+.tab.on{border-bottom-color:#fff}
+.tabbadge{letter-spacing:0}
+body{letter-spacing:.005em}
 </style>
 </head>
 <body>
@@ -264,7 +282,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=82"></script>
+<script src="bungie.js?v=83"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
