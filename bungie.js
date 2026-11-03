@@ -22,10 +22,10 @@ const CLASS_NAME = {0:"Titan",1:"Hunter",2:"Warlock"};
 const B = window.D2R_BUNGIE = {
   auth:null, account:null, profile:null, defs:null, chars:[], charId:null,
   busy:false, log:[], manifestState:"", lastSync:0,
-  opts:{autoEquip:false, autoSync:true}
+  opts:{autoSubclass:true, autoSync:true}
 };
 try { const a = JSON.parse(localStorage.getItem(AUTH_KEY)||"null"); if(a && a.expiresAt > Date.now()+60000) B.auth = a; } catch(e){}
-try { Object.assign(B.opts, JSON.parse(localStorage.getItem(OPT_KEY)||"{}")); } catch(e){}
+try { const o = JSON.parse(localStorage.getItem(OPT_KEY)||"{}"); delete o.autoEquip; Object.assign(B.opts, o); } catch(e){}
 B.saveOpts = () => { try { localStorage.setItem(OPT_KEY, JSON.stringify(B.opts)); } catch(e){} };
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 function note(msg, kind){ B.log.unshift({t:Date.now(), msg, kind:kind||""}); B.log = B.log.slice(0,30); window.renderBungieSoon && window.renderBungieSoon(); }
@@ -223,7 +223,7 @@ function choose(cands, cid){
 }
 
 /* Equip the run's current loadout on the chosen character: gear + subclass. */
-B.applyRun = async (run, {quiet, gearOnly} = {}) => {
+B.applyRun = async (run, {quiet, gearOnly, subclassOnly} = {}) => {
   if(B.busy) return; if(!B.connected()){ note("Connect your Bungie account first.","err"); return; }
   B.busy = true; window.renderBungieSoon && window.renderBungieSoon();
   const cid = B.charId;
@@ -232,6 +232,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
     if(!cid) throw {message:"No "+run.cls+" character found on this account."};
     const items = allItems(), keep = new Set(), equipIds = [], missing = [];
     let exoticWeaponUsed = false, exoticArmorUsed = false;
+    if(!subclassOnly){
     // weapons
     for(const [b, slot] of Object.entries(WEAPON_BUCKETS)){
       const cur = items.find(i=>i.owner===cid && i.equipped && i.d.b==b);
@@ -260,6 +261,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
       const failed = (r.equipResults||[]).filter(x=>x.equipStatus!==1).length;
       if(failed) note(failed+" item(s) couldn't be equipped. Go to orbit or a social space and press Equip again.","err");
     }
+    } // end gear
     let subclassDone = true;
     if(!gearOnly){
       try { await applySubclass(run, cid); B.pendingOrbit = false; }
@@ -270,7 +272,7 @@ B.applyRun = async (run, {quiet, gearOnly} = {}) => {
     if(missing.length) note("Missing from your inventory: "+missing.join(", ")+". Pull them from Collections in game, then press Equip again.","err");
     else if(!subclassDone){ /* already explained above */ }
     else if(!quiet) note((gearOnly ? "Common gear equipped on your " : "Run loadout equipped on your ")+run.cls+".","ok");
-    else note("Loadout updated in game.","ok");
+    else note(subclassOnly ? "Subclass updated in game." : "Loadout updated in game.","ok");
   } catch(e){ note(friendly(e),"err"); }
   finally { B.busy = false; window.render && window.render(); }
 };

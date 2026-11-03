@@ -150,7 +150,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=17"></script>
+<script src="bungie.js?v=19"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -448,9 +448,10 @@ let applyTimer = null;
 function afterChange(){
   if(processQueue()) save();
   const B = window.D2R_BUNGIE, run = state.run;
-  if(!B || !B.connected() || !B.opts.autoEquip || !run || run.status!=="active" || run.pending) return;
+  if(!B || !B.connected() || !B.opts.autoSubclass || !run || run.status!=="active" || run.pending) return;
+  // subclass picks go straight into the game; gear is never moved automatically (loot stays where it drops)
   clearTimeout(applyTimer);
-  applyTimer = setTimeout(()=>{ B.pickChar(run); B.applyRun(run, {quiet:true}); }, 800);
+  applyTimer = setTimeout(()=>{ B.pickChar(run); B.applyRun(run, {quiet:true, subclassOnly:true}); }, 800);
 }
 /* Dungeon runs: each encounter cleared gives a loot pick and a guaranteed ability pick. */
 function encounterCleared(){
@@ -827,7 +828,7 @@ function renderBungie(run){
     ${run && mine.length>1 ? `<label class="field" for="bChar">Character<select id="bChar" name="bChar">${mine.map(c=>`<option value="${c.id}" ${c.id===cid?"selected":""}>${esc(c.cls)} · ${c.light}</option>`).join("")}</select></label>` : ""}
     ${countHtml ? `<div><h3>Allowed gear you own</h3><div class="chips">${countHtml}</div></div>` : ""}
     ${run ? `<div class="row" style="gap:18px">
-      <label class="tog"><input type="checkbox" id="bAutoEquip" ${B.opts.autoEquip?"checked":""}> Equip automatically after each reward</label>
+      <label class="tog"><input type="checkbox" id="bAutoSubclass" ${B.opts.autoSubclass?"checked":""}> Equip subclass picks automatically</label>
       <label class="tog"><input type="checkbox" id="bAutoSync" ${B.opts.autoSync?"checked":""}> Sync automatically (checks every 20 seconds)</label>
       <span class="help">${run.difficulty==="hardcore"?"Hardcore: any death costs a life and the looted gear you had equipped.":"Normal: only failing or wiping out of an activity costs a life."}</span>
       ${ago!=null?`<span class="help">Last sync ${ago} min ago${run.queue&&run.queue.length?` · ${run.queue.length} waiting`:""}</span>`:""}
@@ -901,7 +902,7 @@ document.addEventListener("click", e=>{
 document.addEventListener("change", e=>{
   const t = e.target;
   const B = window.D2R_BUNGIE;
-  if(t.id==="bAutoEquip"){ B.opts.autoEquip = t.checked; B.saveOpts(); return; }
+  if(t.id==="bAutoSubclass"){ B.opts.autoSubclass = t.checked; B.saveOpts(); return; }
   if(t.id==="bAutoSync"){ B.opts.autoSync = t.checked; B.saveOpts(); return; }
   if(t.id==="bChar"){ B.charId = t.value; render(); return; }
   if(["cls","el","lives","mode","difficulty"].includes(t.name)){ ui.setup[t.name] = t.value; if(t.name!=="lives") render(); }
