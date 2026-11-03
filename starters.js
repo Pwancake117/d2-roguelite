@@ -126,7 +126,7 @@ window.D2R_STARTERS = {
        melee: Pocket Singularity
        classAbility: Empowering Rift, Healing Rift
     */
-    "void": {super: "Nova Bomb: Vortex", grenade: "Vortex", jump: "Strafe Glide", melee: "Pocket Singularity", classAbility: "Healing Rift"},
+    "void": {super: "Nova Warp", grenade: "Magnetic", jump: "Strafe Glide", melee: "Pocket Singularity", classAbility: "Healing Rift"},
     /* stasis options
        super: Winter's Wrath
        grenade: Duskfield, Glacier, Shatter, Coldsnap
