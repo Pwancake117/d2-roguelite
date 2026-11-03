@@ -43,7 +43,7 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
 5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, jump, melee, class ability, aspect, fragment, extra life; see Reward tiers below). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
 
-Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Tablet of Ruin, Slayer Baron Apothecary Satchel, Implement of Curiosity, Encrypted Data Disk), one equipped at a time, each with 7 mod slots. You start a run with no artifact: after your first completed event you get a bonus pick of 3 artifacts. Swapping to a different artifact later is an S-tier reward (it frees all your points). Every completed event earns artifact points by difficulty: 1 (Normal to Expert), 2 (Master), 3 (Grandmaster/Ultimate), +1 if flawless; dungeon encounters earn the same by difficulty, and **+2 Artifact Points** is a B-tier reward. Spend points to fill slots: a mod costs its tier; slots 1-2 take tier 1 mods, slots 3-5 up to tier 2, slots 6-7 up to tier 3. Reset is free and refunds every point. Bungie doesn't let apps change artifact mods, so you set them in game; the app checks your equipped artifact and each slot.
+Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Tablet of Ruin, Slayer Baron Apothecary Satchel, Implement of Curiosity, Encrypted Data Disk), one equipped at a time, each with 7 mod slots. You start a run with no artifact: after your first completed event you get a bonus pick of 3 artifacts. More artifacts come as S-tier rewards and join your collection; switch between your artifacts anytime in the Artifact tab (switching clears the slots and refunds your points). Other subclasses unlock as S-tier rewards too: each starts at its base build with its own unlocks, and you switch between unlocked subclasses in the Subclass tab. Every completed event earns artifact points by difficulty: 1 (Normal to Expert), 2 (Master), 3 (Grandmaster/Ultimate), +1 if flawless; dungeon encounters earn the same by difficulty, and **+2 Artifact Points** is a B-tier reward. Spend points to fill slots: a mod costs its tier; slots 1-2 take tier 1 mods, slots 3-5 up to tier 2, slots 6-7 up to tier 3. Reset is free and refunds every point. Bungie doesn't let apps change artifact mods, so you set them in game; the app checks your equipped artifact and each slot.
 
 ### Reward tiers
 
@@ -51,7 +51,7 @@ Rewards are tiered by type (set in `tiers.js`):
 
 | Tier | Rewards |
 |---|---|
-| S | Supers, swap to a different artifact |
+| S | Supers, a new artifact, unlock another subclass |
 | A | Aspects |
 | B | Fragments (offered even when your slots are full, with a warning; the fragment waits until an aspect opens room), extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives), +2 artifact points |
 | C | Grenades, jumps, melees, class abilities |

@@ -223,6 +223,9 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .pickbanner{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 16px;border-radius:6px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel));animation:hotpulse 2.2s ease-in-out infinite}
 .pickbanner b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.08em;color:#fff}
 .pickhead{display:flex;align-items:center;gap:8px}
+.switcher{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.swbtn{font:inherit;font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem;padding:6px 12px;border-radius:4px;border:1px solid var(--line);border-left:3px solid var(--el,var(--accent));background:var(--panel-2);color:var(--muted);cursor:pointer}
+.swbtn.on{color:#fff;border-color:var(--el,var(--accent));background:color-mix(in srgb,var(--el,var(--accent)) 22%,var(--panel-2))}
 .pickhead b{font-family:var(--display);font-size:1.2rem;text-transform:uppercase;letter-spacing:.1em;color:#fff}
 </style>
 </head>
@@ -237,8 +240,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=9"></script>
-<script src="bungie.js?v=42"></script>
+<script src="tiers.js?v=10"></script>
+<script src="bungie.js?v=43"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -373,6 +376,10 @@ function normalize(){
   if(r.artPts===undefined) r.artPts = 0;
   if(r.artPerks && !r.artSlots){ r.artPerks = null; r.ab.artifact = []; }   // old perk model: points come back
   if(!r.artSlots) r.artSlots = [null,null,null,null,null,null,null];
+  // unlocked subclasses: run.subs[element] holds each subclass's unlocks; run.ab is the current one
+  if(!r.subs) r.subs = {};
+  if(r.subs[r.el]) r.ab = r.subs[r.el]; else r.subs[r.el] = r.ab;
+  if(!r.artifacts) r.artifacts = r.artifact ? [r.artifact.n] : [];
 }
 normalize();
 let db=null, userId=null, downloads=null, saving=false, dirty=false;
@@ -471,10 +478,10 @@ const TIER_ORDER = ["S","A","B","C"];
 const TIER_OF_TYPE = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.forEach(t=>(T[t]||[]).forEach(k=>m[k]=t)); return m; })();
 function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
-const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,artpts:1,artswap:1};
+const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,artpts:1,artswap:1,subclass:1};
 const MAX_FRAGMENTS = 6;
 const ONE_PER_PICK = window.D2R_ONE_PER_PICK || ["S","A"];
-const TYPE_WEIGHT = {artswap:0.2};   // inside its tier, an artifact swap comes up less often than a super
+const TYPE_WEIGHT = {artswap:0.2, subclass:0.3};   // inside its tier, an artifact swap comes up less often than a super
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
 function boonOffers(run, lvl, diff){
   if(lvl==null) lvl = (run.pending && run.pending.lvl) || 3;
@@ -490,7 +497,8 @@ function boonOffers(run, lvl, diff){
   // fragments can be offered without a free slot: the card warns, and the fragment waits until an aspect opens room
   if(a.fragments.length<MAX_FRAGMENTS) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
   // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
-  if(run.artifact) artifactOffers(run, 6).forEach(o=>cands.push({type:"artswap",label:"Swap Artifact",name:o.name}));
+  if(run.artifact) artifactOffers(run, 6).forEach(o=>cands.push({type:"artswap",label:"New Artifact",name:o.name}));
+  Object.keys(ELEMENTS).filter(e=>KIT[c][e] && !(run.subs||{})[e]).forEach(e=>cands.push({type:"subclass",label:"Unlock Subclass",name:ELEMENTS[e].name,el:e}));
   cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
   if(run.lives<run.maxLives+2) cands.push({type:"life",label:"Revive Token",name:"+1 Life",n:1});
   if(run.lives+2<=run.maxLives+2 && Math.random()<0.35) cands.push({type:"life",label:"Revive Tokens",name:"+2 Lives",n:2});
@@ -545,6 +553,7 @@ function startRun(){
     weapons:starterGear(), armor:[], commonArmor:true, events:[], pending:null,
     ab: baseAbilities(cls, el)
   };
+  normalize();
   ui.confirm=null; save(); render(); window.scrollTo(0,0);
   const B = window.D2R_BUNGIE;
   if(B && B.connected()){ const run = state.run; B.pickChar(run); B.snapshot(run).then(()=>{ save(); B.applyRun(run); }).catch(()=>B.applyRun(run)); }
@@ -642,14 +651,31 @@ function artSpent(run){ return (run.artSlots||[]).reduce((t,m)=>t+(m?m.t:0),0); 
 function artLeft(run){ return (run.artPts||0) - artSpent(run); }
 function modTier(art, h){ const m = art && art.m.find(x=>x[0]===h); return m ? m[1] : 0; }
 function artName(h){ const B = window.D2R_BUNGIE, d = B && B.desc && B.desc[h]; if(!d) wantDesc.add(h); return d && d.n ? d.n : "Loading…"; }
+function switchSubclass(el){
+  const run = state.run; if(!run || run.status!=="active" || !run.subs[el] || el===run.el) return;
+  run.subs[run.el] = run.ab; run.el = el; run.ab = run.subs[el];
+  save(); afterChange(); render(); toast("Switched to "+ELEMENTS[el].name+".");
+}
+function unlockSubclass(run, el){
+  run.subs = run.subs||{};
+  if(!run.subs[el]) run.subs[el] = baseAbilities(run.cls, el);
+  run.subs[run.el] = run.ab; run.el = el; run.ab = run.subs[el];
+}
+function switchArtifact(name){
+  const run = state.run; if(!run || run.status!=="active" || !(run.artifacts||[]).includes(name) || (run.artifact&&run.artifact.n===name)) return;
+  const back = artSpent(run);
+  setArtifact(run, name);
+  save(); afterChange(); render(); toast("Switched to "+name+(back?": "+back+" point"+(back>1?"s":"")+" refunded":"")+".");
+}
 function setArtifact(run, name){
+  if(!(run.artifacts = run.artifacts||[]).includes(name)) run.artifacts.push(name);
   run.artifact = {n:name, at:Date.now()};
   run.artSlots = [null,null,null,null,null,null,null];
   run.artSwaps = (run.artSwaps||0) + (run.artHistory && run.artHistory.length ? 1 : 0);
   (run.artHistory = run.artHistory||[]).push(name);
 }
 function artifactOffers(run, n){
-  const others = ARTIFACTS.filter(a=>!run.artifact || a.n!==run.artifact.n);
+  const others = ARTIFACTS.filter(a=>!(run.artifacts||[]).includes(a.n) && (!run.artifact || a.n!==run.artifact.n));
   const out = []; const pool = others.slice();
   while(out.length<(n||3) && pool.length){ const a = pick(pool); pool.splice(pool.indexOf(a),1); out.push({type:"artpick",label:"Artifact",name:a.n}); }
   return out;
@@ -709,6 +735,7 @@ function takeBoon(i){
   else if(b.type==="life") run.lives += b.n||1;
   else if(b.type==="artpts") run.artPts = (run.artPts||0) + ART_PTS_REWARD;
   else if(b.type==="artpick" || b.type==="artswap") setArtifact(run, b.name);
+  else if(b.type==="subclass") unlockSubclass(run, b.el);
   run.boons++; run.score += 5;
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   p.boonsLeft--;
@@ -814,7 +841,7 @@ function itemRow(it){
 function showTierList(){
   const run = state.run; if(!run) return;
   const c = run.cls, e = run.el;
-  const LABEL = {super:"Supers",fragment:"Fragments",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)",artpts:"+2 Artifact Points",artswap:"Swap to a different artifact (frees all points)"};
+  const LABEL = {super:"Supers",fragment:"Fragments",aspect:"Aspects",grenade:"Grenades",jump:"Jumps",melee:"Melees",classAbility:"Class abilities",life:"Extra lives (+1 or +2)",artpts:"+2 Artifact Points",artswap:"New artifact (added to your collection)",subclass:"Unlock another subclass"};
   const owned = n => Object.values(run.ab).some(v=>Array.isArray(v) && v.includes(n));
   const rows = TIER_ORDER.map(t=>{
     const cells = ((window.D2R_TIERS||{})[t]||[]).map(k=>{
@@ -948,7 +975,9 @@ function renderArtifact(run){
     picker = `<h3>Choose a mod for slot ${ui.artSlot+1}</h3><div class="offers">${opts.map(([h,t])=>{ const d = descOf(run,"artmod",h), ok = t<=left;
       return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}>${d&&d.i?`<img class="modicon" src="${ICON_ROOT+d.i}" alt="">`:""}<span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
   }
-  return `<div class="slotgroup"><h3>Artifact · ${esc(art.n)}</h3>${left>0?`<div class="ptsbanner"><b>${left}</b><span>point${left===1?"":"s"} to spend: tap a glowing slot</span></div>`:`<p class="help">No points to spend. Complete events to earn more.</p>`}
+  const owned = run.artifacts||[art.n];
+  const aswitch = `<div class="switcher"><span class="glabel">Your artifacts</span>${owned.map(n=>`<button class="swbtn ${n===art.n?"on":""}" data-act="artSwitch" data-name="${esc(n)}">${esc(n)}</button>`).join("")}${owned.length<2?`<span class="help">Get more as S-tier rewards.</span>`:`<span class="help">Switching refunds all spent points.</span>`}</div>`;
+  return `<div class="slotgroup">${aswitch}<h3>Artifact · ${esc(art.n)}</h3>${left>0?`<div class="ptsbanner"><b>${left}</b><span>point${left===1?"":"s"} to spend: tap a glowing slot</span></div>`:`<p class="help">No points to spend. Complete events to earn more.</p>`}
     <p class="help">${artInfoHtml(run, art.n)}</p>
     <p class="help">Each completed event earns points (1, Master 2, Grandmaster 3, +1 if flawless). A mod costs its tier. Slots 1-2 take tier 1, slots 3-5 up to tier 2, slots 6-7 up to tier 3. The app equips the artifact and its mods for you when "Equip subclass picks automatically" is on, or use Set artifact in game.</p>
     <div class="artrow"><div class="artgroup"><span class="glabel">Tier 1</span><div class="artslots">${slotHtml.split("<!--s-->").slice(0,2).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 2</span><div class="artslots">${slotHtml.split("<!--s-->").slice(2,5).join("")}</div></div><div class="artgroup"><span class="glabel">Up to tier 3</span><div class="artslots">${slotHtml.split("<!--s-->").slice(5,7).join("")}</div></div></div>${picker}${check}
@@ -1013,7 +1042,9 @@ function renderSubclassTab(run){
     const d = descOf(run,"aspect",n); return `<div class="aslot">${abilityTile(run,"aspect",n,{big:true})}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></div>`; }).join("");
   const frags = []; for(let i=0;i<Math.max(slots,1);i++){ const n = a.fragments[i]; frags.push(n && i<slots ? `<div class="fslot">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></div>` : `<div class="fslot empty">${i<slots?"<span class='ph'>+</span><span>Open</span>":"<span class='help'>Get an aspect to open fragment slots</span>"}</div>`); }
   const waiting = a.fragments.slice(slots);
-  return `<div class="subscreen el-${run.el}">
+  const subs = Object.keys(ELEMENTS).filter(e=>(run.subs||{})[e]);
+  const switcher = `<div class="switcher"><span class="glabel">Subclasses</span>${subs.map(e=>`<button class="swbtn el-${e} ${e===run.el?"on":""}" data-act="subSwitch" data-el="${e}" ${e===run.el?"aria-pressed=\"true\"":""}>${esc(ELEMENTS[e].name)}</button>`).join("")}${subs.length<2?`<span class="help">Unlock more as S-tier rewards.</span>`:""}</div>`;
+  return `${switcher}<div class="subscreen el-${run.el}">
     <div class="scol"><h3>Abilities</h3>${abilityRow(run,"classAbility","Class ability")}${abilityRow(run,"jump","Jump")}${abilityRow(run,"melee","Melee")}${abilityRow(run,"grenade","Grenade")}</div>
     <div class="scenter"><h3>Super</h3>${act.super?abilityTile(run,"super",act.super,{big:true,diamond:true,on:true}):""}<b class="supername">${esc(act.super||"")}</b>${supers.length?`<div class="aothers">${supers.map(n=>abilityTile(run,"super",n,{act:true})).join("")}</div>`:""}<span class="help">${esc(ELEMENTS[run.el].name)} ${esc(run.cls)}</span></div>
     <div class="scol"><h3>Aspects (${a.aspects.length}/2)</h3><div class="aslots">${aspects}</div><h3>Fragments (${Math.min(a.fragments.length,slots)}/${slots})</h3><div class="fslots">${frags.join("")}</div>${waiting.length?`<p class="help warn-text">Waiting for a slot (not equipped): ${esc(waiting.join(", "))}</p>`:""}</div>
@@ -1038,7 +1069,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}</div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}</div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime (switching refunds your points).</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
@@ -1206,6 +1237,8 @@ document.addEventListener("click", e=>{
   else if(act==="encounter") encounterCleared();
   else if(act==="artReset") resetArtifact();
   else if(act==="tab"){ ui.tab = b.dataset.tab; render(); }
+  else if(act==="subSwitch") switchSubclass(b.dataset.el);
+  else if(act==="artSwitch") switchArtifact(b.dataset.name);
   else if(act==="artApply"){ const B = window.D2R_BUNGIE; B.pickChar(state.run); B.applyArtifact(state.run).then(()=>render()); }
   else if(act==="artSlot"){ const i = parseInt(b.dataset.i,10); ui.artSlot = i<0 ? null : i; render(); }
   else if(act==="artMod") slotMod(parseInt(b.dataset.slot,10), parseInt(b.dataset.h,10));
