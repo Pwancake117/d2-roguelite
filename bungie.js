@@ -440,9 +440,12 @@ function trackEngrams(run, eventNote){
   if(!run.engrams){ run.engrams = []; if(!run.engramBaseline) run.engramBaseline = now.map(i=>i.inst); }
   const base = new Set(run.engramBaseline||[]), known = new Set(run.engrams.map(e=>e.inst)), present = new Set(now.map(i=>i.inst));
   for(const it of now) if(!base.has(it.inst) && !known.has(it.inst)){
-    run.engrams.push({inst:it.inst, hash:it.hash, name:it.d.n||"Engram", rarity:TIER[it.d.tier]||"rare", event:eventNote||(run.events.length?run.events[run.events.length-1].event:"Found during the run"), at:Date.now(), status:"held"});
+    // seen mid-activity (before the activity lands in history): hold the tag until that activity is synced
+    const pendingTag = !eventNote && ((B.lastAct && B.lastAct.counted) || (B.justLeft && Date.now()-B.justLeft < 15*60000));
+    run.engrams.push({inst:it.inst, hash:it.hash, name:it.d.n||"Engram", rarity:TIER[it.d.tier]||"rare", event:eventNote||(pendingTag?"Current activity":(run.events.length?run.events[run.events.length-1].event:"Found during the run")), pendingTag:!!pendingTag, at:Date.now(), status:"held"});
     note("Engram tracked: "+(it.d.n||"Engram")+(it.postmaster?" (in your Postmaster)":"")+".","ok");
   }
+  if(eventNote) for(const e of run.engrams) if(e.pendingTag){ e.event = eventNote; e.pendingTag = false; }
   const opened = [];
   for(const e of run.engrams) if(e.status==="held" && !present.has(e.inst)){ e.status = "opened"; e.openedAt = Date.now(); opened.push(e); }
   return opened;
