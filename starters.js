@@ -118,7 +118,7 @@ window.D2R_STARTERS = {
        melee: Incinerator Snap, Celestial Fire
        classAbility: Phoenix Dive, Empowering Rift, Healing Rift
     */
-    "solar": {super: "Daybreak", grenade: "Solar", jump: "Strafe Glide", melee: "Incinerator Snap", classAbility: "Healing Rift"},
+    "solar": {super: "Daybreak", grenade: "Solar", jump: "Strafe Glide", melee: "Celestial Fire", classAbility: "Healing Rift"},
     /* void options
        super: Nova Warp, Nova Bomb: Vortex, Nova Bomb: Cataclysm
        grenade: Vortex, Void Spike, Scatter, Magnetic, Suppressor, Void Wall, Axion Bolt
