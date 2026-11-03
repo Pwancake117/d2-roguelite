@@ -363,7 +363,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=101"></script>
+<script src="bungie.js?v=102"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -815,8 +815,8 @@ function artName(h){ const B = window.D2R_BUNGIE, d = B && B.desc && B.desc[h]; 
 const SHARE_TYPES = {super:"supers",grenade:"grenades",jump:"jumps",melee:"melees",classAbility:"classAbilities",aspect:"aspects"};
 function syncShared(run){
   if(!run || !run.subs) return [];
-  // grenades and melees never carry into or out of Prismatic
-  const noPrism = t => t==="grenade" || t==="melee";
+  // only jumps and class abilities carry into or out of Prismatic
+  const noPrism = t => t!=="jump" && t!=="classAbility";
   const owned = {}; for(const [sel,ab] of Object.entries(run.subs)) for(const [t,k] of Object.entries(SHARE_TYPES)){ if(noPrism(t) && sel==="prismatic") continue; (ab[k]||[]).forEach(n=>{ (owned[t]=owned[t]||new Set()).add(n); }); }
   const added = [];
   for(const [el,ab] of Object.entries(run.subs)) for(const [t,k] of Object.entries(SHARE_TYPES)){
