@@ -258,7 +258,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=62"></script>
+<script src="bungie.js?v=63"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1270,8 +1270,8 @@ function renderBungie(run){
       <p class="help" style="margin:4px 0 0">${B.manifestState ? esc(B.manifestState) : run ? (mine.length ? "Playing on your "+run.cls+(mine.length>1?"":"")+"." : "No "+run.cls+" on this account.") : "Start a run and the app equips it on your matching character."}</p></div>
       <div class="row">
         ${run ? `<button class="btn primary" data-act="bApply" ${B.busy||!cid?"disabled":""}>${B.busy?"Working…":"Equip starting loadout"}</button>
-        <button class="btn" data-act="bClear" ${B.busy||!cid?"disabled":""} title="Moves weapons and armor on this character that aren't part of the run to your vault">Move non-run gear to vault</button>` : ""}
-        <button class="btn ghost" data-act="bLogout">Disconnect Bungie.net account</button>
+        <button class="btn primary" data-act="bClear" ${B.busy||!cid?"disabled":""} title="Moves weapons and armor on this character that aren't part of the run to your vault">Move non-run gear to vault</button>` : ""}
+        <button class="btn endrun" data-act="bLogout">Disconnect Bungie.net account</button>
       </div></div>
     ${run && mine.length>1 ? `<label class="field" for="bChar">Character<select id="bChar" name="bChar">${mine.map(c=>`<option value="${c.id}" ${c.id===cid?"selected":""}>${esc(c.cls)} · ${c.light}</option>`).join("")}</select></label>` : ""}
     ${countHtml ? `<div><h3>Allowed gear you own</h3><div class="chips">${countHtml}</div></div>` : ""}
