@@ -100,7 +100,7 @@ window.D2R_STARTERS = {
        melee: Thunderclap, Hammer Strike, Shield Throw, Shiver Strike, Frenzied Blade
        classAbility: Towering Barricade, Rally Barricade, Thruster
     */
-    "prismatic": {super: "Thundercrash", grenade: "Pulse", jump: "Strafe Lift", melee: "Thunderclap", classAbility: "Towering Barricade"}
+    "prismatic": {super: "Bladefury", grenade: "Suppressor", jump: "Strafe Lift", melee: "Hammer Strike", classAbility: "Towering Barricade"}
   },
   "Warlock": {
     /* arc options
