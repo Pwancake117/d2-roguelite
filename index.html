@@ -363,7 +363,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=102"></script>
+<script src="bungie.js?v=103"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -501,7 +501,7 @@ function normalize(){
   // unlocked subclasses: run.subs[element] holds each subclass's unlocks; run.ab is the current one
   if(!r.subs) r.subs = {};
   if(r.subs[r.el]) r.ab = r.subs[r.el]; else r.subs[r.el] = r.ab;
-  syncShared(r);
+  try { syncShared(r); } catch(e){ setTimeout(()=>{ try { syncShared(r); save(); render(); } catch(e2){} }, 0); }
   if(!r.artifacts) r.artifacts = r.artifact ? [r.artifact.n] : [];
   if(!r.artSlotsBy) r.artSlotsBy = {};
   if(r.artifact) r.artSlotsBy[r.artifact.n] = r.artSlots;   // keep the current artifact's slots linked
@@ -810,10 +810,11 @@ function artSpentAll(run){ let t = slotCost(run.artSlots); for(const [n,sl] of O
 function artLeft(run){ return (run.artPts||0) - artSpentAll(run); }
 function modTier(art, h){ const m = art && art.m.find(x=>x[0]===h); return m ? m[1] : 0; }
 function artName(h){ const B = window.D2R_BUNGIE, d = B && B.desc && B.desc[h]; if(!d) wantDesc.add(h); return d && d.n ? d.n : "Loading…"; }
+function shareTypes(){ return {super:"supers",grenade:"grenades",jump:"jumps",melee:"melees",classAbility:"classAbilities",aspect:"aspects"}; }
 /* Shared unlocks: an ability you've acquired on one subclass is unlocked on every subclass (owned now or later)
    whose kit has the same ability, e.g. jumps and class abilities, or Prismatic versions of element abilities. */
-const SHARE_TYPES = {super:"supers",grenade:"grenades",jump:"jumps",melee:"melees",classAbility:"classAbilities",aspect:"aspects"};
 function syncShared(run){
+  const SHARE_TYPES = shareTypes();
   if(!run || !run.subs) return [];
   // only jumps and class abilities carry into or out of Prismatic
   const noPrism = t => t!=="jump" && t!=="classAbility";
@@ -924,7 +925,7 @@ function takeBoon(i){
   const map = {grenade:"grenades",jump:"jumps",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
   if(!a.artifact) a.artifact = [];
   if(map[b.type]){ a[map[b.type]].push(b.name); if(a.active && b.type in a.active) a.active[b.type] = b.name;
-    if(SHARE_TYPES[b.type]){ const shared = syncShared(run); if(shared.length) toast("Also unlocked on: "+shared.join(", ")); } }
+    if(shareTypes()[b.type]){ const shared = syncShared(run); if(shared.length) toast("Also unlocked on: "+shared.join(", ")); } }
   else if(b.type==="fragslot") a.fragBonus++;
   else if(b.type==="life" || b.type==="life2") run.lives += b.n||1;
   else if(b.type==="artpts") run.artPts = (run.artPts||0) + ART_PTS_REWARD;
