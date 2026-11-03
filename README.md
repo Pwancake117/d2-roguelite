@@ -41,22 +41,31 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
 3. **Play Vanguard Ops** (Director → Vanguard Ops: Solo, Fireteam, Arena or Pinnacle Ops). Each finished op is synced from Bungie and logged automatically.
 4. **Use what you find.** Any weapon or armor piece you pick up during the run (including Postmaster drops) is added to your run and is yours to equip. The game's own difficulty decides how good the drops are.
-5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, melee, class ability, aspect, fragment, fragment slot or extra life; every pick includes aspect and fragment options while any are left). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
+5. **Unlock abilities.** Every completed event gives an ability pick (a new super, grenade, jump, melee, class ability, aspect, fragment, fragment slot or extra life; see Reward tiers below). Clears also earn Light, and every 4 Light adds a bonus pick, so harder and flawless clears unlock more. The app sets it on your subclass in game automatically (you can turn that off). Gear is never equipped for you: loot stays where it drops until you equip it. Bungie only allows gear changes in orbit or social spaces.
 
 Artifact perks: every completed event earns 1 artifact point (+1 if flawless; dungeon encounters earn 1). Spend points in the Artifact perks panel: a perk costs its tier (tier 1 = 1 point, tier 2 = 2 points, ...), and a tier opens once you own a perk from the tier before it. Bungie doesn't let apps change artifact perks, so you switch unlocked perks on in game. The app checks your artifact and flags perks that are on but not unlocked in the run.
 
 ### Reward tiers
 
-Every super, grenade, melee, class ability, aspect and fragment has a tier from S to D in `tiers.js` (anything not listed is B). Harder events offer higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
+Rewards are tiered by type (set in `tiers.js`):
 
-| Reward level | S | A | B | C | D |
-|---|---|---|---|---|---|
-| up to 3 (e.g. Solo Ops, Normal) | 0% | 5% | 25% | 40% | 30% |
-| 4–5 | 5% | 20% | 35% | 30% | 10% |
-| 6–7 | 15% | 35% | 30% | 15% | 5% |
-| 8+ (e.g. Grandmaster, Master dungeon) | 30% | 40% | 25% | 5% | 0% |
+| Tier | Rewards |
+|---|---|
+| S | Supers |
+| A | Fragments, +1 fragment slot (a pick never offers more than one of these) |
+| B | Aspects, extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives) |
+| C | Grenades, jumps, melees, class abilities |
 
-Each pick card shows the item's tier, and the **Reward tier list** button shows the full list for your subclass. To re-rank, edit `tiers.js`.
+Each of the 3 choices in a pick rolls a tier, then a reward inside it, so a pick can offer two aspects or two supers. Harder events roll higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
+
+| Reward level | S | A | B | C |
+|---|---|---|---|---|
+| up to 3 (e.g. Solo Ops, Normal) | 5% | 25% | 25% | 45% |
+| 4–5 | 10% | 30% | 30% | 30% |
+| 6–7 | 20% | 30% | 30% | 20% |
+| 8+ (e.g. Grandmaster) | 30% | 30% | 30% | 10% |
+
+Each pick card shows its tier, and the **Reward tier list** button shows everything for your subclass. To change tiers or odds, edit `tiers.js`.
 
 ## Modes and deaths
 | | Normal | Hardcore |
