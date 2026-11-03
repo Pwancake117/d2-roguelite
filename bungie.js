@@ -61,7 +61,7 @@ async function api(path, opts={}){
   if(B.auth) headers.Authorization = "Bearer " + B.auth.token;
   if(opts.body) headers["Content-Type"] = "application/json";
   for(let attempt=0; attempt<4; attempt++){
-    const r = await fetch(BNG.root + path, {method:opts.method||"GET", headers, body:opts.body?JSON.stringify(opts.body):undefined});
+    const r = await fetch(BNG.root + path, {method:opts.method||"GET", headers, cache:"no-store", body:opts.body?JSON.stringify(opts.body):undefined});
     if(r.status===401){ B.logout(); throw {status:"AuthExpired", message:"Your Bungie sign-in expired. Connect again."}; }
     const j = await r.json().catch(()=>null);
     if(!j) throw {status:"BadResponse", message:"Bungie.net returned an unreadable response ("+r.status+")."};
