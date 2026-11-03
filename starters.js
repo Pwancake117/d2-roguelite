@@ -34,7 +34,7 @@ window.D2R_STARTERS = {
        melee: Withering Blade
        classAbility: Marksman's Dodge, Gambler's Dodge
     */
-    "stasis": {super: "Silence and Squall", grenade: "Duskfield", jump: "High Jump", melee: "Withering Blade", classAbility: "Marksman's Dodge"},
+    "stasis": {super: "Silence and Squall", grenade: "Coldsnap", jump: "High Jump", melee: "Withering Blade", classAbility: "Marksman's Dodge"},
     /* strand options
        super: Silkstrike
        grenade: Slicewire, Grapple, Shackle, Threadling
