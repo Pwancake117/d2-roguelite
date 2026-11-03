@@ -74,7 +74,7 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 
 **Rerolls:** on any reward pick you can press **⟳ Reroll** to redraw all 3 choices for **1 unspent artifact point**, once per pick. The new choices follow the same tier odds and difficulty boosts.
 
-**What is a life?** A life is lost when an event fails: your fireteam runs out of revives and gets sent to orbit, or you leave an activity after 5 minutes. A death you're revived from doesn't cost a life in Normal mode (it only lowers the Light you earn); in Hardcore, any death costs a life. At 0 lives the run is over.
+**What is a life?** A life is lost when an event fails: your fireteam runs out of revives and gets sent to orbit, or you leave an activity after 5 minutes. A death you're revived from doesn't cost a life in Normal mode (it only lowers the Light you earn); in Hardcore, dying at any point in an event costs one life, plus the looted gear you had equipped. At 0 lives the run is over.
 
 ### Reward tiers
 
