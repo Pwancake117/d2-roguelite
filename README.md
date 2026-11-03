@@ -4,6 +4,20 @@ A roguelite run tracker for Destiny 2. Each run starts on a fixed base build wit
 
 **Play:** https://pwancake117.github.io/d2-roguelite/
 
+## About this project
+
+I started on this idea a while back, but was recently inspired by Lep's Dungeon Crawler Carl dungeon runs. For all I know someone has already made something like this; if so, I didn't copy it on purpose. I made this for fun, and I'm not a developer.
+
+### Things to know
+
+- **Engrams can be a bit wonky.** Engrams at the end of an event can take a few minutes to show up from the Postmaster in the app, even after the event's rewards have posted. Some of this runs on the honor system.
+- **Stick with Vanguard Ops.** Some activities pour out drops. Vanguard Ops seem to give a more normal, manageable amount.
+- **Dungeon encounter rewards are lightly tested.** I haven't tried them much, so you may need to push those out manually as you progress through a dungeon.
+
+### What's next
+
+I may look at adding exotics as drop options, but that could get tedious, since you'd need to pull them from Collections if they aren't already in your vault.
+
 ## Before your first run: pull common gear from Collections
 
 The app equips your starting gear for you, but it can only use items you own. Collections can't be reached through Bungie's API, so this one step happens in game.
