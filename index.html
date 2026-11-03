@@ -124,6 +124,8 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .t-S{background:#ff7f7f}.t-A{background:#ffbf7f}.t-B{background:#ffdf7f}.t-C{background:#bfff7f}.t-D{background:#7fbfff}
 .tierrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)}
 .tiercells{display:grid;gap:4px}
+.fitbadge{display:inline-block;justify-self:start;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:3px;background:var(--good,#3c9);color:#111}
+.help .desc,.help .dstat{display:block}
 .artslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:6px 0}
 .artslot{background:var(--panel-2);border:1px dashed var(--line);border-radius:4px;padding:8px;text-align:left;display:grid;gap:2px;color:var(--ink);font:inherit}
 button.artslot:not([disabled]){cursor:pointer}.artslot.sel{border-color:var(--accent)}.artslot.on{border-style:solid;border-color:var(--accent)}
@@ -166,7 +168,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=5"></script>
-<script src="bungie.js?v=31"></script>
+<script src="bungie.js?v=32"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -184,6 +186,22 @@ const BASE_JUMP = (c,e) => ((JUMPS[c]||{})[e]||{}).base || (KIT[c][e].jump[0]||{
    slots 1-2 take tier 1 mods, slots 3-5 up to tier 2, slots 6-7 up to tier 3. Mods: [plug hash, tier]. From the Bungie manifest. */
 const ARTIFACTS = [{"n":"NPA Repulsion Regulator","h":1504442987,"m":[[2311625538,3],[2311625537,3],[2311625536,3],[2311625543,3],[2311625542,3],[2311625541,3],[2311625540,3],[4232817857,2],[4232817858,2],[4232817859,2],[4232817860,2],[4232817861,2],[4232817862,2],[4232817863,2],[255237660,1],[255237663,1],[255237662,1],[255237657,1],[255237656,1],[255237659,1],[255237658,1]]},{"n":"Queensfoil Censer","h":3518286241,"m":[[2596646301,3],[1328115227,3],[1328115226,3],[1328115229,3],[1328115228,3],[2659604384,3],[1319563985,3],[3585856464,2],[51032916,2],[51032917,2],[51032914,2],[51032915,2],[3116632769,2],[3585856467,2],[3153265450,1],[3547711349,1],[3547711348,1],[2903198437,1],[3547711346,1],[2317325398,1],[2317325399,1]]},{"n":"Hunter's Journal","h":2180638678,"m":[[1533272841,3],[1533272842,3],[1533272843,3],[1533272844,3],[1533272845,3],[1533272846,3],[1533272847,3],[2344320970,2],[2344320969,2],[2344320968,2],[2344320975,2],[2344320974,2],[2344320973,2],[2344320972,2],[3116632771,1],[3116632768,1],[3116632769,1],[3116632774,1],[3116632775,1],[3116632772,1],[3116632773,1]]},{"n":"Tablet of Ruin","h":3821685388,"m":[[1319563991,3],[1319563988,3],[1319563989,3],[1319563986,3],[1319563987,3],[1319563984,3],[1319563985,3],[2596646296,2],[2596646299,2],[2596646298,2],[2596646301,2],[2596646300,2],[2596646303,2],[2596646302,2],[3585856469,1],[3585856470,1],[3585856471,1],[3585856464,1],[3585856465,1],[3585856466,1],[3585856467,1]]},{"n":"Slayer Baron Apothecary Satchel","h":1770364095,"m":[[3117519998,3],[3117519997,3],[3117519996,3],[3117519995,3],[3117519994,3],[3117519993,3],[3117519992,3],[611645149,2],[611645150,2],[611645151,2],[611645144,2],[611645145,2],[611645146,2],[611645147,2],[4037132128,1],[4037132131,1],[4037132130,1],[4037132133,1],[4037132132,1],[4037132135,1],[4037132134,1]]},{"n":"Implement of Curiosity","h":23349941,"m":[[2659604388,3],[2659604391,3],[2659604390,3],[2659604385,3],[2659604384,3],[2659604387,3],[2659604386,3],[3459646243,2],[3459646240,2],[3459646241,2],[3459646246,2],[3459646247,2],[3459646244,2],[3459646245,2],[3153265450,1],[3153265449,1],[3153265448,1],[2596646301,1],[3153265454,1],[3153265453,1],[3153265452,1]]},{"n":"Encrypted Data Disk","h":1014202826,"m":[[2742146821,3],[2742146822,3],[2742146823,3],[2742146816,3],[2742146817,3],[2742146818,3],[2742146819,3],[2903198438,2],[2903198437,2],[2903198436,2],[2903198435,2],[2903198434,2],[2903198433,2],[2903198432,2],[3834273543,1],[3834273540,1],[3834273541,1],[3834273538,1],[3834273539,1],[3834273536,1],[3834273537,1]]}];
 const ART_SLOT_MAX = [1,1,2,2,2,3,3];
+/* Artifact themes: written from each artifact's 21 mods (names and Bungie descriptions); "best" = subclasses its mods
+   mention most. Prismatic is listed where the mods span several elements or name Prismatic. */
+const ART_INFO = {
+  "NPA Repulsion Regulator": {best:["void","arc","prismatic"], blurb:"Void-heavy: volatile and overshield play (Volatile Flow, Unto the Breach, Void Weapon Channeling, Supernova), with Arc amplify and jolt (Amped Up, Thunderous Retort, Lightning Strikes Twice)."},
+  "Queensfoil Censer": {best:["stasis","solar","strand"], blurb:"Stasis and Solar control: freeze and crystals (Pillar of Ice, Creeping Chill, Frigid Glare), scorch and ignitions (Torch, Heart of the Flame, Kindling Trigger), plus heavy-weapon mods (Argent Ordnance, Horde Shuttle)."},
+  "Hunter's Journal": {best:["prismatic","void","solar","arc"], blurb:"Mixed-element build tools: Elemental Siphon, Prismatic Transfer and Transference reward swapping damage types, with sword and sniper perks (Argent Blade, Blade Stamina, Sniper's Meditation)."},
+  "Tablet of Ruin": {best:["void","arc","strand"], blurb:"Void and Arc damage: volatile and weaken (Volatile Marksman, Maligned Harvest), blinding and jolt (Photonic Flare, Flashover), and super uptime (Limit Break, Particle Reconstruction)."},
+  "Slayer Baron Apothecary Satchel": {best:["stasis","void","prismatic"], blurb:"Stasis and Void together: slow, freeze and shatter (Wind Chill, Crystalline Converter, Brain Freeze, Served Cold) alongside Void weaken and devour (Supernova, Old God's Rite, Void Renewal)."},
+  "Implement of Curiosity": {best:["strand","stasis","solar","prismatic"], blurb:"Strand first: unravel, threadlings and suspend (Refresh Threads, Tangled Web, Threaded Blast), with Stasis frost (Frost Renewal, Frigid Glare), Solar (Radiant Shrapnel) and bow perks (Argent Quiver)."},
+  "Encrypted Data Disk": {best:["arc","prismatic"], blurb:"Arc and Kinetic close range: jolt and amplify (Gravitic-Voltaic Charge), Kinetic weapon perks (Kinetic Synthesis, Kinetic Rupture), and melee or sword play (Riposte, Sword Storm Combo, Singularity Blade)."}
+};
+function artInfoHtml(run, name){
+  const i = ART_INFO[name]; if(!i) return "";
+  const fit = run && i.best.includes(run.el);
+  return `<span class="desc">${esc(i.blurb)}</span><span class="dstat">Best for: ${i.best.map(e=>ELEMENTS[e]?ELEMENTS[e].name:cap(e)).join(", ")}</span>${fit?`<span class="fitbadge">Good fit for ${esc(ELEMENTS[run.el]?ELEMENTS[run.el].name:run.el)}</span>`:""}`;
+}
 const artByName = n => ARTIFACTS.find(a=>a.n===n);
 const ABILITY_TYPES = ["super","grenade","jump","melee","classAbility","aspect","fragment"];
 const LIST_KEY = {super:"supers",grenade:"grenades",jump:"jumps",melee:"melees",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
@@ -851,6 +869,7 @@ function renderArtifact(run){
       return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}><span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
   }
   return `<div class="slotgroup"><h3>Artifact · ${esc(art.n)} · ${left} point${left===1?"":"s"} to spend</h3>
+    <p class="help">${artInfoHtml(run, art.n)}</p>
     <p class="help">Each completed event earns points (1, Master 2, Grandmaster 3, +1 if flawless). A mod costs its tier. Slots 1-2 take tier 1, slots 3-5 up to tier 2, slots 6-7 up to tier 3. Bungie doesn't let apps change artifact mods, so you set them in game.</p>
     <div class="artslots">${slotHtml}</div>${picker}${check}
     ${artSpent(run)?`<div class="row"><button class="btn ghost" data-act="artReset">Reset artifact (free, refunds all points)</button></div>`:""}</div>`;
@@ -897,7 +916,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?`<span class="desc">Your artifact for this run (7 mod slots). Swapping later is an S-tier reward.</span>`:b.type==="artswap"?`<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
+    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
