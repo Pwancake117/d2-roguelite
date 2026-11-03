@@ -362,7 +362,9 @@ B.sync = async (run, {quiet} = {}) => {
   try {
     const a = B.account;
     const r = await api(`/Destiny2/${a.type}/Account/${a.id}/Character/${cid}/Stats/Activities/?count=25&mode=0&page=0`);
-    const acts = (r.activities||[]).filter(x=>Date.parse(x.period) >= run.startedAt).reverse();
+    // skip activities played while this run was saved away (paused)
+    const paused = t => (run.pauses||[]).some(p=>t>=p.from && t<(p.to||Infinity));
+    const acts = (r.activities||[]).filter(x=>{ const t = Date.parse(x.period); return t >= run.startedAt && !paused(t); }).reverse();
     run.synced = run.synced || [];
     run.queue = run.queue || [];
     for(const act of acts){
@@ -409,6 +411,16 @@ B.sync = async (run, {quiet} = {}) => {
 
 /* Real loot: every weapon/armor instance owned at run start is "old"; anything new is looted. */
 const ARMOR_NAME = {[BUCKET.helmet]:"helmet",[BUCKET.gauntlets]:"gauntlets",[BUCKET.chest]:"chest",[BUCKET.legs]:"legs",[BUCKET.classitem]:"classitem"};
+/* Resuming a saved run: anything picked up while it was paused isn't run loot, so add it to the "owned at start" lists. */
+B.rebaseline = async run => {
+  if(!B.connected()) return;
+  await loadDefs(); await loadProfile();
+  const mine = new Set(run.weapons.concat(run.armor).map(x=>x.inst).filter(Boolean));
+  const items = allItems();
+  run.ownedAtStart = [...new Set((run.ownedAtStart||[]).concat(items.filter(i=>(i.d.t===2||i.d.t===3) && !mine.has(i.inst)).map(i=>i.inst)))];
+  const held = new Set((run.engrams||[]).map(e=>e.inst));
+  run.engramBaseline = [...new Set((run.engramBaseline||[]).concat(items.filter(i=>i.d.t===8 && !held.has(i.inst)).map(i=>i.inst)))];
+};
 B.snapshot = async run => {
   await loadDefs(); await loadProfile();
   run.ownedAtStart = allItems().filter(i=>i.d.t===2||i.d.t===3).map(i=>i.inst);
