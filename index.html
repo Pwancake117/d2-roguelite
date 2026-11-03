@@ -241,7 +241,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=45"></script>
+<script src="bungie.js?v=46"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1182,7 +1182,7 @@ function renderBungie(run){
     <div class="row between"><div><h2>Bungie.net · ${esc(B.account ? B.account.name : "connected")}</h2>
       <p class="help" style="margin:4px 0 0">${B.manifestState ? esc(B.manifestState) : run ? (mine.length ? "Playing on your "+run.cls+(mine.length>1?"":"")+"." : "No "+run.cls+" on this account.") : "Start a run and the app equips it on your matching character."}</p></div>
       <div class="row">
-        ${run ? `<button class="btn primary" data-act="bApply" ${B.busy||!cid?"disabled":""}>${B.busy?"Working…":"Equip run loadout"}</button>
+        ${run ? `<button class="btn primary" data-act="bApply" ${B.busy||!cid?"disabled":""}>${B.busy?"Working…":"Equip starting loadout"}</button>
         <button class="btn" data-act="bSync" ${B.busy||!cid?"disabled":""}>Sync activities</button>
         <button class="btn" data-act="bClear" ${B.busy||!cid?"disabled":""} title="Moves weapons and armor on this character that aren't part of the run to your vault">Move other gear to vault</button>` : ""}
         <button class="btn ghost" data-act="bLogout">Disconnect</button>
@@ -1253,7 +1253,9 @@ document.addEventListener("click", e=>{
   else if(act==="artMod") slotMod(parseInt(b.dataset.slot,10), parseInt(b.dataset.h,10));
   else if(act==="bLogin") window.D2R_BUNGIE.login();
   else if(act==="bLogout") window.D2R_BUNGIE.logout();
-  else if(act==="bApply"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.applyRun(state.run); }
+  else if(act==="bApply"){ const B=window.D2R_BUNGIE, run=state.run; B.pickChar(run);
+    // starting loadout: only the starter commons (white kinetic and energy, green power, white armor), never looted gear; subclass untouched
+    B.applyRun(Object.assign({}, run, {weapons:run.weapons.filter(w=>!w.inst), armor:[]}), {gearOnly:true}); }
   else if(act==="bSync") bungieSync(false);
   else if(act==="bPull") window.D2R_BUNGIE.pullPostmaster(state.run);
   else if(act==="bClear"){ const B=window.D2R_BUNGIE; B.pickChar(state.run); B.clearToVault(state.run); }

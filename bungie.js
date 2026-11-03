@@ -271,7 +271,7 @@ B.applyRun = async (run, {quiet, gearOnly, subclassOnly} = {}) => {
     if(!subclassDone) note("Gear is set. Your subclass changes need orbit: the app will apply them as soon as you're in orbit.","err");
     if(missing.length) note("Missing from your inventory: "+missing.join(", ")+". Pull them from Collections in game, then press Equip again.","err");
     else if(!subclassDone){ /* already explained above */ }
-    else if(!quiet) note((gearOnly ? "Common gear equipped on your " : "Run loadout equipped on your ")+run.cls+".","ok");
+    else if(!quiet) note((gearOnly ? "Starting loadout (common gear) equipped on your " : "Run loadout equipped on your ")+run.cls+".","ok");
     else note(subclassOnly ? "Subclass updated in game." : "Loadout updated in game.","ok");
   } catch(e){ note(friendly(e),"err"); }
   finally { B.busy = false; window.render && window.render(); }
