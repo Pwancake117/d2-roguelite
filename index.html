@@ -360,7 +360,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=94"></script>
+<script src="bungie.js?v=95"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -719,7 +719,7 @@ function logEventData(x, noRender){
   // rewards for finishing
   if(completed){
     run.depth++;
-    const gain = flawless ? power + FLAWLESS_LIGHT : hardcore ? power : Math.max(1, power - deaths);
+    const gain = (flawless ? power + FLAWLESS_LIGHT : hardcore ? power : Math.max(1, power - deaths)) + (ev.id==="dungeon" ? DUNGEON_CLEAR_LIGHT : 0);
     entry.lightGain = gain;
     run.light += gain;
     entry.artPts = artPtsFor(diff) + (flawless ? ART_PTS_FLAWLESS : 0);
@@ -776,6 +776,7 @@ function afterChange(){
 /* Dungeon runs: each encounter cleared gives a loot pick and a guaranteed ability pick. */
 /* points per clear by difficulty (0 Normal … 3 Master, 4 Grandmaster/Ultimate): harder content has more champions */
 const ART_PTS_FLAWLESS = 1, ART_PTS_REWARD = 2;
+const ENCOUNTER_ART_PTS = 1, DUNGEON_CLEAR_LIGHT = 2;   // dungeon encounters: 1 pick + 1 point; a full dungeon clear gets +2 bonus Light
 function artPtsFor(diff){ return diff>=4 ? 3 : diff===3 ? 2 : 1; }
 /* Artifact: chosen as an extra pick after the first completed event; swapping is an S-tier reward.
    Points fill the 7 slots: a mod costs its tier, and each slot only takes mods up to its tier limit. Reset is free. */
@@ -845,13 +846,10 @@ function encounterCleared(){
   const entry = {n:run.events.length+1, at:Date.now(), eventId:"encounter", event:"Encounter "+run.dungeon.encounters+" · "+dname, diff, diffName:DIFFS[diff], power, outcome:"clear", note:"", source:"encounter", loot:null, boons:[], lost:null, lightBefore:run.light};
   run.events.push(entry);
   run.depth++; run.score += power*10;
-  entry.artPts = artPtsFor(diff); run.artPts = (run.artPts||0) + entry.artPts;
-  entry.rewardLvl = power;
-  // an encounter is a completed event: Light like a clear (deaths aren't known mid-dungeon), 1 guaranteed pick + 1 per 4 Light
-  entry.lightGain = power; run.light += power;
-  let picks = GUARANTEED_PICKS; while(run.light >= LIGHT_PER_BOON){ run.light -= LIGHT_PER_BOON; picks++; }
-  entry.picks = picks;
-  run.pending = {eventN:entry.n, loot:[], boonsLeft:picks, boon:boonOffers(run, power, diff), lvl:power, diff};
+  // an encounter is a completed event: 1 guaranteed pick and 1 artifact point, no Light (Light comes from the full dungeon clear)
+  entry.artPts = ENCOUNTER_ART_PTS; run.artPts = (run.artPts||0) + entry.artPts;
+  entry.rewardLvl = power; entry.lightGain = 0; entry.picks = GUARANTEED_PICKS;
+  run.pending = {eventN:entry.n, loot:[], boonsLeft:GUARANTEED_PICKS, boon:boonOffers(run, power, diff), lvl:power, diff};
   if(!run.artifact){ run.pending.artFirst = true; run.pending.boonsLeft++; run.pending.boon = artifactOffers(run); }
   save(); render();
 }
@@ -1139,7 +1137,7 @@ function renderSetup(){
   return `<section class="panel">
     <div><h2>New run</h2><p class="startnote">Each starter build is set statically in the app: every class and subclass always starts from the same fixed build, and players can't change it.</p><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's starter build with common gear only. Anything you pick up in game during the run becomes usable, and clears unlock new abilities, aspects and fragments.</p></div>
     <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
-      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter is treated as a completed event with reward unlocks: tap Encounter cleared after each one to earn Light, a guaranteed pick and artifact points. Finishing the dungeon counts as one more event when it syncs, and deaths come from Bungie's record when the dungeon ends. You can run every dungeon in one run, back to back; the run keeps going until you're out of lives or end it. Can you beat them all in one run?" : "Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops), and so do dungeons, with the same rewards as a Dungeon Only Run: tap Encounter cleared after each encounter, and the full clear counts as one more event. Every finished op or dungeon gives an ability pick, and Light from harder or flawless clears earns bonus picks."}</p></div>
+      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter is treated as a completed event with reward unlocks: tap Encounter cleared after each one for a guaranteed pick and 1 artifact point. Finishing the dungeon counts as one more event when it syncs, with its Light plus a +2 Light dungeon bonus, and deaths come from Bungie's record when the dungeon ends. You can run every dungeon in one run, back to back; the run keeps going until you're out of lives or end it. Can you beat them all in one run?" : "Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops), and so do dungeons, with the same rewards as a Dungeon Only Run: tap Encounter cleared after each encounter, and the full clear counts as one more event. Every finished op or dungeon gives an ability pick, and Light from harder or flawless clears earns bonus picks."}</p></div>
     <div><h3>Mode</h3>${seg("difficulty", [["normal","Normal"],["hardcore","Hardcore"]], s.difficulty||"normal")}
       <p class="help" style="margin:6px 0 0">${(s.difficulty||"normal")==="hardcore" ? "Any death, or leaving an activity after 5 minutes, costs a life and every looted item you had equipped. Your starter commons are never lost." : "Clearing with no deaths earns bonus Light. Dying only reduces the Light you earn; failing an activity, or leaving after 5 minutes, costs a life."} Flawless clears earn +${2} Light and +25 score in both modes.</p><div class="startnote lightnote"><b>What is Light?</b> Light is the completion reward the app uses to decide how many rewards you get. Every completed event gives 1 guaranteed pick and earns Light equal to its power (activity tier + difficulty), +2 for a flawless clear. In Normal mode each death lowers it by 1 (minimum 1). Every 4 Light adds a bonus pick, and leftover Light carries over. Harder and cleaner clears mean more picks.</div></div>
     <div><h3>Class</h3>${seg("cls", CLASSES.map(c=>[c,c]), s.cls)}</div>
