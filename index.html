@@ -171,8 +171,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=8"></script>
-<script src="bungie.js?v=37"></script>
+<script src="tiers.js?v=9"></script>
+<script src="bungie.js?v=38"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -406,7 +406,8 @@ const TIER_OF_TYPE = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.f
 function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
 const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,artpts:1,artswap:1};
-const MAX_ASPECT_OFFERS = 2, MAX_FRAGMENTS = 6;
+const MAX_FRAGMENTS = 6;
+const ONE_PER_PICK = window.D2R_ONE_PER_PICK || ["S","A"];
 const TYPE_WEIGHT = {artswap:0.2};   // inside its tier, an artifact swap comes up less often than a super
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
 function boonOffers(run, lvl, diff){
@@ -427,11 +428,15 @@ function boonOffers(run, lvl, diff){
   cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
   if(run.lives<run.maxLives+2) cands.push({type:"life",label:"Revive Token",name:"+1 Life",n:1});
   if(run.lives+2<=run.maxLives+2 && Math.random()<0.35) cands.push({type:"life",label:"Revive Tokens",name:"+2 Lives",n:2});
-  const odds = oddsFor(lvl), out = [], aspMax = Math.min(MAX_ASPECT_OFFERS, Math.max(0, 2 - a.aspects.length));
+  const odds = oddsFor(lvl), out = []
   let pool = cands.slice();
   // Master / Grandmaster: chance that one choice is guaranteed S tier (tiers.js D2R_S_FLOOR)
-  const sAll = pool.filter(o=>tierOfType(o.type)==="S"), sSup = sAll.filter(o=>o.type==="super"), sPool = sSup.length ? sSup : sAll;
-  if(sPool.length && Math.random() < sFloor(diff)){ const choice = pick(sPool); out.push(choice); pool.splice(pool.indexOf(choice),1); }
+  const sAll = pool.filter(o=>tierOfType(o.type)==="S");
+  if(sAll.length && Math.random() < sFloor(diff)){
+    const types = {}; sAll.forEach(o=>{ (types[o.type] = types[o.type]||[]).push(o); });
+    const k = weighted(Object.keys(types).map(k=>({k, w:TYPE_WEIGHT[k]||1}))).k;
+    out.push(pick(types[k])); pool = pool.filter(o=>tierOfType(o.type)!=="S");
+  }
   while(out.length<3 && pool.length){
     const byTier = {}; pool.forEach(o=>{ const t = tierOfType(o.type); (byTier[t] = byTier[t]||[]).push(o); });
     const tiers = Object.keys(byTier).map(t=>({t, w:odds[t]||0}));
@@ -443,8 +448,9 @@ function boonOffers(run, lvl, diff){
     const choice = pick(types[k]);
     out.push(choice);
     pool.splice(pool.indexOf(choice),1);
-    // aspects: at most 2 per pick, and never more than the open aspect slots
-    if(choice.type==="aspect" && out.filter(o=>o.type==="aspect").length >= aspMax) pool = pool.filter(o=>o.type!=="aspect");
+    // S and A tiers (supers, artifact swaps, aspects): at most one per pick
+    const ct = tierOfType(choice.type);
+    if(ONE_PER_PICK.includes(ct)) pool = pool.filter(o=>tierOfType(o.type)!==ct);
   }
   return out;
 }
@@ -753,7 +759,7 @@ function showTierList(){
   const odds = (window.D2R_REWARD_ODDS||[]).map((o,i,arr)=>`<tr><td>${o.upTo===Infinity?(arr[i-1]?arr[i-1].upTo+1:0)+"+":"up to "+o.upTo}</td>${TIER_ORDER.map(t=>`<td>${o[t]||0}%</td>`).join("")}</tr>`).join("");
   $("#modal").innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Reward tier list"><div class="panel" style="max-width:900px;max-height:90vh;overflow:auto">
     <div class="row between"><h2>Reward tier list · ${esc(c)} ${esc(cap(e))}</h2><button class="btn ghost" data-act="closeModal">Close</button></div>
-    <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick offers at most 2 aspects, and only as many as you have open aspect slots. Fragments can show up even when your slots are full; the card warns you. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
+    <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick offers at most one S reward and one A reward. Fragments can show up even when your slots are full; the card warns you. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
     ${rows}
     <p class="help">Master: ${Math.round(sFloor(3)*100)}% chance a pick includes an S reward. Grandmaster/Ultimate: ${Math.round(sFloor(4)*100)}%. On top of that, every choice rolls the odds below.</p><h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
   </div></div>`;
