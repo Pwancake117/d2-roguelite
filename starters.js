@@ -26,7 +26,7 @@ window.D2R_STARTERS = {
        melee: Phantom Surge, Snare Bomb
        classAbility: Marksman's Dodge, Gambler's Dodge
     */
-    "void": {super: "Shadowshot: Deadfall", grenade: "Vortex", jump: "High Jump", melee: "Snare Bomb", classAbility: "Marksman's Dodge"},
+    "void": {super: "Shadowshot: Moebius Quiver", grenade: "Magnetic", jump: "High Jump", melee: "Snare Bomb", classAbility: "Marksman's Dodge"},
     /* stasis options
        super: Silence and Squall
        grenade: Duskfield, Glacier, Shatter, Coldsnap
