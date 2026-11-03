@@ -238,6 +238,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .starteredit select{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px}
 .about p{max-width:80ch;margin:8px 0}
 .about summary{cursor:pointer}
+.privacy{margin:0;padding:8px 10px;border-left:3px solid var(--good);background:rgba(95,227,154,.06)}
 .saverow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .saverow > div:first-child{display:grid;gap:2px}
 .manualoff{display:grid;gap:4px;padding:10px 12px;border:1px dashed var(--line);border-radius:6px}
@@ -313,7 +314,7 @@ table thead th{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;co
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=84"></script>
+<script src="bungie.js?v=85"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1334,7 +1335,7 @@ function renderBungie(run){
   if(!B.connected()){
     return `<section class="panel bungie"><div class="row between"><div><h2>Bungie.net</h2>
       <p class="help" style="margin:4px 0 0">Connect your Bungie account and the app equips your run loadout in game, sets your subclass after every unlock, and logs finished activities for you.</p></div>
-      <button class="btn primary" data-act="bLogin">Connect Bungie account</button></div>${logHtml?`<ul class="blog">${logHtml}</ul>`:""}</section>`;
+      <button class="btn primary" data-act="bLogin">Connect Bungie account</button></div><p class="help privacy">🔒 This app only links to Bungie's official API. You sign in on bungie.net itself, so the app never sees your password or account details. It only gets permission to read your Destiny inventory and move or equip your gear, and your run data stays in this browser. Disconnect anytime.</p>${logHtml?`<ul class="blog">${logHtml}</ul>`:""}</section>`;
   }
   const chars = B.chars||[];
   const cid = run ? B.pickChar(run) : null;

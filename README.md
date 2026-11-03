@@ -18,6 +18,10 @@ I started on this idea a while back, but was recently inspired by Lep's Dungeon 
 
 I may look at adding exotics as drop options, but that could get tedious, since you'd need to pull them from Collections if they aren't already in your vault.
 
+## Your Bungie account
+
+This app only links to Bungie's official API. You sign in on bungie.net itself (Bungie's own sign-in page), so the app never sees your password or account details. It only gets permission to read your Destiny inventory and to move or equip your gear, and your run data stays in your browser. You can disconnect anytime in the app, or remove the app's access from your bungie.net account settings.
+
 ## Before your first run: pull common gear from Collections
 
 The app equips your starting gear for you, but it can only use items you own. Collections can't be reached through Bungie's API, so this one step happens in game.
