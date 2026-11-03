@@ -531,6 +531,36 @@ B.loadArtifact = async () => {
   } catch(e){ return B.artifact; }
 };
 
+/* Equip the run's artifact and put its mods in, on the run's character. Artifacts are instanced items
+   (one copy per character, in bucket 1506418338). Mods go in with InsertSocketPlugFree if Bungie allows it. */
+B.applyArtifact = async (run, {quiet}={}) => {
+  if(!B.connected() || !B.charId || !run || !run.artifact) return false;
+  const want = (window.ARTIFACTS||[]).find(x=>x.n===run.artifact.n); if(!want) return false;
+  try {
+    const a = B.account;
+    let live = await B.loadArtifact();
+    if(!live || live.name!==want.n){
+      const c = await api(`/Destiny2/${a.type}/Profile/${a.id}/Character/${B.charId}/?components=201`);
+      const it = (c.inventory && c.inventory.data && c.inventory.data.items || []).find(i=>i.itemHash===want.h && i.itemInstanceId);
+      if(!it){ if(!quiet) note(want.n+" isn't on this character. Unlock it in game first.","err"); return false; }
+      await api("/Destiny2/Actions/Items/EquipItem/", {method:"POST", body:{itemId:it.itemInstanceId, characterId:B.charId, membershipType:a.type}});
+      await sleep(800);
+      live = await B.loadArtifact();
+    }
+    let modsOk = true, changed = 0;
+    for(let i=0;i<7;i++){
+      const m = run.artSlots && run.artSlots[i], target = m ? m.h : EMPTY_ART_MOD, cur = live && live.slots[i] || EMPTY_ART_MOD;
+      if(cur===target) continue;
+      try { await insertPlug(live.inst, B.charId, i, target); changed++; }
+      catch(e){ modsOk = false; if(needsOrbit(e)) B.pendingOrbit = true; }
+    }
+    if(changed) await B.loadArtifact();
+    if(!quiet) note(modsOk ? "Artifact set: "+want.n+(changed?" with "+changed+" mod change"+(changed>1?"s":""):"")+"." : "Equipped "+want.n+", but Bungie wouldn't change its mods from here. Set them in game.", modsOk?"ok":"err");
+    window.render && window.render();
+    return modsOk;
+  } catch(e){ if(needsOrbit(e)) B.pendingOrbit = true; if(!quiet) note(friendly(e),"err"); return false; }
+};
+
 /* Which activity is the run's character in right now? Used to detect dungeons live. */
 B.current = null;
 B.pollCurrent = async run => {
