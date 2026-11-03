@@ -252,6 +252,9 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .about p{max-width:80ch;margin:8px 0}
 .about summary{cursor:pointer}
 .startnote{margin:6px 0 4px;padding:6px 10px;border-left:3px solid var(--accent);background:rgba(127,212,255,.07);font-size:.85rem}
+.dlist{display:grid;gap:6px}
+.dchip{color:var(--muted);font-size:.78rem}
+.dchip.done{color:#06121b;background:var(--good);border-color:var(--good);font-weight:700}
 .privacy{margin:0;padding:8px 10px;border-left:3px solid var(--good);background:rgba(95,227,154,.06)}
 .saverow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .saverow > div:first-child{display:grid;gap:2px}
@@ -357,7 +360,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=91"></script>
+<script src="bungie.js?v=92"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -694,6 +697,9 @@ function logEvent(form){
 }
 const FLAWLESS_LIGHT = 2, FLAWLESS_SCORE = 25, GUARANTEED_PICKS = 1;
 /* x: {eventId, diff, completed, deaths, note, at, instanceId, loot:[names], equippedLoot:[instance ids]} */
+/* The 11 dungeons in the game (from Bungie's activity data, Nov 2026). Dungeon runs track which ones you've beaten. */
+const DUNGEONS = ["The Shattered Throne","Pit of Heresy","Prophecy","Grasp of Avarice","Duality","Spire of the Watcher","Ghosts of the Deep","Warlord's Ruin","Vesper's Host","Sundered Doctrine","Equilibrium"];
+function dungeonOf(name){ const n = (name||"").toLowerCase(); return DUNGEONS.find(d=>n.startsWith(d.toLowerCase()) || n.startsWith(d.toLowerCase().replace(/^the /,""))) || null; }
 function logEventData(x, noRender){
   const run = state.run; if(!run || run.pending || run.status!=="active") return;
   const list = eventsFor(run);
@@ -706,6 +712,7 @@ function logEventData(x, noRender){
   const outcome = flawless ? "flawless" : completed ? "clear" : "death";
   const entry = {n:run.events.length+1, at:x.at||Date.now(), eventId:ev.id, event:ev.name, diff, diffName:DIFFS[diff], power, outcome, deaths, note:x.note||"", source:x.instanceId?"bungie":"manual",
     loot:(x.loot&&x.loot.length)?x.loot.join(", "):null, boons:[], lost:null, lifeLost:false, lightBefore:run.light, scoreBefore:run.score, lightGain:0};
+  if(ev.id==="dungeon" && completed){ const dn = dungeonOf(x.note) || dungeonOf(run.dungeon && run.dungeon.name); if(dn){ run.dungeonsBeaten = run.dungeonsBeaten||[]; if(!run.dungeonsBeaten.includes(dn)){ run.dungeonsBeaten.push(dn); entry.newDungeon = dn; } } }
   if(ev.id==="dungeon" && run.dungeon){ entry.note = (entry.note?entry.note+" · ":"")+run.dungeon.encounters+" encounter"+(run.dungeon.encounters===1?"":"s")+" cleared"; run.dungeon = null; }
   run.events.push(entry);
   run.deaths += deaths;
@@ -887,7 +894,7 @@ function endRun(result){
   const highest = run.events.filter(e=>e.outcome==="clear"||e.outcome==="flawless").reduce((m,e)=>Math.max(m,e.diff),-1);
   state.history.unshift({
     id:run.id, mode:run.mode||"ops", cls:run.cls, el:run.el, startedAt:run.startedAt, endedAt:run.endedAt, result, depth:run.depth, deaths:run.deaths,
-    score:run.score, boons:run.boons, highestDiff: highest>=0 ? DIFFS[highest] : "None", events:run.events,
+    dungeonsBeaten:(run.dungeonsBeaten||[]).slice(), score:run.score, boons:run.boons, highestDiff: highest>=0 ? DIFFS[highest] : "None", events:run.events,
     finalLoadout:{weapons:run.weapons.map(itemLabel), armor:run.armor.map(a=>a.name), abilities:run.ab}
   });
   state.history = state.history.slice(0,30);
@@ -1194,6 +1201,7 @@ function renderStatus(run){
     ${(()=>{ const pts = artLeft(run), can = run.artifact && pts>0;
       return can ? `<button class="stat-hot" data-act="tab" data-tab="artifact" title="Open the Artifact tab to spend"><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="hotcta">Spend now ›</span></button>`
         : `<div><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="lbl">${run.artifact?esc(run.artifact.n):"No artifact yet"}</span></div>`; })()}
+    ${run.mode==="dungeon"?`<div title="${esc((run.dungeonsBeaten||[]).join(", ")||"None yet")}"><span class="lbl">Dungeons beaten</span><span class="val">${(run.dungeonsBeaten||[]).length}/${DUNGEONS.length}</span></div>`:""}
     <div><span class="lbl">Deaths</span><span class="val">${run.deaths}</span></div>
     <div><span class="lbl">Score</span><span class="val">${run.score}</span></div>
   </section>`;
@@ -1275,6 +1283,11 @@ function renderPending(run){
   }
   return html + `</div>`;
 }
+function dungeonChecklist(run){
+  const done = run.dungeonsBeaten||[];
+  return `<div class="dlist"><div class="row between"><span class="glabel">Dungeons beaten: ${done.length} / ${DUNGEONS.length}</span>${done.length===DUNGEONS.length?`<span class="res clear">All dungeons beaten!</span>`:`<span class="help">Can you beat them all in one run?</span>`}</div>
+    <div class="chips">${DUNGEONS.map(d=>`<span class="chip dchip ${done.includes(d)?"done":""}">${done.includes(d)?"✓ ":""}${esc(d)}</span>`).join("")}</div></div>`;
+}
 function renderDungeonPanel(run){
   const B = window.D2R_BUNGIE, cur = B && B.current, d = run.dungeon;
   const live = cur ? `<b>In ${esc(cur.name)}</b>${cur.diff?` · ${esc(DIFFS[cur.diff])}`:""}` : (B && B.connected() ? "Not in a dungeon right now. The app checks every 20 seconds." : "Connect Bungie to detect dungeons automatically.");
@@ -1282,6 +1295,7 @@ function renderDungeonPanel(run){
   return `<section class="callout dungeon">
     <div class="row between"><h2 style="color:var(--accent)">Dungeon tracker</h2><span class="help">${live}</span></div>
     <p style="margin:0">${d ? `${esc(d.name)}: <b>${n}</b> encounter${n===1?"":"s"} cleared this clear.` : "Tap the button after each encounter you beat (bosses and major fights). Each one gives an ability unlock; the gear you pick up in game is yours to use."}</p>
+    ${dungeonChecklist(run)}
     <div class="row"><button class="btn primary big" data-act="encounter">Encounter cleared</button>
     <span class="help">When the dungeon ends, Bungie's record logs the clear, your deaths and your loot.</span></div>
   </section>`;
@@ -1334,7 +1348,7 @@ function renderHistory(){
   return `<section class="panel">
     <div class="row between"><h2>Run history</h2><div class="row"><button class="btn dlbtn" data-act="export" data-kind="csv">Export CSV</button><button class="btn dlbtn" data-act="export" data-kind="json">Export JSON</button></div></div>
     ${h.length ? `<div class="tablewrap"><table><thead><tr><th>Ended</th><th>Run</th><th>Guardian</th><th>Result</th><th>Events cleared</th><th>Deaths</th><th>Top difficulty</th><th>Score</th><th>Length</th></tr></thead><tbody>
-      ${h.map(r=>`<tr><td>${fmtTime(r.endedAt)}</td><td>${r.mode==="dungeon"?"Dungeon":"Vanguard Ops"}</td><td><span class="chip el el-${r.el}">${ELEMENTS[r.el].name} ${r.cls}</span></td><td><span class="res ${r.result}">${r.result==="death"?"Died":"Ended"}</span></td><td class="num">${r.depth}</td><td class="num">${r.deaths}</td><td>${esc(r.highestDiff)}</td><td class="num">${r.score}</td><td class="num">${fmtDur(r.endedAt-r.startedAt)}</td></tr>`).join("")}
+      ${h.map(r=>`<tr><td>${fmtTime(r.endedAt)}</td><td>${r.mode==="dungeon"?"Dungeon":"Vanguard Ops"}</td><td><span class="chip el el-${r.el}">${ELEMENTS[r.el].name} ${r.cls}</span></td><td><span class="res ${r.result}">${r.result==="death"?"Died":"Ended"}</span></td><td class="num">${r.depth}${r.mode==="dungeon"&&r.dungeonsBeaten?` <span class="help">(${r.dungeonsBeaten.length}/${DUNGEONS.length} dungeons)</span>`:""}</td><td class="num">${r.deaths}</td><td>${esc(r.highestDiff)}</td><td class="num">${r.score}</td><td class="num">${fmtDur(r.endedAt-r.startedAt)}</td></tr>`).join("")}
     </tbody></table></div>` : `<div class="empty-note">Finished runs show up here with events cleared, deaths and score. Exports include every event you logged.</div>`}
   </section>`;
 }
@@ -1343,7 +1357,7 @@ function renderEnded(){
   const dead = r.result==="death";
   return `<section class="callout ${dead?"dead":""}">
     <h2 style="color:${dead?"var(--danger)":"var(--accent)"}">${dead?"Run over: your Light fades":"Run ended"}</h2>
-    <p style="margin:0">${ELEMENTS[r.el].name} ${r.cls} cleared <b>${r.depth}</b> event${r.depth===1?"":"s"} (of ${r.events.length} played) with a score of <b>${r.score}</b>. Highest difficulty cleared: ${esc(r.highestDiff)}.</p>
+    <p style="margin:0">${ELEMENTS[r.el].name} ${r.cls} cleared <b>${r.depth}</b> event${r.depth===1?"":"s"} (of ${r.events.length} played) with a score of <b>${r.score}</b>. Highest difficulty cleared: ${esc(r.highestDiff)}.${r.mode==="dungeon"?` Dungeons beaten: <b>${(r.dungeonsBeaten||[]).length} / ${DUNGEONS.length}</b>${(r.dungeonsBeaten||[]).length===DUNGEONS.length?" — all of them!":""}.`:""}</p>
     <div class="row"><button class="btn primary" data-act="dismiss">Set up next run</button><button class="btn dlbtn" data-act="export" data-kind="csv">Export CSV</button></div>
   </section>`;
 }
