@@ -251,6 +251,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .starteredit select{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px}
 .about p{max-width:80ch;margin:8px 0}
 .about summary{cursor:pointer}
+.startnote{margin:6px 0 4px;padding:6px 10px;border-left:3px solid var(--accent);background:rgba(127,212,255,.07);font-size:.85rem}
 .privacy{margin:0;padding:8px 10px;border-left:3px solid var(--good);background:rgba(95,227,154,.06)}
 .saverow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .saverow > div:first-child{display:grid;gap:2px}
@@ -356,7 +357,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=87"></script>
+<script src="bungie.js?v=88"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1125,7 +1126,7 @@ function renderSetup(){
   const s = ui.setup;
   const seg = (name, opts, cur, cls="") => `<div class="seg" role="radiogroup">${opts.map(([v,l,extra])=>`<input type="radio" name="${name}" id="${name}-${v}" value="${v}" ${v===cur?"checked":""}><label for="${name}-${v}" class="${cls} ${extra||""}">${l}</label>`).join("")}</div>`;
   return `<section class="panel">
-    <div><h2>New run</h2><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's base build with common gear only. Anything you pick up in game during the run becomes usable, and clears unlock new abilities, aspects and fragments.</p></div>
+    <div><h2>New run</h2><p class="startnote">Each starter build is set statically in the app: every class and subclass always starts from the same fixed build, and players can't change it.</p><p class="help">Pick a Guardian and subclass. Every run starts from that subclass's starter build with common gear only. Anything you pick up in game during the run becomes usable, and clears unlock new abilities, aspects and fragments.</p></div>
     <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
       <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives an ability unlock, and finishing the dungeon earns Light. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Every finished op gives an ability pick, and Light from harder or flawless clears earns bonus picks."}</p></div>
     <div><h3>Mode</h3>${seg("difficulty", [["normal","Normal"],["hardcore","Hardcore"]], s.difficulty||"normal")}
