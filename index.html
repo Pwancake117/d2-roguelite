@@ -224,6 +224,11 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .pickbanner{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 16px;border-radius:6px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel));animation:hotpulse 2.2s ease-in-out infinite}
 .pickbanner b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.08em;color:#fff}
 .pickhead{display:flex;align-items:center;gap:8px}
+.synccard{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}
+.synccard > div{display:grid;gap:2px}
+.synccard b{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em}
+.synccard.hot{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel-2));animation:hotpulse 2.2s ease-in-out infinite}
+.syncbtn{white-space:nowrap;font-size:1.05rem}
 .switcher{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .swbtn{font:inherit;font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem;padding:6px 12px;border-radius:4px;border:1px solid var(--line);border-left:3px solid var(--el,var(--accent));background:var(--panel-2);color:var(--muted);cursor:pointer}
 .swbtn.on{color:#fff;border-color:var(--el,var(--accent));background:color-mix(in srgb,var(--el,var(--accent)) 22%,var(--panel-2))}
@@ -242,7 +247,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=49"></script>
+<script src="bungie.js?v=50"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1097,6 +1102,18 @@ function renderDungeonPanel(run){
     <span class="help">When the dungeon ends, Bungie's record logs the clear, your deaths and your loot.</span></div>
   </section>`;
 }
+/* Sync card: big, always at the top of the event column; glows right after you finish an activity */
+function renderSyncCard(run){
+  const B = window.D2R_BUNGIE; if(!B || !B.connected()) return "";
+  const mins = B.lastSync ? Math.max(0, Math.round((Date.now()-B.lastSync)/60000)) : null;
+  const justLeft = B.justLeft && (!B.lastSync || B.lastSync < B.justLeft) && Date.now()-B.justLeft < 30*60000;
+  const stale = mins==null || mins>=10;
+  const hot = justLeft || stale;
+  const msg = justLeft ? "You just finished an activity. Sync to log it, get your rewards and pick up loot and engrams."
+    : stale ? "Finished an event? Sync now to log it and credit your loot."
+    : "Sync after every event to log it, get rewards and credit loot and engrams.";
+  return `<div id="synccard" class="synccard ${hot?"hot":""}"><button class="btn primary big syncbtn" data-act="bSync" ${B.busy?"disabled":""}>${B.busy?"Syncing…":"⟳ Sync now"}</button><div><b>${justLeft?"Activity finished":"After each event: sync"}</b><span class="help">${msg} ${mins==null?"Not synced yet.":`Last synced ${mins===0?"just now":mins+" min ago"}.`}</span></div></div>`;
+}
 function renderEventForm(run){
   const list = eventsFor(run);
   return `${run && run.mode==="dungeon" ? renderDungeonPanel(run) : ""}<form id="evform" class="panel" style="background:var(--panel-2)">
@@ -1149,6 +1166,7 @@ function render(){
     html += renderStatus(run);
     html += renderBungie(run);
     html += `<div class="grid2">${renderLoadout(run)}<section class="panel"><div style="display:grid;gap:14px">
+      ${renderSyncCard(run)}
       ${run.pending ? renderPending(run) : renderEventForm(run)}
       <h2>Event log</h2>${renderEventLog(run.events)}
       <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
@@ -1236,6 +1254,7 @@ async function watchActivity(){
   else if((B.current && B.current.started) !== beforeDungeon) render();
 }
 setInterval(watchActivity, 20000);
+setInterval(()=>{ const el = document.getElementById("synccard"); if(el && state.run && state.run.status==="active"){ const t = document.createElement("div"); t.innerHTML = renderSyncCard(state.run); if(t.firstElementChild) el.replaceWith(t.firstElementChild); } }, 10000);
 setInterval(()=>{ const B = window.D2R_BUNGIE; if(B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && !document.hidden) bungieSync(true); }, 60000);
 document.addEventListener("visibilitychange", ()=>{ const B = window.D2R_BUNGIE; if(!document.hidden && B && B.connected() && B.opts.autoSync && state.run && state.run.status==="active" && Date.now()-B.lastSync>30000){ bungieSync(true); watchActivity(); } });
 
