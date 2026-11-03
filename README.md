@@ -72,6 +72,8 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 
 **Starter builds:** every class and subclass starts from a fixed starter build (super, grenade, jump, melee, class ability), set in `starters.js`. Each build lists that subclass's options above it; change a name to change the build. The start screen shows the build for the class and subclass you pick.
 
+**Rerolls:** on any reward pick you can press **⟳ Reroll** to redraw all 3 choices for **1 unspent artifact point**, once per pick. The new choices follow the same tier odds and difficulty boosts.
+
 ### Reward tiers
 
 Rewards are tiered by type (set in `tiers.js`):

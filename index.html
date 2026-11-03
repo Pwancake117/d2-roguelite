@@ -243,7 +243,9 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .artslot.canfill:hover{background:color-mix(in srgb,var(--accent) 22%,var(--panel-2))}
 .pickbanner{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 16px;border-radius:6px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--panel));animation:hotpulse 2.2s ease-in-out infinite}
 .pickbanner b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.08em;color:#fff}
-.pickhead{display:flex;align-items:center;gap:8px}
+.pickhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn.reroll{margin-left:auto;border-color:var(--accent);color:var(--accent)}
+.btn.reroll[disabled]{opacity:.45;cursor:not-allowed}
 .synccard{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}
 .synccard > div{display:grid;gap:2px}
 .starteredit{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
@@ -360,7 +362,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=95"></script>
+<script src="bungie.js?v=96"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -866,6 +868,16 @@ function takeLoot(i){
   if(!p.boonsLeft) run.pending = null;
   save(); afterChange(); render();
 }
+/* Reroll: redraw all 3 choices of the current pick for 1 unspent artifact point, once per pick */
+const REROLL_COST = 1;
+function rerollPick(){
+  const run = state.run, p = run && run.pending; if(!p || !p.boon || p.rerollAt===p.boonsLeft || artLeft(run)<REROLL_COST) return;
+  run.artPts -= REROLL_COST; p.rerollAt = p.boonsLeft;
+  p.boon = p.boon.some(b=>b.type==="artpick") ? artifactOffers(run) : boonOffers(run, p.lvl, p.diff);
+  const ev = run.events.find(e=>e.n===p.eventN); if(ev){ ev.rerolls = (ev.rerolls||0)+1; }
+  run.rerolls = (run.rerolls||0)+1;
+  save(); render(); toast("Rerolled for "+REROLL_COST+" artifact point.");
+}
 function takeBoon(i){
   const run = state.run, p = run.pending; if(!p || !p.boon) return;
   const b = p.boon[i], a = run.ab;
@@ -968,6 +980,7 @@ function undoLast(){
   run.events.pop(); if(ev.outcome!=="death") run.depth--; run.score = ev.scoreBefore ?? (run.score - ev.power*10); run.deaths -= ev.deaths||0; if(ev.lifeLost) run.lives++;
   run.light = ev.lightBefore ?? 0;
   if(ev.artPts) run.artPts = Math.max(0, (run.artPts||0) - ev.artPts);
+  if(ev.rerolls) run.artPts = (run.artPts||0) + ev.rerolls*REROLL_COST;
   run.pending = null;
   save(); render(); toast("Last event removed");
 }
@@ -1277,7 +1290,8 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}</div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
+    const canReroll = p.rerollAt!==p.boonsLeft && artLeft(run)>=REROLL_COST;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
@@ -1479,6 +1493,7 @@ document.addEventListener("click", e=>{
   if(act==="start") startRun();
   else if(act==="loot") takeLoot(parseInt(b.dataset.i,10));
   else if(act==="boon") takeBoon(parseInt(b.dataset.i,10));
+  else if(act==="reroll") rerollPick();
   else if(act==="undo") undoLast();
   else if(act==="encounter") encounterCleared();
   else if(act==="artReset") resetArtifact();
