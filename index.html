@@ -249,7 +249,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=52"></script>
+<script src="bungie.js?v=53"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1006,13 +1006,13 @@ function renderStatus(run){
   const pct = Math.round(run.light/LIGHT_PER_BOON*100);
   const picks = run.pending ? (run.pending.boonsLeft||0) + (run.pending.loot&&run.pending.loot.length?1:0) : 0;
   return `${picks?`<div class="pickbanner" role="status"><b>${picks} reward pick${picks>1?"s":""} waiting</b><span>Choose ${picks>1?"them":"it"} in the Ability unlock panel before logging your next event.</span></div>`:""}<section class="status">
-    <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>Depth ${run.depth}</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
+    <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>${run.depth} event${run.depth===1?"":"s"} cleared</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to bonus pick</span><span class="val">${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
     ${(()=>{ const pts = artLeft(run), can = run.artifact && pts>0;
       return can ? `<button class="stat-hot" data-act="tab" data-tab="artifact" title="Open the Artifact tab to spend"><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="hotcta">Spend now ›</span></button>`
         : `<div><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="lbl">${run.artifact?esc(run.artifact.n):"No artifact yet"}</span></div>`; })()}
-    <div><span class="lbl">Events / Deaths</span><span class="val">${run.events.length} / ${run.deaths}</span></div>
+    <div><span class="lbl">Deaths</span><span class="val">${run.deaths}</span></div>
     <div><span class="lbl">Score</span><span class="val">${run.score}</span></div>
   </section>`;
 }
@@ -1052,7 +1052,7 @@ function renderCharacterTab(run){
   const pm = B && B.profile ? run.weapons.concat(run.armor).concat(held).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
   const engHtml = held.length ? `<div class="gslot engrams"><div class="glabel">Engrams (${held.length})</div>${held.map(e=>{ const d = B && B.defs && B.defs[e.hash], w = B ? B.whereIs(e.inst) : null;
       return `<div class="gtile r-${e.rarity}" title="${esc(e.name+" from "+e.event)}"><div class="gicon">${d&&d.i?`<img src="${ICON_ROOT+d.i}" alt="">`:`<span class="ph">E</span>`}</div><div class="gtext"><span class="rtag">${esc(e.rarity)} ${w?`<span class="where w-${w.replace(/ /g,"-")}">${WHERE_LABEL[w]||w}</span>`:""}</span><span class="nm">${esc(e.name)}${d&&d.tn?` <span class="help">${esc(d.tn)}</span>`:""}</span><span class="sub">From ${esc(e.event)}</span></div></div>`; }).join("")}<p class="help">Decrypt these in game; what comes out is added to your run and credited to the event.</p></div>` : "";
-  const center = `<div class="gcenter el-${run.el}"><div class="emblem"><span>${esc(ELEMENTS[run.el].name)}</span></div><b class="gclass">${esc(run.cls)}</b><span class="help">Depth ${run.depth} · ${run.lives} ${run.lives===1?"life":"lives"}</span>${pm?`<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${pm} from Postmaster</button>`:""}<p class="help">Equip anything shown here. Gear you pick up in game is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>${engHtml}</div>`;
+  const center = `<div class="gcenter el-${run.el}"><div class="emblem"><span>${esc(ELEMENTS[run.el].name)}</span></div><b class="gclass">${esc(run.cls)}</b><span class="help">${run.depth} event${run.depth===1?"":"s"} cleared · ${run.lives} ${run.lives===1?"life":"lives"}</span>${pm?`<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${pm} from Postmaster</button>`:""}<p class="help">Equip anything shown here. Gear you pick up in game is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>${engHtml}</div>`;
   return `<div class="charscreen"><div class="gcol"><h3>Weapons</h3>${wcol}</div>${center}<div class="gcol"><h3>Armor</h3>${acol}</div></div>`;
 }
 function renderSubclassTab(run){
@@ -1151,9 +1151,9 @@ function renderHistory(){
   const h = state.history;
   return `<section class="panel">
     <div class="row between"><h2>Run history</h2><div class="row"><button class="btn" data-act="export" data-kind="csv">Export CSV</button><button class="btn" data-act="export" data-kind="json">Export JSON</button></div></div>
-    ${h.length ? `<div class="tablewrap"><table><thead><tr><th>Ended</th><th>Run</th><th>Guardian</th><th>Result</th><th>Depth</th><th>Deaths</th><th>Top difficulty</th><th>Score</th><th>Length</th></tr></thead><tbody>
+    ${h.length ? `<div class="tablewrap"><table><thead><tr><th>Ended</th><th>Run</th><th>Guardian</th><th>Result</th><th>Events cleared</th><th>Deaths</th><th>Top difficulty</th><th>Score</th><th>Length</th></tr></thead><tbody>
       ${h.map(r=>`<tr><td>${fmtTime(r.endedAt)}</td><td>${r.mode==="dungeon"?"Dungeon":"Vanguard Ops"}</td><td><span class="chip el el-${r.el}">${ELEMENTS[r.el].name} ${r.cls}</span></td><td><span class="res ${r.result}">${r.result==="death"?"Died":"Extracted"}</span></td><td class="num">${r.depth}</td><td class="num">${r.deaths}</td><td>${esc(r.highestDiff)}</td><td class="num">${r.score}</td><td class="num">${fmtDur(r.endedAt-r.startedAt)}</td></tr>`).join("")}
-    </tbody></table></div>` : `<div class="empty-note">Finished runs show up here with depth, deaths and score. Exports include every event you logged.</div>`}
+    </tbody></table></div>` : `<div class="empty-note">Finished runs show up here with events cleared, deaths and score. Exports include every event you logged.</div>`}
   </section>`;
 }
 function renderEnded(){
@@ -1161,7 +1161,7 @@ function renderEnded(){
   const dead = r.result==="death";
   return `<section class="callout ${dead?"dead":""}">
     <h2 style="color:${dead?"var(--danger)":"var(--accent)"}">${dead?"Run over: your Light fades":"Extracted"}</h2>
-    <p style="margin:0">${ELEMENTS[r.el].name} ${r.cls} reached depth <b>${r.depth}</b> with a score of <b>${r.score}</b> over ${r.events.length} events. Highest difficulty cleared: ${esc(r.highestDiff)}.</p>
+    <p style="margin:0">${ELEMENTS[r.el].name} ${r.cls} cleared <b>${r.depth}</b> event${r.depth===1?"":"s"} (of ${r.events.length} played) with a score of <b>${r.score}</b>. Highest difficulty cleared: ${esc(r.highestDiff)}.</p>
     <div class="row"><button class="btn primary" data-act="dismiss">Set up next run</button><button class="btn" data-act="export" data-kind="csv">Export CSV</button></div>
   </section>`;
 }
