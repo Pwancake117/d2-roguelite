@@ -264,7 +264,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=81"></script>
+<script src="bungie.js?v=82"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1015,7 +1015,7 @@ function renderGuide(){
        <td>${tick(!x.armorMissing.length)} ${x.armorHave}/5${x.armorMissing.length?` <span class="help">needs ${esc(x.armorMissing.join(", ").toLowerCase())}</span>`:""}</td></tr>`).join("")}
     </tbody></table></div><p class="help" style="margin:0">Counts are copies you own anywhere on the account. Weapons are shared between classes; armor is not.</p>` : `<p class="help" style="margin:0">Connect your Bungie account to see which classes are ready.</p>`;
   const allReady = r && r.filter(x=>x.has).every(x=>x.kinetic&&x.energy&&x.power&&!x.armorMissing.length);
-  return `<details class="panel guide" ${allReady?"":"open"}>
+  return `<details class="panel guide">
     <summary><h2 style="display:inline">Setup guide: pull common gear for each class</h2>${allReady?` <span class="res clear">All classes ready</span>`:""}</summary>
     ${table}
     <div class="guidecols">
@@ -1269,10 +1269,10 @@ function render(){
     html += renderEnded();
   } else {
     html += renderAbout();
+    html += renderGuide();
     html += renderBungie(null);
     html += renderSaved();
     html += renderSetup();
-    html += renderGuide();
   }
   html += renderHistory();
   $("#app").innerHTML = html;
