@@ -135,6 +135,7 @@ button.artslot:not([disabled]){cursor:pointer}.artslot.sel{border-color:var(--ac
 .desc.muted{opacity:.5}
 .dstat{color:var(--muted);font-size:.75rem}
 .offer .dstat{display:block;margin-top:2px}
+.capline{color:var(--accent);font-weight:600}
 .desclist{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
 .callout{border:1px solid var(--accent);background:rgba(127,212,255,.06);border-radius:6px;padding:14px;display:grid;gap:10px}
 .callout.dead{border-color:var(--danger);background:rgba(255,93,93,.07)}
@@ -170,7 +171,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=7"></script>
-<script src="bungie.js?v=35"></script>
+<script src="bungie.js?v=36"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -226,10 +227,11 @@ function descOf(run, type, name){
   if(!d){ wantDesc.add(h); return null; }
   return d;
 }
-function descHtml(d){ return d ? `<span class="desc">${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}</span>` : `<span class="desc muted">Loading description…</span>`; }
+const capText = d => d && d.cap ? `<span class="dstat capline">Opens ${d.cap} fragment slot${d.cap>1?"s":""}</span>` : "";
+function descHtml(d){ return d ? `<span class="desc">${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}</span>${capText(d)}` : `<span class="desc muted">Loading description…</span>`; }
 function descList(run, type, names){
   if(!names.length) return "";
-  return `<ul class="desclist">${names.map(n=>{ const d = descOf(run,type,n); return `<li><b>${esc(n)}</b>${d?` — ${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}`:""}</li>`; }).join("")}</ul>`;
+  return `<ul class="desclist">${names.map(n=>{ const d = descOf(run,type,n); return `<li><b>${esc(n)}</b>${d&&d.cap?` <span class="dstat">(${d.cap} fragment slot${d.cap>1?"s":""})</span>`:""}${d?` — ${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}`:""}</li>`; }).join("")}</ul>`;
 }
 /* weapon archetypes (dim = weapon type key, matched against Bungie item subtypes) */
 const WEAPON_TYPES = [
@@ -393,7 +395,9 @@ function lootOffers(run, power){
   }
   return offers;
 }
-function fragSlots(run){ return run.ab.aspects.length*2 + run.ab.fragBonus; }
+/* fragment slots = each owned aspect's real fragment capacity from Bungie (2 until its data loads) */
+function aspectCap(run, name){ const d = descOf(run, "aspect", name); return d && d.cap ? d.cap : 2; }
+function fragSlots(run){ return run.ab.aspects.reduce((t,n)=>t+aspectCap(run,n),0) + (run.ab.fragBonus||0); }
 /* Reward tiers (tiers.js) are by reward type. Each offered choice rolls a tier by the event's reward level,
    then a reward inside it. At most one fragment (or fragment slot) per pick; aspects and supers can repeat. */
 const TIER_ORDER = ["S","A","B","C"];
@@ -906,7 +910,7 @@ function renderLoadout(run){
     <div class="slotgroup"><h3>Melee</h3>${pickList(run,"melee")}</div>
     <div class="slotgroup"><h3>Class ability</h3>${pickList(run,"classAbility")}</div>
     <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}${descList(run,"aspect",a.aspects)}</div>
-    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens 2 fragment slots", fragSlots(run))}${descList(run,"fragment",a.fragments)}</div>
+    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens fragment slots (most open 2, some 3)", fragSlots(run))}${descList(run,"fragment",a.fragments)}</div>
     ${renderArtifact(run)}
     <div class="row"><button class="btn ghost" data-act="tierList">Reward tier list</button></div>
   </section>`;
