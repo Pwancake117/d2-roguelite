@@ -317,6 +317,7 @@ async function applySubclass(run, cid){
 /* Only Vanguard Ops activities count as events. Bungie tags them with these activity types,
    and Quickplay nodes also report the Ops category as their destination. */
 const DUNGEON_TYPE = 608898761, DUNGEON_MODE = 82;
+const LEAVE_GRACE_SECONDS = 300; // leave within 5 minutes: doesn't count
 const VO_TYPES = {1996806804:"fireteam", 2009300208:"arena", 3851289711:"solo", 3652020199:"pinnacle"};
 const VO_DESTS = {2171594315:"fireteam", 103806431:"arena", 4008773657:"solo"};
 /* Activities launched from the Vanguard Ops tabs that Bungie tags by their own type rather than an Ops type:
@@ -373,7 +374,9 @@ B.sync = async (run, {quiet} = {}) => {
       const name = info.name;
       const completed = val("completed")===1 && val("completionReason")!==1 && val("completionReason")!==2;
       const deaths = val("deaths");
-      if(!completed && !deaths) continue; // left early without dying: not an event
+      // leaving: within the grace period it's not an event; after it, it counts as a failed attempt
+      const played = val("timePlayedSeconds") || val("activityDurationSeconds");
+      if(!completed && played < LEAVE_GRACE_SECONDS) continue;
       run.queue.push({eventId:type, diff:difficulty(name), completed, deaths, note:name, at:Date.parse(act.period), instanceId:id});
       added++;
     }
@@ -382,7 +385,7 @@ B.sync = async (run, {quiet} = {}) => {
       B.lastLootCheck = Date.now();
       await loadDefs(); await loadProfile();
       const eqLoot = B.equippedLoot(run);
-      if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths) q.equippedLoot = eqLoot; });
+      if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths || !q.completed) q.equippedLoot = eqLoot; });
       const loot = findLoot(run);
       if(loot.length){
         loot.forEach(x=>{ x.source = added ? run.queue[run.queue.length-1].note : "Found during the run"; (x.kind==="weapon" ? run.weapons : run.armor).push(x); });

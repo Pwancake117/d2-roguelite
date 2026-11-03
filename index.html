@@ -150,7 +150,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=20"></script>
+<script src="bungie.js?v=21"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -414,7 +414,7 @@ function logEventData(x, noRender){
   }
   // penalties
   let loseLife = false;
-  if(hardcore && deaths>0){
+  if(hardcore && (deaths>0 || !completed)){
     loseLife = true;
     const eq = new Set(x.equippedLoot || run.weapons.concat(run.armor).filter(i=>i.inst).map(i=>i.inst));
     const gone = run.weapons.concat(run.armor).filter(i=>i.inst && eq.has(i.inst));
@@ -665,7 +665,7 @@ function renderSetup(){
     <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
       <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter you beat gives an ability unlock, and finishing the dungeon earns Light. Deaths come from Bungie's record when the dungeon ends." : "Only Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops). Each finished op earns Light toward ability unlocks."}</p></div>
     <div><h3>Mode</h3>${seg("difficulty", [["normal","Normal"],["hardcore","Hardcore"]], s.difficulty||"normal")}
-      <p class="help" style="margin:6px 0 0">${(s.difficulty||"normal")==="hardcore" ? "Any death costs a life and every looted item you had equipped. Your starter commons are never lost." : "Clearing with no deaths earns bonus Light. Dying only reduces the Light you earn; failing or wiping out of an activity costs a life."} Flawless clears earn +${2} Light and +25 score in both modes.</p></div>
+      <p class="help" style="margin:6px 0 0">${(s.difficulty||"normal")==="hardcore" ? "Any death, or leaving an activity after 5 minutes, costs a life and every looted item you had equipped. Your starter commons are never lost." : "Clearing with no deaths earns bonus Light. Dying only reduces the Light you earn; failing an activity, or leaving after 5 minutes, costs a life."} Flawless clears earn +${2} Light and +25 score in both modes.</p></div>
     <div><h3>Class</h3>${seg("cls", CLASSES.map(c=>[c,c]), s.cls)}</div>
     <div><h3>Subclass</h3>${seg("el", Object.keys(ELEMENTS).map(k=>[k,ELEMENTS[k].name,"elem el-"+k]).concat([["random","Random"]]), s.el)}</div>
     ${baseBuildHTML(s.cls, s.el)}
@@ -830,7 +830,7 @@ function renderBungie(run){
     ${run ? `<div class="row" style="gap:18px">
       <label class="tog"><input type="checkbox" id="bAutoSubclass" ${B.opts.autoSubclass?"checked":""}> Equip subclass picks automatically</label>
       <label class="tog"><input type="checkbox" id="bAutoSync" ${B.opts.autoSync?"checked":""}> Sync automatically (checks every 20 seconds)</label>
-      <span class="help">${run.difficulty==="hardcore"?"Hardcore: any death costs a life and the looted gear you had equipped.":"Normal: only failing or wiping out of an activity costs a life."}</span>
+      <span class="help">${run.difficulty==="hardcore"?"Hardcore: any death costs a life and the looted gear you had equipped.":"Normal: failing an activity, or leaving after 5 minutes, costs a life."}</span>
       ${ago!=null?`<span class="help">Last sync ${ago} min ago${run.queue&&run.queue.length?` · ${run.queue.length} waiting`:""}</span>`:""}
     </div>` : ""}
     ${logHtml?`<ul class="blog">${logHtml}</ul>`:""}

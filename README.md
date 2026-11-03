@@ -48,7 +48,8 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 |---|---|---|
 | Clear with no deaths | Power + 2 bonus Light, +25 score | Same |
 | Clear with deaths | Light reduced by 1 per death (min 1), no other penalty | Lose a life **and every looted item you had equipped** |
-| Failed or wiped out | Lose a life | Lose a life and your equipped loot |
+| Failed, or left after 5 minutes | Lose a life | Lose a life and your equipped loot |
+| Left within 5 minutes | Doesn't count | Doesn't count |
 | Starter commons | Never lost | Never lost |
 
 Power = Solo Ops 2, Fireteam/Arena Ops 3, Pinnacle Ops 4, plus 0–4 for difficulty. Lost loot is removed from your run; what you do with it in game is up to you. At 0 lives the run is over.
