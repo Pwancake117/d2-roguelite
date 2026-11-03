@@ -247,7 +247,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=50"></script>
+<script src="bungie.js?v=51"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1205,7 +1205,6 @@ function renderBungie(run){
       <p class="help" style="margin:4px 0 0">${B.manifestState ? esc(B.manifestState) : run ? (mine.length ? "Playing on your "+run.cls+(mine.length>1?"":"")+"." : "No "+run.cls+" on this account.") : "Start a run and the app equips it on your matching character."}</p></div>
       <div class="row">
         ${run ? `<button class="btn primary" data-act="bApply" ${B.busy||!cid?"disabled":""}>${B.busy?"Working…":"Equip starting loadout"}</button>
-        <button class="btn" data-act="bSync" ${B.busy||!cid?"disabled":""}>Sync activities</button>
         <button class="btn" data-act="bClear" ${B.busy||!cid?"disabled":""} title="Moves weapons and armor on this character that aren't part of the run to your vault">Move other gear to vault</button>` : ""}
         <button class="btn ghost" data-act="bLogout">Disconnect</button>
       </div></div>
