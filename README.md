@@ -6,7 +6,7 @@ A roguelite run tracker for Destiny 2. Each run starts on a fixed base build wit
 
 ## What is D2 Roguelite?
 
-D2 Roguelite turns Destiny 2 into a roguelite. You start a run as a stripped-down Guardian with only common (white) gear and a basic starter build, then earn your way back up by playing.
+D2 Roguelite is a free web app that turns Destiny 2 into a roguelite. You start a run as a stripped-down Guardian with only common (white) gear and a basic starter build, then earn your way back up by playing.
 
 **How a run works**
 1. **Start weak.** Pick a class and subclass. You begin with common weapons and armor and a fixed starter build: no aspects, no fragments, no artifact.
