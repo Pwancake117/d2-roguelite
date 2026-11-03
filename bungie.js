@@ -115,7 +115,7 @@ async function loadDefs(){
   const man = await api("/Destiny2/Manifest/");
   const paths = man.jsonWorldComponentContentPaths && man.jsonWorldComponentContentPaths.en || {};
   const path = paths.DestinyInventoryItemLiteDefinition || paths.DestinyInventoryItemDefinition;
-  const cacheKey = "defs3:" + path;
+  const cacheKey = "defs4:" + path;
   const cached = await idbGet("defs");
   if(cached && cached.key === cacheKey){ B.defs = cached.data; return B.defs; }
   B.manifestState = "Downloading Destiny item data (first time only)…"; window.renderBungieSoon && window.renderBungieSoon();
@@ -124,7 +124,10 @@ async function loadDefs(){
   const slim = {};
   for(const h in raw){
     const d = raw[h], inv = d.inventory || {};
-    if(d.itemType!==2 && d.itemType!==3 && d.itemType!==16 && d.itemType!==8) continue;
+    // engrams come in several item types (8, 19, 0); their type name says "Engram" (e.g. "Tier 2 Engram")
+    const isEngram = d.itemType===8 || /engram/i.test(d.itemTypeDisplayName||"") || (d.itemType===19 && /engram/i.test((d.displayProperties||{}).name||""));
+    if(d.itemType!==2 && d.itemType!==3 && d.itemType!==16 && !isEngram) continue;
+    if(isEngram){ slim[h] = {n:d.displayProperties && d.displayProperties.name, i:d.displayProperties && d.displayProperties.icon, t:8, tier:inv.tierType, b:inv.bucketTypeHash, tn:d.itemTypeDisplayName}; continue; }
     slim[h] = {n:d.displayProperties && d.displayProperties.name, i:d.displayProperties && d.displayProperties.icon, t:d.itemType, st:d.itemSubType, c:d.classType, tier:inv.tierType, b:inv.bucketTypeHash};
   }
   B.defs = slim; B.manifestState = "";

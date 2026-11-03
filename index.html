@@ -242,7 +242,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=47"></script>
+<script src="bungie.js?v=48"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1044,7 +1044,7 @@ function renderCharacterTab(run){
   const B = window.D2R_BUNGIE, held = (run.engrams||[]).filter(e=>e.status==="held");
   const pm = B && B.profile ? run.weapons.concat(run.armor).concat(held).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
   const engHtml = held.length ? `<div class="gslot engrams"><div class="glabel">Engrams (${held.length})</div>${held.map(e=>{ const d = B && B.defs && B.defs[e.hash], w = B ? B.whereIs(e.inst) : null;
-      return `<div class="gtile r-${e.rarity}" title="${esc(e.name+" from "+e.event)}"><div class="gicon">${d&&d.i?`<img src="${ICON_ROOT+d.i}" alt="">`:`<span class="ph">E</span>`}</div><div class="gtext"><span class="rtag">${esc(e.rarity)} ${w?`<span class="where w-${w.replace(/ /g,"-")}">${WHERE_LABEL[w]||w}</span>`:""}</span><span class="nm">${esc(e.name)}</span><span class="sub">From ${esc(e.event)}</span></div></div>`; }).join("")}<p class="help">Decrypt these in game; what comes out is added to your run and credited to the event.</p></div>` : "";
+      return `<div class="gtile r-${e.rarity}" title="${esc(e.name+" from "+e.event)}"><div class="gicon">${d&&d.i?`<img src="${ICON_ROOT+d.i}" alt="">`:`<span class="ph">E</span>`}</div><div class="gtext"><span class="rtag">${esc(e.rarity)} ${w?`<span class="where w-${w.replace(/ /g,"-")}">${WHERE_LABEL[w]||w}</span>`:""}</span><span class="nm">${esc(e.name)}${d&&d.tn?` <span class="help">${esc(d.tn)}</span>`:""}</span><span class="sub">From ${esc(e.event)}</span></div></div>`; }).join("")}<p class="help">Decrypt these in game; what comes out is added to your run and credited to the event.</p></div>` : "";
   const center = `<div class="gcenter el-${run.el}"><div class="emblem"><span>${esc(ELEMENTS[run.el].name)}</span></div><b class="gclass">${esc(run.cls)}</b><span class="help">Depth ${run.depth} · ${run.lives} ${run.lives===1?"life":"lives"}</span>${pm?`<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${pm} from Postmaster</button>`:""}<p class="help">Equip anything shown here. Gear you pick up in game is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>${engHtml}</div>`;
   return `<div class="charscreen"><div class="gcol"><h3>Weapons</h3>${wcol}</div>${center}<div class="gcol"><h3>Armor</h3>${acol}</div></div>`;
 }
