@@ -45,6 +45,9 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 
 Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Censer, Hunter's Journal, Tablet of Ruin, Slayer Baron Apothecary Satchel, Implement of Curiosity, Encrypted Data Disk), one equipped at a time, each with 7 mod slots. You start a run with no artifact: after your first completed event you get a bonus pick of 3 artifacts. More artifacts come as S-tier rewards and join your collection; switch between your artifacts anytime in the Artifact tab (each artifact keeps its own mods; points spent on one stay spent until you reset it). Other subclasses unlock as S-tier rewards too: each starts at its base build with its own unlocks, and you switch between unlocked subclasses in the Subclass tab. Every completed event earns artifact points by difficulty: 1 (Normal to Expert), 2 (Master), 3 (Grandmaster/Ultimate), +1 if flawless; dungeon encounters earn the same by difficulty, and **+2 Artifact Points** is a B-tier reward. Spend points to fill slots: a mod costs its tier; slots 1-2 take tier 1 mods, slots 3-5 up to tier 2, slots 6-7 up to tier 3. Reset is free and refunds every point. Bungie doesn't let apps change artifact mods, so you set them in game; the app checks your equipped artifact and each slot.
 
+
+**Engrams:** engrams you don't pick up in time go to the Postmaster. The app tracks every engram that drops during the run along with the event it came from, shows them in the Character tab with where they are, and **Pull from Postmaster** pulls them too. Decrypt them in game; the gear that comes out is added to your run and credited to the engram's event.
+
 ### Reward tiers
 
 Rewards are tiered by type (set in `tiers.js`):

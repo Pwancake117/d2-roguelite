@@ -115,16 +115,16 @@ async function loadDefs(){
   const man = await api("/Destiny2/Manifest/");
   const paths = man.jsonWorldComponentContentPaths && man.jsonWorldComponentContentPaths.en || {};
   const path = paths.DestinyInventoryItemLiteDefinition || paths.DestinyInventoryItemDefinition;
-  const cacheKey = "defs2:" + path;
+  const cacheKey = "defs3:" + path;
   const cached = await idbGet("defs");
   if(cached && cached.key === cacheKey){ B.defs = cached.data; return B.defs; }
   B.manifestState = "Downloading Destiny item data (first time only)…"; window.renderBungieSoon && window.renderBungieSoon();
   const raw = await (await fetch("https://www.bungie.net" + path)).json();
-  // keep only what the app needs: weapons, armor and subclasses
+  // keep only what the app needs: weapons, armor, subclasses and engrams
   const slim = {};
   for(const h in raw){
     const d = raw[h], inv = d.inventory || {};
-    if(d.itemType!==2 && d.itemType!==3 && d.itemType!==16) continue;
+    if(d.itemType!==2 && d.itemType!==3 && d.itemType!==16 && d.itemType!==8) continue;
     slim[h] = {n:d.displayProperties && d.displayProperties.name, i:d.displayProperties && d.displayProperties.icon, t:d.itemType, st:d.itemSubType, c:d.classType, tier:inv.tierType, b:inv.bucketTypeHash};
   }
   B.defs = slim; B.manifestState = "";
@@ -387,9 +387,10 @@ B.sync = async (run, {quiet} = {}) => {
       const eqLoot = B.equippedLoot(run);
       if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths || !q.completed) q.equippedLoot = eqLoot; });
       await B.loadArtifact();
+      const opened = trackEngrams(run, added ? run.queue[run.queue.length-1].note : null);
       const loot = findLoot(run);
       if(loot.length){
-        loot.forEach(x=>{ x.source = added ? run.queue[run.queue.length-1].note : "Found during the run"; (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
+        loot.forEach(x=>{ x.source = opened.length ? "Decrypted "+opened.map(e=>e.name).join(", ")+(opened[0].event?" ("+opened[0].event+")":"") : added ? run.queue[run.queue.length-1].note : "Found during the run"; (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
         if(added) run.queue[run.queue.length-1].loot = loot.map(x=>x.name);
         else run.unattachedLoot = (run.unattachedLoot||[]).concat(loot.map(x=>x.name));
         note("Looted: "+loot.map(x=>x.name).join(", ")+". You can use "+(loot.length>1?"them":"it")+" now.","ok");
@@ -408,6 +409,8 @@ const ARMOR_NAME = {[BUCKET.helmet]:"helmet",[BUCKET.gauntlets]:"gauntlets",[BUC
 B.snapshot = async run => {
   await loadDefs(); await loadProfile();
   run.ownedAtStart = allItems().filter(i=>i.d.t===2||i.d.t===3).map(i=>i.inst);
+  run.engramBaseline = allItems().filter(i=>i.d.t===8).map(i=>i.inst);
+  run.engrams = [];
 };
 function findLoot(run){
   if(!run.ownedAtStart) return [];
@@ -426,6 +429,22 @@ function findLoot(run){
   return found;
 }
 B.findLoot = findLoot;
+/* Engrams: ones that drop during the run (often straight to the Postmaster if not picked up in time) are tracked
+   with the event they came from; when one disappears, gear that appears in the same sync is credited to it. */
+function trackEngrams(run, eventNote){
+  if(!B.profile || !B.defs) return [];
+  const now = allItems().filter(i=>i.d.t===8);
+  if(!run.engrams){ run.engrams = []; if(!run.engramBaseline) run.engramBaseline = now.map(i=>i.inst); }
+  const base = new Set(run.engramBaseline||[]), known = new Set(run.engrams.map(e=>e.inst)), present = new Set(now.map(i=>i.inst));
+  for(const it of now) if(!base.has(it.inst) && !known.has(it.inst)){
+    run.engrams.push({inst:it.inst, hash:it.hash, name:it.d.n||"Engram", rarity:TIER[it.d.tier]||"rare", event:eventNote||(run.events.length?run.events[run.events.length-1].event:"Found during the run"), at:Date.now(), status:"held"});
+    note("Engram tracked: "+(it.d.n||"Engram")+(it.postmaster?" (in your Postmaster)":"")+".","ok");
+  }
+  const opened = [];
+  for(const e of run.engrams) if(e.status==="held" && !present.has(e.inst)){ e.status = "opened"; e.openedAt = Date.now(); opened.push(e); }
+  return opened;
+}
+B.trackEngrams = trackEngrams;
 /* Where is an item right now? postmaster | equipped | character | vault | other | null */
 B.whereIs = inst => {
   if(!B.profile || !inst) return null;
@@ -466,13 +485,13 @@ B.pullPostmaster = async run => {
   try {
     await loadProfile();
     const inv = (B.profile.characterInventories.data[B.charId]||{}).items||[];
-    const looted = new Set(run.weapons.concat(run.armor).map(x=>x.inst).filter(Boolean));
+    const looted = new Set(run.weapons.concat(run.armor).map(x=>x.inst).concat((run.engrams||[]).filter(e=>e.status==="held").map(e=>e.inst)).filter(Boolean));
     for(const it of inv.filter(i=>i.bucketHash===215593132 && looted.has(i.itemInstanceId))){
       await api("/Destiny2/Actions/Items/PullFromPostmaster/", {method:"POST", body:{itemReferenceHash:it.itemHash, stackSize:1, itemId:it.itemInstanceId, characterId:B.charId, membershipType:B.account.type}});
       n++; await sleep(300);
     }
     await sleep(2500); await loadProfile();
-    note(n ? "Pulled "+n+" looted item"+(n>1?"s":"")+" from the Postmaster." : "No looted items in your Postmaster.", n?"ok":"");
+    note(n ? "Pulled "+n+" item"+(n>1?"s":"")+" (loot and engrams) from the Postmaster." : "No run loot or engrams in your Postmaster.", n?"ok":"");
   } catch(e){ note(friendly(e),"err"); }
   finally { B.busy = false; window.render && window.render(); }
 };

@@ -169,6 +169,7 @@ button.atile{cursor:pointer}button.atile:hover{border-color:var(--el)}
 .gcenter{display:grid;justify-items:center;text-align:center;gap:8px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 12px}
 .emblem{width:90px;height:90px;transform:rotate(45deg);border:2px solid var(--el);display:grid;place-items:center;margin:20px;background:color-mix(in srgb,var(--el) 18%,#0c1117)}
 .emblem span{transform:rotate(-45deg);font-family:var(--display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem}
+.engrams{width:100%;text-align:left}
 .gclass{font-family:var(--display);font-size:1.3rem;text-transform:uppercase;letter-spacing:.1em}
 @media (max-width:900px){.subscreen,.charscreen{grid-template-columns:1fr}.scenter,.gcenter{border:0;padding:0}}
 .fitbadge{display:inline-block;justify-self:start;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:3px;background:var(--good,#3c9);color:#111}
@@ -241,7 +242,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=46"></script>
+<script src="bungie.js?v=47"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1040,8 +1041,11 @@ function renderCharacterTab(run){
   const anyArmor = {kind:"armor",any:true,rarity:"common",name:"Any common "+run.cls+" armor",note:"Pull from Collections"};
   const acol = `<div class="gslot"><div class="glabel">Starter armor</div>${gearTile(run,anyArmor)}</div>` + ARMOR_ORDER.map(([k,l])=>{ const list = run.armor.filter(a=>a.piece===k); return list.length ? `<div class="gslot"><div class="glabel">${l}</div>${list.map(a=>gearTile(run,a)).join("")}</div>` : ""; }).join("")
     + (run.armor.length ? "" : `<div class="empty-note">Armor you pick up during the run shows here</div>`);
-  const B = window.D2R_BUNGIE, pm = B && B.profile ? run.weapons.concat(run.armor).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
-  const center = `<div class="gcenter el-${run.el}"><div class="emblem"><span>${esc(ELEMENTS[run.el].name)}</span></div><b class="gclass">${esc(run.cls)}</b><span class="help">Depth ${run.depth} · ${run.lives} ${run.lives===1?"life":"lives"}</span>${pm?`<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${pm} from Postmaster</button>`:""}<p class="help">Equip anything shown here. Gear you pick up in game is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p></div>`;
+  const B = window.D2R_BUNGIE, held = (run.engrams||[]).filter(e=>e.status==="held");
+  const pm = B && B.profile ? run.weapons.concat(run.armor).concat(held).filter(x=>x.inst && B.whereIs(x.inst)==="postmaster").length : 0;
+  const engHtml = held.length ? `<div class="gslot engrams"><div class="glabel">Engrams (${held.length})</div>${held.map(e=>{ const d = B && B.defs && B.defs[e.hash], w = B ? B.whereIs(e.inst) : null;
+      return `<div class="gtile r-${e.rarity}" title="${esc(e.name+" from "+e.event)}"><div class="gicon">${d&&d.i?`<img src="${ICON_ROOT+d.i}" alt="">`:`<span class="ph">E</span>`}</div><div class="gtext"><span class="rtag">${esc(e.rarity)} ${w?`<span class="where w-${w.replace(/ /g,"-")}">${WHERE_LABEL[w]||w}</span>`:""}</span><span class="nm">${esc(e.name)}</span><span class="sub">From ${esc(e.event)}</span></div></div>`; }).join("")}<p class="help">Decrypt these in game; what comes out is added to your run and credited to the event.</p></div>` : "";
+  const center = `<div class="gcenter el-${run.el}"><div class="emblem"><span>${esc(ELEMENTS[run.el].name)}</span></div><b class="gclass">${esc(run.cls)}</b><span class="help">Depth ${run.depth} · ${run.lives} ${run.lives===1?"life":"lives"}</span>${pm?`<button class="btn" data-act="bPull" ${B.busy?"disabled":""}>Pull ${pm} from Postmaster</button>`:""}<p class="help">Equip anything shown here. Gear you pick up in game is added automatically${run.ownedAtStart?"":" once Bungie is connected"}.</p>${engHtml}</div>`;
   return `<div class="charscreen"><div class="gcol"><h3>Weapons</h3>${wcol}</div>${center}<div class="gcol"><h3>Armor</h3>${acol}</div></div>`;
 }
 function renderSubclassTab(run){
