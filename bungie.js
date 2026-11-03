@@ -484,6 +484,34 @@ B.equippedLoot = run => {
 
 /* Seasonal artifact: Bungie lets apps read perks (per character) but not change them. */
 B.artifact = null;
+/* Ability descriptions (aspects, fragments, abilities, artifact perks) from the public manifest, cached in localStorage. */
+const DESC_KEY = "d2r.desc2";
+const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
+B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
+const descBusy = new Set();
+B.describe = async hashes => {
+  const todo = [...new Set(hashes.filter(h=>h && !B.desc[h] && !descBusy.has(h)))];
+  if(!todo.length) return 0;
+  todo.forEach(h=>descBusy.add(h));
+  let i = 0, got = 0;
+  const one = async h => {
+    const d = await fullDef(h);
+    const texts = [];
+    for(const pk of d.perks||[]){
+      if(pk.perkVisibility!==0) continue;
+      try { const sp = await api(`/Destiny2/Manifest/DestinySandboxPerkDefinition/${pk.perkHash}/`); const t = sp.displayProperties && sp.displayProperties.description; if(t && !texts.includes(t)) texts.push(t); } catch(e){}
+    }
+    if(!texts.length && d.displayProperties && d.displayProperties.description) texts.push(d.displayProperties.description);
+    const st = d.investmentStats||[];
+    const cap = (st.find(x=>x.statTypeHash===2223994109)||{}).value;
+    const stats = st.filter(x=>x.value && STAT_NAME[x.statTypeHash]).map(x=>(x.value>0?"+":"")+x.value+" "+STAT_NAME[x.statTypeHash]);
+    B.desc[h] = {d:texts.join(" "), s:stats, cap:cap||null};
+    got++;
+  };
+  await Promise.all(Array.from({length:Math.min(6,todo.length)}, async()=>{ while(i<todo.length){ const h = todo[i++]; try { await one(h); } catch(e){} descBusy.delete(h); } }));
+  try { localStorage.setItem(DESC_KEY, JSON.stringify(B.desc)); } catch(e){}
+  return got;
+};
 const ART_NAMES_KEY = "d2r.artNames";
 let artNames = {}; try { artNames = JSON.parse(localStorage.getItem(ART_NAMES_KEY)||"{}"); } catch(e){}
 B.loadArtifact = async () => {

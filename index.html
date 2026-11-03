@@ -119,6 +119,10 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .offer .nm{font-family:var(--display);font-weight:600;font-size:1rem}
 .offer .sub{font-size:.78rem;color:var(--muted)}
 .offer.boon{--rc:var(--el)}
+.offer .desc,.desclist{font-size:.8rem;color:var(--ink);opacity:.85;line-height:1.35}
+.desc.muted{opacity:.5}
+.dstat{color:var(--muted);white-space:nowrap}
+.desclist{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
 .callout{border:1px solid var(--accent);background:rgba(127,212,255,.06);border-radius:6px;padding:14px;display:grid;gap:10px}
 .callout.dead{border-color:var(--danger);background:rgba(255,93,93,.07)}
 /* log */
@@ -152,7 +156,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=25"></script>
+<script src="bungie.js?v=26"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -170,6 +174,25 @@ const P = {
   classAbilities:(c,e)=>KIT[c][e].classAbility.map(x=>x.n), aspects:(c,e)=>KIT[c][e].aspect.map(x=>x.n), fragments:(c,e)=>KIT[c][e].fragment.map(x=>x.n)
 };
 function plugHash(c,e,type,name){ const f = (KIT[c]&&KIT[c][e]&&KIT[c][e][type]||[]).find(x=>x.n===name); return f ? f.h : null; }
+/* descriptions: hash for an offer/owned item, text from the Bungie manifest (loaded on demand) */
+const DESC_TYPES = {grenade:"grenade",melee:"melee",super:"super",classAbility:"classAbility",aspect:"aspect",fragment:"fragment"};
+const wantDesc = new Set();
+function descHash(run, type, name){
+  if(type==="artifact"){ const B = window.D2R_BUNGIE, p = B && B.artifact && B.artifact.perks.find(x=>x.n===name); return p ? p.h : null; }
+  return DESC_TYPES[type] ? plugHash(run.cls, run.el, type, name) : null;
+}
+function descOf(run, type, name){
+  const h = descHash(run, type, name), B = window.D2R_BUNGIE;
+  if(!h) return null;
+  const d = B && B.desc && B.desc[h];
+  if(!d){ wantDesc.add(h); return null; }
+  return d;
+}
+function descHtml(d){ return d ? `<span class="desc">${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}</span>` : `<span class="desc muted">Loading description…</span>`; }
+function descList(run, type, names){
+  if(!names.length) return "";
+  return `<ul class="desclist">${names.map(n=>{ const d = descOf(run,type,n); return `<li><b>${esc(n)}</b>${d?` — ${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}`:""}</li>`; }).join("")}</ul>`;
+}
 /* weapon archetypes (dim = weapon type key, matched against Bungie item subtypes) */
 const WEAPON_TYPES = [
   {dim:"autorifle",label:"Auto Rifle",ammo:"primary"},{dim:"handcannon",label:"Hand Cannon",ammo:"primary"},
@@ -727,11 +750,11 @@ function renderArtifact(run){
         const open = artTierOpen(run,t);
         return `<p class="help"><b>Tier ${t}</b> · costs ${t} point${t>1?"s":""}${open?"":` · unlock a tier ${t-1} perk first`}</p><div class="chips">`
           + art.perks.filter(p=>p.tier===t).map(p=>{ const own = mine.includes(p.n), ok = open && !own && t<=left;
-            return `<button class="chip pickchip ${own?"on":""}" data-act="artBuy" data-name="${esc(p.n)}" data-tier="${t}" ${ok?"":"disabled"}>${esc(p.n)}${own?" · owned":""}</button>`; }).join("") + `</div>`;
+            return `<button class="chip pickchip ${own?"on":""}" data-act="artBuy" data-name="${esc(p.n)}" data-tier="${t}" title="${esc((descOf(run,"artifact",p.n)||{}).d||"")}" ${ok?"":"disabled"}>${esc(p.n)}${own?" · owned":""}</button>`; }).join("") + `</div>`;
       }).join("") + `</details>`;
     }
   } else check = `<p class="help">Connect Bungie to see your artifact.</p>`;
-  return `<div class="slotgroup"><h3>Artifact perks (${mine.length}) · ${left} point${left===1?"":"s"} to spend</h3>${chipList(mine, run.el, "None unlocked yet. Earn 1 artifact point per completed event (+1 if flawless) and spend it below. Bungie doesn't let apps change artifact perks, so you set them in game.")}${check}${shop}</div>`;
+  return `<div class="slotgroup"><h3>Artifact perks (${mine.length}) · ${left} point${left===1?"":"s"} to spend</h3>${chipList(mine, run.el, "None unlocked yet. Earn 1 artifact point per completed event (+1 if flawless) and spend it below. Bungie doesn't let apps change artifact perks, so you set them in game.")}${descList(run,"artifact",mine)}${check}${shop}</div>`;
 }
 function renderStatus(run){
   const pips = [];
@@ -760,8 +783,8 @@ function renderLoadout(run){
     <div class="slotgroup"><h3>Grenade</h3>${pickList(run,"grenade")}</div>
     <div class="slotgroup"><h3>Melee</h3>${pickList(run,"melee")}</div>
     <div class="slotgroup"><h3>Class ability</h3>${pickList(run,"classAbility")}</div>
-    <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}</div>
-    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens 2 fragment slots", fragSlots(run))}</div>
+    <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}${descList(run,"aspect",a.aspects)}</div>
+    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens 2 fragment slots", fragSlots(run))}${descList(run,"fragment",a.fragments)}</div>
     ${renderArtifact(run)}
   </section>`;
 }
@@ -773,7 +796,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}</span><span class="nm">${esc(b.name)}</span></button>`).join("")}</div>`;
+    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
@@ -833,6 +856,7 @@ function renderEnded(){
   </section>`;
 }
 function render(){
+  setTimeout(()=>{ const B = window.D2R_BUNGIE; if(!wantDesc.size || !B || !B.describe) return; const hs = [...wantDesc]; wantDesc.clear(); B.describe(hs).then(n=>{ if(n) render(); }); }, 0);
   const run = state.run;
   let html = "";
   if(run && run.status==="active"){
