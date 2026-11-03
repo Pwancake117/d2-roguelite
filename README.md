@@ -45,6 +45,19 @@ Once you're connected, the app's **Setup guide** shows which classes are ready a
 
 Artifact perks: every completed event earns 1 artifact point (+1 if flawless; dungeon encounters earn 1). Spend points in the Artifact perks panel: a perk costs its tier (tier 1 = 1 point, tier 2 = 2 points, ...), and a tier opens once you own a perk from the tier before it. Bungie doesn't let apps change artifact perks, so you switch unlocked perks on in game. The app checks your artifact and flags perks that are on but not unlocked in the run.
 
+### Reward tiers
+
+Every super, grenade, melee, class ability, aspect and fragment has a tier from S to D in `tiers.js` (anything not listed is B). Harder events offer higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
+
+| Reward level | S | A | B | C | D |
+|---|---|---|---|---|---|
+| up to 3 (e.g. Solo Ops, Normal) | 0% | 5% | 25% | 40% | 30% |
+| 4–5 | 5% | 20% | 35% | 30% | 10% |
+| 6–7 | 15% | 35% | 30% | 15% | 5% |
+| 8+ (e.g. Grandmaster, Master dungeon) | 30% | 40% | 25% | 5% | 0% |
+
+Each pick card shows the item's tier, and the **Reward tier list** button shows the full list for your subclass. To re-rank, edit `tiers.js`.
+
 ## Modes and deaths
 | | Normal | Hardcore |
 |---|---|---|

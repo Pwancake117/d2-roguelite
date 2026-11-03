@@ -119,6 +119,11 @@ textarea{width:100%;font-family:var(--mono);font-size:.8rem;resize:vertical}
 .offer .nm{font-family:var(--display);font-weight:600;font-size:1rem}
 .offer .sub{font-size:.78rem;color:var(--muted)}
 .offer.boon{--rc:var(--el)}
+.tierbadge{display:inline-block;min-width:1.4em;text-align:center;border-radius:3px;font-weight:700;padding:0 4px;color:#111;margin-left:4px}
+.tierbadge.big{font-size:1.3rem;min-width:2em;padding:6px 8px;margin:0}
+.t-S{background:#ff7f7f}.t-A{background:#ffbf7f}.t-B{background:#ffdf7f}.t-C{background:#bfff7f}.t-D{background:#7fbfff}
+.tierrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px solid var(--line)}
+.tiercells{display:grid;gap:4px}
 .offer .desc,.desclist{font-size:.8rem;color:var(--ink);opacity:.85;line-height:1.35}
 .desc.muted{opacity:.5}
 .dstat{color:var(--muted);white-space:nowrap}
@@ -156,7 +161,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="bungie.js?v=26"></script>
+<script src="tiers.js?v=1"></script>
+<script src="bungie.js?v=27"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -354,7 +360,19 @@ function lootOffers(run, power){
   return offers;
 }
 function fragSlots(run){ return run.ab.aspects.length*2 + run.ab.fragBonus; }
-function boonOffers(run){
+/* Reward tiers (tiers.js): harder events and flawless clears offer higher tiers more often */
+const TIER_ORDER = ["S","A","B","C","D"];
+const TIER_OF = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.slice().reverse().forEach(t=>(T[t]||[]).forEach(n=>m[n]=t)); return m; })();
+function tierOf(name){ return TIER_OF[name] || "B"; }
+function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:1,A:1,B:1,C:1,D:1}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
+const TIERED = {grenade:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1};
+function tierPick(opts, lvl){
+  if(opts.length<2 || !TIERED[opts[0].type]) return pick(opts);
+  const odds = oddsFor(lvl), w = opts.map(o=>({o, w:odds[tierOf(o.name)]||0}));
+  return w.some(x=>x.w>0) ? weighted(w).o : pick(opts);
+}
+function boonOffers(run, lvl){
+  if(lvl==null) lvl = (run.pending && run.pending.lvl) || 3;
   const a = run.ab, c = run.cls, e = run.el, cands = [];
   const add = (type,label,list,w) => list.forEach(name=>cands.push({type,label,name,w}));
   add("grenade","Grenade",P.grenades(c,e).filter(n=>!a.grenades.includes(n)),3);
@@ -370,7 +388,7 @@ function boonOffers(run){
   for(const t of ["aspect","fragment"]){
     if(out.length>=2) break;
     const opts = pool.filter(o=>o.type===t);
-    if(opts.length){ const choice = pick(opts); out.push(choice); pool.splice(pool.indexOf(choice),1); }
+    if(opts.length){ const choice = tierPick(opts, lvl); out.push(choice); pool.splice(pool.indexOf(choice),1); }
   }
   if(!out.some(o=>o.type==="fragment")){ const slot = pool.find(o=>o.type==="fragslot"); if(slot && out.length<2){ out.push(slot); pool.splice(pool.indexOf(slot),1); } }
   // fill the rest, spread across the other types: weight each type once, then pick a name inside it
@@ -379,7 +397,7 @@ function boonOffers(run){
     const typeList = Object.keys(types).filter(t=>!out.some(o=>o.type===t));
     const useList = typeList.length ? typeList : Object.keys(types);
     const t = weighted(useList.map(t=>({t,w:types[t][0].w}))).t;
-    const choice = pick(types[t]);
+    const choice = tierPick(types[t], lvl);
     out.push(choice);
     pool.splice(pool.indexOf(choice),1);
   }
@@ -470,8 +488,10 @@ function logEventData(x, noRender){
     let boonCount = completed ? GUARANTEED_PICKS : 0;
     while(run.light >= LIGHT_PER_BOON){ run.light -= LIGHT_PER_BOON; boonCount++; }
     entry.picks = boonCount;
-    const offers = boonCount ? boonOffers(run) : [];
-    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers} : null;
+    const lvl = power + (flawless ? 1 : 0);
+    entry.rewardLvl = lvl;
+    const offers = boonCount ? boonOffers(run, lvl) : [];
+    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers, lvl} : null;
   }
   if(!noRender){ save(); afterChange(); render(); }
 }
@@ -518,7 +538,8 @@ function encounterCleared(){
   run.events.push(entry);
   run.depth++; run.score += power*10;
   entry.artPts = ART_PTS_CLEAR; run.artPts = (run.artPts||0) + entry.artPts;
-  run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run)};
+  entry.rewardLvl = power;
+  run.pending = {eventN:entry.n, loot:[], boonsLeft:1, boon:boonOffers(run, power), lvl:power};
   save(); render();
 }
 function itemLabel(it){ return it.kind==="armor" || it.rarity==="exotic" ? it.name : cap(it.rarity)+" "+it.name; }
@@ -545,7 +566,7 @@ function takeBoon(i){
   run.boons++; run.score += 5;
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   p.boonsLeft--;
-  p.boon = p.boonsLeft>0 ? boonOffers(run) : null;
+  p.boon = p.boonsLeft>0 ? boonOffers(run, p.lvl) : null;
   if(p.boon && !p.boon.length){ p.boon = null; p.boonsLeft = 0; }
   if(!p.boonsLeft && !p.loot.length) run.pending = null;
   save(); afterChange(); render();
@@ -643,6 +664,23 @@ function itemRow(it){
   const B = window.D2R_BUNGIE, where = it.inst && B ? B.whereIs(it.inst) : null;
   const tag = where ? `<span class="where w-${where.replace(/ /g,"-")}">${WHERE_LABEL[where]||where}</span>` : "";
   return `<div class="item r-${it.rarity}"><div><div class="rtag">${it.rarity} ${tag}</div><div class="nm">${esc(it.name)}</div></div><div class="meta">${esc(sub)}${it.inst?"":"<br>"+esc(it.source||"")}</div></div>`;
+}
+function showTierList(){
+  const run = state.run; if(!run) return;
+  const c = run.cls, e = run.el, types = [["super","Supers"],["grenade","Grenades"],["melee","Melees"],["classAbility","Class abilities"],["aspect","Aspects"],["fragment","Fragments"]];
+  const owned = n => Object.values(run.ab).some(v=>Array.isArray(v) && v.includes(n));
+  const rows = TIER_ORDER.map(t=>{
+    const cells = types.map(([k,label])=>{ const names = (KIT[c]&&KIT[c][e]&&KIT[c][e][k]||[]).map(x=>x.n).filter(n=>tierOf(n)===t);
+      return names.length ? `<div><span class="help">${label}:</span> ${names.map(n=>`<span class="chip ${owned(n)?"el el-"+e:""}" title="${esc((descOf(run,k,n)||{}).d||"")}">${esc(n)}</span>`).join(" ")}</div>` : ""; }).join("");
+    return `<div class="tierrow"><span class="tierbadge big t-${t}">${t}</span><div class="tiercells">${cells||'<span class="help">none</span>'}</div></div>`;
+  }).join("");
+  const odds = (window.D2R_REWARD_ODDS||[]).map(o=>`<tr><td>${o.upTo===Infinity?"8+":"up to "+o.upTo}</td>${TIER_ORDER.map(t=>`<td>${o[t]}%</td>`).join("")}</tr>`).join("");
+  $("#modal").innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Reward tier list"><div class="panel" style="max-width:900px;max-height:90vh;overflow:auto">
+    <div class="row between"><h2>Reward tier list · ${esc(c)} ${esc(cap(e))}</h2><button class="btn ghost" data-act="closeModal">Close</button></div>
+    <p class="help">Highlighted = already unlocked. Hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
+    ${rows}
+    <h3>Odds by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
+  </div></div>`;
 }
 function chipList(list, el, emptyText, slots){
   const chips = list.map(n=>`<span class="chip el el-${el}">${esc(n)}</span>`);
@@ -786,6 +824,7 @@ function renderLoadout(run){
     <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}${descList(run,"aspect",a.aspects)}</div>
     <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens 2 fragment slots", fragSlots(run))}${descList(run,"fragment",a.fragments)}</div>
     ${renderArtifact(run)}
+    <div class="row"><button class="btn ghost" data-act="tierList">Reward tier list</button></div>
   </section>`;
 }
 function renderPending(run){
@@ -796,7 +835,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):""}</button>`).join("")}</div>`;
+    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOf(b.name)}">${tierOf(b.name)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
@@ -978,6 +1017,7 @@ document.addEventListener("click", e=>{
   else if(act==="copy") copy(b.dataset.text);
   else if(act==="export") exportFile(b.dataset.kind);
   else if(act==="closeModal") $("#modal").innerHTML="";
+  else if(act==="tierList") showTierList();
   else if(act==="copyModal") copy($("#modalText").value);
 });
 document.addEventListener("change", e=>{
