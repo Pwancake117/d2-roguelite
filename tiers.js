@@ -1,11 +1,11 @@
 /* D2 Roguelite reward tiers (PvE). Tiers are by reward type:
-   S = supers, swap artifact · A = fragments · B = aspects, extra lives (+1 or +2), +2 artifact points · C = grenades, jumps, melees, class abilities.
-   A pick offers at most 2 fragments (and no more than your open fragment slots); it can offer several aspects or supers.
+   S = supers, swap artifact · A = aspects · B = fragments, extra lives (+1 or +2), +2 artifact points · C = grenades, jumps, melees, class abilities.
+   A pick offers at most 2 aspects (and no more than your open aspect slots); it can offer several fragments or supers.
    Edit freely: move a type key between tiers, or change the odds below. */
 window.D2R_TIERS = {
   S: ["super", "artswap"],
-  A: ["fragment"],
-  B: ["aspect", "life", "artpts"],
+  A: ["aspect"],
+  B: ["fragment", "life", "artpts"],
   C: ["grenade", "jump", "melee", "classAbility"]
 };
 

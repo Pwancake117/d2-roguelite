@@ -136,6 +136,7 @@ button.artslot:not([disabled]){cursor:pointer}.artslot.sel{border-color:var(--ac
 .dstat{color:var(--muted);font-size:.75rem}
 .offer .dstat{display:block;margin-top:2px}
 .capline{color:var(--accent);font-weight:600}
+.warnline{font-size:.78rem;font-weight:600;color:var(--danger,#e66)}
 .desclist{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
 .callout{border:1px solid var(--accent);background:rgba(127,212,255,.06);border-radius:6px;padding:14px;display:grid;gap:10px}
 .callout.dead{border-color:var(--danger);background:rgba(255,93,93,.07)}
@@ -170,8 +171,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div id="modal"></div>
 
-<script src="tiers.js?v=7"></script>
-<script src="bungie.js?v=36"></script>
+<script src="tiers.js?v=8"></script>
+<script src="bungie.js?v=37"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -405,8 +406,7 @@ const TIER_OF_TYPE = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.f
 function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
 const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,artpts:1,artswap:1};
-const FRAG_TYPES = {fragment:1, fragslot:1};
-const MAX_FRAG_OFFERS = 2;
+const MAX_ASPECT_OFFERS = 2, MAX_FRAGMENTS = 6;
 const TYPE_WEIGHT = {artswap:0.2};   // inside its tier, an artifact swap comes up less often than a super
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
 function boonOffers(run, lvl, diff){
@@ -420,13 +420,14 @@ function boonOffers(run, lvl, diff){
   add("melee","Melee",P.melees(c,e).filter(n=>!a.melees.includes(n)));
   add("classAbility","Class Ability",P.classAbilities(c,e).filter(n=>!a.classAbilities.includes(n)));
   if(a.aspects.length<2) add("aspect","Aspect",P.aspects(c,e).filter(n=>!a.aspects.includes(n)));
-  if(a.fragments.length<fragSlots(run)) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
+  // fragments can be offered without a free slot: the card warns, and the fragment waits until an aspect opens room
+  if(a.fragments.length<MAX_FRAGMENTS) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
   // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
   if(run.artifact) artifactOffers(run, 6).forEach(o=>cands.push({type:"artswap",label:"Swap Artifact",name:o.name}));
   cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
   if(run.lives<run.maxLives+2) cands.push({type:"life",label:"Revive Token",name:"+1 Life",n:1});
   if(run.lives+2<=run.maxLives+2 && Math.random()<0.35) cands.push({type:"life",label:"Revive Tokens",name:"+2 Lives",n:2});
-  const odds = oddsFor(lvl), out = [], fragMax = Math.min(MAX_FRAG_OFFERS, Math.max(0, fragSlots(run) - a.fragments.length));
+  const odds = oddsFor(lvl), out = [], aspMax = Math.min(MAX_ASPECT_OFFERS, Math.max(0, 2 - a.aspects.length));
   let pool = cands.slice();
   // Master / Grandmaster: chance that one choice is guaranteed S tier (tiers.js D2R_S_FLOOR)
   const sAll = pool.filter(o=>tierOfType(o.type)==="S"), sSup = sAll.filter(o=>o.type==="super"), sPool = sSup.length ? sSup : sAll;
@@ -442,8 +443,8 @@ function boonOffers(run, lvl, diff){
     const choice = pick(types[k]);
     out.push(choice);
     pool.splice(pool.indexOf(choice),1);
-    // fragments: at most 2 per pick, and never more than the open fragment slots
-    if(FRAG_TYPES[choice.type] && out.filter(o=>FRAG_TYPES[o.type]).length >= fragMax) pool = pool.filter(o=>!FRAG_TYPES[o.type]);
+    // aspects: at most 2 per pick, and never more than the open aspect slots
+    if(choice.type==="aspect" && out.filter(o=>o.type==="aspect").length >= aspMax) pool = pool.filter(o=>o.type!=="aspect");
   }
   return out;
 }
@@ -752,7 +753,7 @@ function showTierList(){
   const odds = (window.D2R_REWARD_ODDS||[]).map((o,i,arr)=>`<tr><td>${o.upTo===Infinity?(arr[i-1]?arr[i-1].upTo+1:0)+"+":"up to "+o.upTo}</td>${TIER_ORDER.map(t=>`<td>${o[t]||0}%</td>`).join("")}</tr>`).join("");
   $("#modal").innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Reward tier list"><div class="panel" style="max-width:900px;max-height:90vh;overflow:auto">
     <div class="row between"><h2>Reward tier list · ${esc(c)} ${esc(cap(e))}</h2><button class="btn ghost" data-act="closeModal">Close</button></div>
-    <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick offers at most 2 fragments, and only as many as you have open fragment slots. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
+    <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick offers at most 2 aspects, and only as many as you have open aspect slots. Fragments can show up even when your slots are full; the card warns you. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
     ${rows}
     <p class="help">Master: ${Math.round(sFloor(3)*100)}% chance a pick includes an S reward. Grandmaster/Ultimate: ${Math.round(sFloor(4)*100)}%. On top of that, every choice rolls the odds below.</p><h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
   </div></div>`;
@@ -910,7 +911,7 @@ function renderLoadout(run){
     <div class="slotgroup"><h3>Melee</h3>${pickList(run,"melee")}</div>
     <div class="slotgroup"><h3>Class ability</h3>${pickList(run,"classAbility")}</div>
     <div class="slotgroup"><h3>Aspects (${a.aspects.length}/2)</h3>${chipList(a.aspects, run.el, "", 2)}${descList(run,"aspect",a.aspects)}</div>
-    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments, run.el, "Each aspect opens fragment slots (most open 2, some 3)", fragSlots(run))}${descList(run,"fragment",a.fragments)}</div>
+    <div class="slotgroup"><h3>Fragments (${a.fragments.length}/${fragSlots(run)})</h3>${chipList(a.fragments.slice(0,fragSlots(run)), run.el, "Each aspect opens fragment slots (most open 2, some 3)", fragSlots(run))}${a.fragments.length>fragSlots(run)?`<p class="help warn-text">Waiting for a slot (not equipped): ${esc(a.fragments.slice(fragSlots(run)).join(", "))}</p>`:""}${descList(run,"fragment",a.fragments)}</div>
     ${renderArtifact(run)}
     <div class="row"><button class="btn ghost" data-act="tierList">Reward tier list</button></div>
   </section>`;
@@ -923,7 +924,7 @@ function renderPending(run){
       <div class="row"><button class="btn ghost" data-act="loot" data-i="-1">Leave it</button></div>`;
   }
   if(p.boon){
-    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
+    html += `<h3>Ability unlocked: choose one${p.boonsLeft>1?` (${p.boonsLeft} picks left)`:""}</h3><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&run.ab.fragments.length>=fragSlots(run)?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Replaces ${esc(run.artifact?run.artifact.n:"")}; all spent points come back.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }

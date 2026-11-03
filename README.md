@@ -52,8 +52,8 @@ Rewards are tiered by type (set in `tiers.js`):
 | Tier | Rewards |
 |---|---|
 | S | Supers, swap to a different artifact |
-| A | Fragments (at most 2 per pick, and only as many as you have open fragment slots) |
-| B | Aspects, extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives), +2 artifact points |
+| A | Aspects (at most 2 per pick, and only as many as you have open aspect slots) |
+| B | Fragments (offered even when your slots are full, with a warning; the fragment waits until an aspect opens room), extra lives (+1 Life, sometimes +2 Lives; up to 2 over your starting lives), +2 artifact points |
 | C | Grenades, jumps, melees, class abilities |
 
 Each of the 3 choices in a pick rolls a tier, then a reward inside it, so a pick can offer two aspects or two supers. Harder events roll higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
