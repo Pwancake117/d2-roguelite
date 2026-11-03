@@ -115,7 +115,7 @@ Pick **Dungeon Only Run** on the setup screen for a run where only dungeons coun
 - Tap **Encounter cleared** after each boss or major fight. Every encounter is treated as a completed event with reward unlocks: it earns Light (the dungeon's power), a guaranteed pick plus a bonus pick for every 4 Light, and artifact points.
 - When the dungeon ends, Bungie's record logs the clear (Light), your deaths and the loot you picked up.
 - Bungie's API doesn't report dungeon encounters, so the encounter tap is the one manual step.
-- You can run every dungeon in one run, back to back. The run keeps going until you're out of lives or you end it.
+- You can run every dungeon in one run, back to back. The run keeps going until you're out of lives or you end it. **Can you beat them all in one run?**
 
 ## Export
 Download your runs as CSV (one row per event) or JSON from Run history. Run data is stored in your own browser.
