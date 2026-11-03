@@ -362,7 +362,7 @@ summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=96"></script>
+<script src="bungie.js?v=97"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1163,6 +1163,7 @@ function renderSetup(){
       </label>
       <button class="btn primary" data-act="start">Start run</button>
     </div>
+    <p class="startnote livesnote"><b>What is a life?</b> A life is lost when an event fails: your fireteam runs out of revives and gets sent to orbit, or you leave an activity after 5 minutes. A death you get revived from doesn't cost a life (it only lowers the Light you earn). In Hardcore, any death costs a life. At 0 lives the run is over.</p>
   </section>`;
 }
 function renderArtifact(run){
@@ -1207,7 +1208,7 @@ function renderStatus(run){
   const picks = run.pending ? (run.pending.boonsLeft||0) + (run.pending.loot&&run.pending.loot.length?1:0) : 0;
   return `${picks?`<div class="pickbanner" role="status"><b>${picks} reward pick${picks>1?"s":""} waiting</b><span>Choose ${picks>1?"them":"it"} in the Ability unlock panel before logging your next event.</span></div>`:""}<section class="status">
     <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>${run.depth} event${run.depth===1?"":"s"} cleared</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
-    <div><span class="lbl">Lives</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
+    <div title="A life is lost when an event fails: out of revives and sent to orbit, or leaving after 5 minutes.${run.difficulty==="hardcore"?" Hardcore: any death costs a life.":""}"><span class="lbl">Lives ⓘ</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to bonus pick</span><span class="val"><svg class="lighticon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z"/></svg>${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
     ${(()=>{ const pts = artLeft(run), can = run.artifact && pts>0;
       return can ? `<button class="stat-hot" data-act="tab" data-tab="artifact" title="Open the Artifact tab to spend"><span class="lbl">Artifact points</span><span class="val">${pts}</span><span class="hotcta">Spend now ›</span></button>`
