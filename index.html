@@ -236,6 +236,8 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .starteredit{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .starteredit label{display:grid;gap:3px}
 .starteredit select{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px}
+.about p{max-width:80ch;margin:8px 0}
+.about summary{cursor:pointer}
 .saverow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .saverow > div:first-child{display:grid;gap:2px}
 .manualoff{display:grid;gap:4px;padding:10px 12px;border:1px dashed var(--line);border-radius:6px}
@@ -262,7 +264,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 
 <script src="tiers.js?v=10"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=80"></script>
+<script src="bungie.js?v=81"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -833,6 +835,20 @@ async function loadRunFile(file){
     save(); render(); toast("Save file loaded into Saved runs.");
   } catch(e){ toast("Couldn't load that file: "+(e.message||e)); }
 }
+function renderAbout(){
+  return `<section class="panel about"><details ${(()=>{ try { return localStorage.getItem("d2r.aboutClosed")==="1" ? "" : "open"; } catch(e){ return "open"; } })()} data-act="aboutToggle">
+    <summary><h2 style="display:inline">About this project</h2></summary>
+    <p>I started on this idea a while back, but was recently inspired by Lep's Dungeon Crawler Carl dungeon runs. For all I know someone has already made something like this; if so, I didn't copy it on purpose. I made this for fun, and I'm not a developer.</p>
+    <h3>Things to know</h3>
+    <ul class="steps">
+      <li><b>Engrams can be a bit wonky.</b> Engrams at the end of an event can take a few minutes to show up from the Postmaster in the app, even after the event's rewards have posted. Some of this runs on the honor system.</li>
+      <li><b>Stick with Vanguard Ops.</b> Some activities pour out drops. Vanguard Ops seem to give a more normal, manageable amount.</li>
+      <li><b>Dungeon encounter rewards are lightly tested.</b> I haven't tried them much, so you may need to push those out manually as you progress through a dungeon.</li>
+    </ul>
+    <h3>What's next</h3>
+    <p>I may look at adding exotics as drop options, but that could get tedious, since you'd need to pull them from Collections if they aren't already in your vault.</p>
+  </details></section>`;
+}
 function renderSaved(){
   const list = state.saved||[];
   const rows = list.map(x=>{ const r = x.run, conf = ui.confirm==="del:"+r.id;
@@ -1252,6 +1268,7 @@ function render(){
   } else if(run && run.status!=="active"){
     html += renderEnded();
   } else {
+    html += renderAbout();
     html += renderBungie(null);
     html += renderSaved();
     html += renderSetup();
@@ -1341,6 +1358,9 @@ document.addEventListener("change", e=>{
   try { localStorage.setItem(MANUAL_KEY, t.checked ? "1" : "0"); } catch(err){}
   render();
 });
+document.addEventListener("toggle", e=>{
+  const t = e.target; if(t && t.dataset && t.dataset.act==="aboutToggle"){ try { localStorage.setItem("d2r.aboutClosed", t.open ? "0" : "1"); } catch(err){} }
+}, true);
 document.addEventListener("click", e=>{
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
