@@ -249,7 +249,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 <div id="modal"></div>
 
 <script src="tiers.js?v=10"></script>
-<script src="bungie.js?v=53"></script>
+<script src="bungie.js?v=54"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -765,7 +765,7 @@ function endRun(result){
   const run = state.run; if(!run) return;
   run.status = result; run.endedAt = Date.now(); run.pending = null;
   if(result==="extracted"){ run.score += run.depth*5; }
-  const highest = run.events.filter(e=>e.outcome==="clear").reduce((m,e)=>Math.max(m,e.diff),-1);
+  const highest = run.events.filter(e=>e.outcome==="clear"||e.outcome==="flawless").reduce((m,e)=>Math.max(m,e.diff),-1);
   state.history.unshift({
     id:run.id, mode:run.mode||"ops", cls:run.cls, el:run.el, startedAt:run.startedAt, endedAt:run.endedAt, result, depth:run.depth, deaths:run.deaths,
     score:run.score, boons:run.boons, highestDiff: highest>=0 ? DIFFS[highest] : "None", events:run.events,
