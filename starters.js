@@ -110,7 +110,7 @@ window.D2R_STARTERS = {
        melee: Ball Lightning, Chain Lightning
        classAbility: Empowering Rift, Healing Rift
     */
-    "arc": {super: "Stormtrance", grenade: "Storm", jump: "Burst Glide", melee: "Chain Lightning", classAbility: "Healing Rift"},
+    "arc": {super: "Stormtrance", grenade: "Flashbang", jump: "Strafe Glide", melee: "Chain Lightning", classAbility: "Healing Rift"},
     /* solar options
        super: Song of Flame, Daybreak, Well of Radiance
        grenade: Fusion, Healing, Firebolt, Solar, Incendiary, Tripmine, Swarm, Thermite
@@ -118,7 +118,7 @@ window.D2R_STARTERS = {
        melee: Incinerator Snap, Celestial Fire
        classAbility: Phoenix Dive, Empowering Rift, Healing Rift
     */
-    "solar": {super: "Daybreak", grenade: "Solar", jump: "Burst Glide", melee: "Incinerator Snap", classAbility: "Healing Rift"},
+    "solar": {super: "Daybreak", grenade: "Solar", jump: "Strafe Glide", melee: "Incinerator Snap", classAbility: "Healing Rift"},
     /* void options
        super: Nova Warp, Nova Bomb: Vortex, Nova Bomb: Cataclysm
        grenade: Vortex, Void Spike, Scatter, Magnetic, Suppressor, Void Wall, Axion Bolt
@@ -126,7 +126,7 @@ window.D2R_STARTERS = {
        melee: Pocket Singularity
        classAbility: Empowering Rift, Healing Rift
     */
-    "void": {super: "Nova Bomb: Vortex", grenade: "Vortex", jump: "Burst Glide", melee: "Pocket Singularity", classAbility: "Healing Rift"},
+    "void": {super: "Nova Bomb: Vortex", grenade: "Vortex", jump: "Strafe Glide", melee: "Pocket Singularity", classAbility: "Healing Rift"},
     /* stasis options
        super: Winter's Wrath
        grenade: Duskfield, Glacier, Shatter, Coldsnap
@@ -142,7 +142,7 @@ window.D2R_STARTERS = {
        melee: Arcane Needle
        classAbility: Healing Rift, Empowering Rift
     */
-    "strand": {super: "Needlestorm", grenade: "Threadling", jump: "Burst Glide", melee: "Arcane Needle", classAbility: "Healing Rift"},
+    "strand": {super: "Needlestorm", grenade: "Threadling", jump: "Strafe Glide", melee: "Arcane Needle", classAbility: "Healing Rift"},
     /* prismatic options
        super: Stormtrance, Song of Flame, Nova Bomb: Cataclysm, Winter's Wrath, Needlestorm
        grenade: Storm, Healing, Vortex, Coldsnap, Threadling
@@ -150,6 +150,6 @@ window.D2R_STARTERS = {
        melee: Arcane Needle, Chain Lightning, Incinerator Snap, Pocket Singularity, Penumbral Blast
        classAbility: Healing Rift, Empowering Rift, Phoenix Dive
     */
-    "prismatic": {super: "Song of Flame", grenade: "Healing", jump: "Burst Glide", melee: "Arcane Needle", classAbility: "Healing Rift"}
+    "prismatic": {super: "Song of Flame", grenade: "Healing", jump: "Strafe Glide", melee: "Arcane Needle", classAbility: "Healing Rift"}
   }
 };
