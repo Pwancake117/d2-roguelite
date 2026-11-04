@@ -400,9 +400,9 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <div id="modal"></div>
 
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
-<script src="tiers.js?v=14"></script>
+<script src="tiers.js?v=15"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=138"></script>
+<script src="bungie.js?v=139"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -682,8 +682,9 @@ const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragmen
 const MAX_FRAGMENTS = Infinity;   // no cap on fragments owned: extras wait in the Subclass tab to be swapped in (equipped count is limited by aspect slots)
 const ONE_PER_PICK = window.D2R_ONE_PER_PICK || ["S","A"];
 const TYPE_WEIGHT = {artswap:0.2, subclass:0.3, life:0.45, life2:0.35, artpts:0.5};   // inside A, aspects stay the most common   // inside its tier, an artifact swap comes up less often than a super
+const DUNGEON_CLEAR_S_FLOOR = 1;   // full dungeon clear: first pick always has an S choice
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
-function boonOffers(run, lvl, diff, noFloor){
+function boonOffers(run, lvl, diff, noFloor, floorP){
   if(lvl==null) lvl = (run.pending && run.pending.lvl) || 3;
   if(diff==null) diff = (run.pending && run.pending.diff) || 0;
   const a = run.ab, c = run.cls, e = run.el, cands = [];
@@ -717,7 +718,7 @@ function boonOffers(run, lvl, diff, noFloor){
   // Master / Grandmaster: chance that one choice is guaranteed S tier (tiers.js D2R_S_FLOOR)
   const sAll = pool.filter(o=>tierOfType(o.type)==="S");
   // the floor applies to the first reward pick of an event only (noFloor after that pick is taken)
-  if(sAll.length && !noFloor && Math.random() < sFloor(diff)){
+  if(sAll.length && !noFloor && Math.random() < Math.max(sFloor(diff), floorP||0)){
     const types = {}; sAll.forEach(o=>{ (types[o.type] = types[o.type]||[]).push(o); });
     const k = weighted(Object.keys(types).map(k=>({k, w:TYPE_WEIGHT[k]||1}))).k;
     out.push(pick(types[k])); pool = pool.filter(o=>tierOfType(o.type)!=="S");
@@ -862,8 +863,10 @@ function logEventData(x, noRender){
     entry.picks = boonCount;
     const lvl = power + (flawless ? 1 : 0);
     entry.rewardLvl = lvl;
-    const offers = boonCount ? boonOffers(run, lvl, diff) : [];
-    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers, lvl, diff} : null;
+    // a full dungeon clear guarantees one S choice on its first reward pick
+    const floorP = ev.id==="dungeon" ? DUNGEON_CLEAR_S_FLOOR : 0;
+    const offers = boonCount ? boonOffers(run, lvl, diff, false, floorP) : [];
+    run.pending = offers.length ? {eventN:entry.n, loot:[], boonsLeft:boonCount, boon:offers, lvl, diff, floorP} : null;
     if(completed && !run.artifact && run.pending && !run.pending.artFirst){ run.pending.artFirst = true; run.pending.boonsLeft++; entry.picks++; run.pending.boon = artifactOffers(run); }
   }
   if(!noRender){ save(); afterChange(); render(); }
@@ -1024,7 +1027,7 @@ function rerollPick(){
   const run = state.run, p = run && run.pending; if(!p || !p.boon || p.rerollAt===p.boonsLeft || artLeft(run)<REROLL_COST) return;
   run.artPts -= REROLL_COST; p.rerollAt = p.boonsLeft;
   logOffers(run, p, null);
-  p.boon = p.boon.some(b=>b.type==="artpick") ? artifactOffers(run) : boonOffers(run, p.lvl, p.diff, p.floorDone);
+  p.boon = p.boon.some(b=>b.type==="artpick") ? artifactOffers(run) : boonOffers(run, p.lvl, p.diff, p.floorDone, p.floorP);
   const ev = run.events.find(e=>e.n===p.eventN); if(ev){ ev.rerolls = (ev.rerolls||0)+1; }
   run.rerolls = (run.rerolls||0)+1;
   save(); render(); toast("Rerolled for "+REROLL_COST+" artifact point.");
@@ -1046,7 +1049,7 @@ function takeBoon(i){
   const ev = run.events.find(e=>e.n===p.eventN); if(ev) ev.boons.push(b.label+": "+b.name);
   if(b.type!=="artpick") p.floorDone = true;   // Master/GM S floor: first tiered pick only
   p.boonsLeft--;
-  p.boon = p.boonsLeft>0 ? ((p.next && p.next.length) ? p.next.shift() : boonOffers(run, p.lvl, p.diff, p.floorDone)) : null;
+  p.boon = p.boonsLeft>0 ? ((p.next && p.next.length) ? p.next.shift() : boonOffers(run, p.lvl, p.diff, p.floorDone, p.floorP)) : null;
   if(p.boon && !p.boon.length){ p.boon = null; p.boonsLeft = 0; }
   if(!p.boonsLeft && !p.loot.length) run.pending = null;
   save(); afterChange(); render();
@@ -1237,7 +1240,7 @@ function showTierList(){
     <div class="row between"><h2>Reward tier list · ${esc(c)} ${esc(cap(e))}</h2><button class="btn ghost" data-act="closeModal">Close</button></div>
     <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick offers at most one S reward and one A reward. Fragments can show up even when your slots are full; the card warns you. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
     ${rows}
-    <p class="help">First reward pick of each event only: Master ${Math.round(sFloor(3)*100)}% chance it includes an S reward, Grandmaster/Ultimate ${Math.round(sFloor(4)*100)}%. On top of that, every choice rolls the odds below.</p><h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
+    <p class="help">First reward pick of each event only: a full dungeon clear always includes an S reward; Master ${Math.round(sFloor(3)*100)}% chance it includes an S reward, Grandmaster/Ultimate ${Math.round(sFloor(4)*100)}%. On top of that, every choice rolls the odds below.</p><h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
     ${(()=>{ const st = offerStats([run]); if(!st.sets) return `<h3>This run's offers</h3><p class="help">Choices are saved from now on; numbers show up after your next pick.</p>`;
       const pct = n => st.choices ? Math.round(n/st.choices*100)+"%" : "0%";
       return `<h3>This run's offers</h3><p class="help">${st.sets} choice set${st.sets===1?"":"s"} shown (rerolls included) · S offered in ${st.sOffered} (${Math.round(st.sOffered/st.sets*100)}%) · S taken ${st.sTaken}. Per choice: ${TIER_ORDER.map(t=>t+" "+pct(st.tiers[t])).join(" · ")}. Saved since Nov 3; earlier picks only recorded what you took.</p>`; })()}
@@ -1498,7 +1501,7 @@ function renderPending(run){
   }
   if(p.boon){
     const canReroll = p.rerollAt!==p.boonsLeft && artLeft(run)>=REROLL_COST;
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${sFloor(p.diff||0)&&!p.floorDone?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice on this first pick. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.spill?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot: it waits, not equipped, until you have room (another aspect, or swap fragments in the Subclass tab)</span>`:""}${b.spill?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${(p.floorP||0)>=1&&!p.floorDone?`Dungeon clear: this first pick includes an S choice. `:sFloor(p.diff||0)&&!p.floorDone?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice on this first pick. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.spill?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot: it waits, not equipped, until you have room (another aspect, or swap fragments in the Subclass tab)</span>`:""}${b.spill?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }

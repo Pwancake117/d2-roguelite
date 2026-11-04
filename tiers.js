@@ -16,10 +16,10 @@ window.D2R_ONE_PER_PICK = ["S", "A"];
    Reward level = event power (tier + difficulty) + 1 if flawless.
    Solo Ops on Normal = 2, Fireteam Ops on Expert = 5, Pinnacle on Master = 7, Grandmaster = 8+. */
 window.D2R_REWARD_ODDS = [
-  {upTo: 3,        S: 5,  A: 25, B: 25, C: 45},
-  {upTo: 5,        S: 10, A: 30, B: 30, C: 30},
-  {upTo: 7,        S: 12, A: 32, B: 32, C: 24},
-  {upTo: Infinity, S: 15, A: 35, B: 35, C: 15}
+  {upTo: 3,        S: 3,  A: 25, B: 27, C: 45},
+  {upTo: 5,        S: 6,  A: 30, B: 32, C: 32},
+  {upTo: 7,        S: 8,  A: 32, B: 34, C: 26},
+  {upTo: Infinity, S: 10, A: 35, B: 38, C: 17}
 ];
 
 /* Difficulty floor for S tier: chance that the first reward pick of an event includes an S reward, by difficulty

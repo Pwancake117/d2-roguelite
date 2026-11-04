@@ -110,12 +110,12 @@ Each of the 3 choices in a pick rolls a tier, then a reward inside it. A pick of
 
 | Reward level | S | A | B | C |
 |---|---|---|---|---|
-| up to 3 (e.g. Solo Ops, Normal) | 5% | 25% | 25% | 45% |
-| 4–5 | 10% | 30% | 30% | 30% |
-| 6–7 | 12% | 32% | 32% | 24% |
-| 8+ (e.g. Grandmaster) | 15% | 35% | 35% | 15% |
+| up to 3 (e.g. Solo Ops, Normal) | 3% | 25% | 27% | 45% |
+| 4–5 | 6% | 30% | 32% | 32% |
+| 6–7 | 8% | 32% | 34% | 26% |
+| 8+ (e.g. Grandmaster) | 10% | 35% | 38% | 17% |
 
-Master and Grandmaster boost S on the **first reward pick of each event**: Master gives a 50% chance of a guaranteed S choice, Grandmaster/Ultimate 95%. The event's other picks roll the normal odds above.
+A **full dungeon clear** always includes an S choice on its first reward pick. Master and Grandmaster boost S on the **first reward pick of each event**: Master gives a 50% chance of a guaranteed S choice, Grandmaster/Ultimate 95%. The event's other picks roll the normal odds above.
 
 Each pick card shows its tier, and the **Reward tier list** button shows everything for your subclass. To change tiers or odds, edit `tiers.js`.
 
