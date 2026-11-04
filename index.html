@@ -177,6 +177,16 @@ button.atile{cursor:pointer}button.atile:hover{border-color:var(--el)}
 .fslot.empty{border-style:dashed;color:var(--muted);min-height:76px;align-content:center}
 .fslot.empty .ph{width:44px;height:44px;border:1px dashed var(--line);border-radius:3px}
 .descs summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+button.fslot,button.aslot{font:inherit;color:var(--ink);cursor:pointer;text-align:left;width:100%}
+button.aslot:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
+.aslot.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.aslot.bench{opacity:.75;border-style:dashed;border-left-style:solid}
+.aslot.bench:hover{opacity:1}
+button.fslot:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
+.fslot.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.fslot.bench{opacity:.75;border-style:dashed}
+.fslot.bench:hover{opacity:1}
+.fbench{display:grid;gap:6px;margin-top:4px}
 /* character screen */
 .charscreen{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.6fr) minmax(0,1fr);gap:18px;align-items:start}
 .gcol{display:grid;gap:10px;align-content:start}
@@ -381,7 +391,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=123"></script>
+<script src="bungie.js?v=125"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -615,8 +625,42 @@ function lootOffers(run, power){
 }
 /* fragment slots = each owned aspect's real fragment capacity from Bungie (2 until its data loads) */
 function aspectCap(run, name, el){ const d = descOf(run, "aspect", name, el); return d && d.cap ? d.cap : 2; }
-function fragSlotsFor(run, el){ const ab = el && run.subs && run.subs[el] ? run.subs[el] : run.ab; return ab.aspects.reduce((t,n)=>t+aspectCap(run,n,el),0) + (ab.fragBonus||0); }
+/* aspects: you can own more than 2; 2 are equipped (ab.aspActive, topped up in order) */
+function activeAspectsOf(ab){ const c = (ab.aspActive||[]).filter(n=>ab.aspects.includes(n)); for(const n of ab.aspects){ if(c.length>=2) break; if(!c.includes(n)) c.push(n); } return c.slice(0,2); }
+function activeAspects(run){ return activeAspectsOf(run.ab); }
+function fragSlotsFor(run, el){ const ab = el && run.subs && run.subs[el] ? run.subs[el] : run.ab; return activeAspectsOf(ab).reduce((t,n)=>t+aspectCap(run,n,el),0) + (ab.fragBonus||0); }
 function fragSlots(run){ return fragSlotsFor(run, null); }
+/* which owned fragments are equipped: your choice (ab.fragActive) kept to the slot count, topped up with the rest in order */
+function activeFrags(run){
+  const a = run.ab, slots = fragSlots(run);
+  const chosen = (a.fragActive||[]).filter(n=>a.fragments.includes(n));
+  for(const n of a.fragments){ if(chosen.length>=slots) break; if(!chosen.includes(n)) chosen.push(n); }
+  return chosen.slice(0, slots);
+}
+function aspClick(name){
+  const run = state.run; if(!run) return;
+  const a = run.ab, act = activeAspects(run);
+  if(act.includes(name)){ ui.aspSel = ui.aspSel===name ? null : name; render(); return; }
+  if(!a.aspects.includes(name)) return;
+  let next = act.slice();
+  if(ui.aspSel && next.includes(ui.aspSel)) next[next.indexOf(ui.aspSel)] = name;
+  else if(next.length < 2) next.push(name);
+  else { ui.aspHint = true; render(); return; }
+  a.aspActive = next; ui.aspSel = null; ui.aspHint = false;
+  save(); afterChange(); render(); toast(name+" equipped. Fragment slots: "+fragSlots(run)+".");
+}
+function fragClick(name){
+  const run = state.run; if(!run) return;
+  const a = run.ab, act = activeFrags(run), slots = fragSlots(run);
+  if(act.includes(name)){ ui.fragSel = ui.fragSel===name ? null : name; render(); return; }      // pick an equipped one to swap out
+  if(!a.fragments.includes(name)) return;
+  let next = act.slice();
+  if(ui.fragSel && next.includes(ui.fragSel)) next[next.indexOf(ui.fragSel)] = name;
+  else if(next.length < slots) next.push(name);
+  else { ui.fragHint = true; render(); return; }
+  a.fragActive = next; ui.fragSel = null; ui.fragHint = false;
+  save(); afterChange(); render(); toast(name+" equipped.");
+}
 /* Reward tiers (tiers.js) are by reward type. Each offered choice rolls a tier by the event's reward level,
    then a reward inside it. At most one fragment (or fragment slot) per pick; aspects and supers can repeat. */
 const TIER_ORDER = ["S","A","B","C"];
@@ -638,7 +682,7 @@ function boonOffers(run, lvl, diff){
   add("jump","Jump",P.jumps(c,e).filter(n=>!(a.jumps||[]).includes(n)));
   add("melee","Melee",P.melees(c,e).filter(n=>!a.melees.includes(n)));
   add("classAbility","Class Ability",P.classAbilities(c,e).filter(n=>!a.classAbilities.includes(n)));
-  if(a.aspects.length<2) add("aspect","Aspect",P.aspects(c,e).filter(n=>!a.aspects.includes(n)));
+  add("aspect","Aspect",P.aspects(c,e).filter(n=>!a.aspects.includes(n)));   // aspects keep dropping after 2; extras can be swapped in
   // fragments can be offered without a free slot: the card warns, and the fragment waits until an aspect opens room
   if(a.fragments.length<MAX_FRAGMENTS) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
   // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
@@ -683,7 +727,6 @@ function spillover(run, out){
   return out.map(o=>{
     if(!SPILL_TYPES[o.type] || Math.random() >= SPILL_CHANCE) return o;
     const el = pick(others), ab = run.subs[el], key = SPILL_TYPES[o.type];
-    if(o.type==="aspect" && ab.aspects.length>=2) return o;
     if(o.type==="fragment" && ab.fragments.length>=MAX_FRAGMENTS) return o;
     const names = (KIT[run.cls][el][SPILL_LIST[o.type]]||[]).map(x=>x.n).filter(n=>!(ab[key]||[]).includes(n) && !out.some(x=>x.el===el && x.name===n));
     if(!names.length) return o;
@@ -844,7 +887,6 @@ function syncShared(run){
     if(noPrism(t) && el==="prismatic") continue;
     for(const x of (KIT[run.cls][el][t]||[])){
       if(!owned[t] || !owned[t].has(x.n) || ab[k].includes(x.n)) continue;
-      if(t==="aspect" && ab.aspects.length>=2) continue;
       ab[k].push(x.n); added.push(ELEMENTS[el].name+" "+x.n);
     }
   }
@@ -1068,8 +1110,8 @@ function dimLoadout(run){
   const put = (idx, type, name) => { const h = plugHash(c,e,type,name); if(h) so[idx] = h; };
   put(0,"classAbility",act.classAbility); put(1,"jump",act.jump); put(2,"super",act.super); put(3,"melee",act.melee); put(4,"grenade",act.grenade);
   const aspIdx = prism ? [7,8] : [5,6], fragStart = prism ? 9 : 7;
-  a.aspects.slice(0,2).forEach((n,i)=>put(aspIdx[i],"aspect",n));
-  a.fragments.slice(0,fragmentCap(run)).forEach((n,i)=>put(fragStart+i,"fragment",n));
+  activeAspects(run).forEach((n,i)=>put(aspIdx[i],"aspect",n));
+  activeFrags(run).slice(0,fragmentCap(run)).forEach((n,i)=>put(fragStart+i,"fragment",n));
   const name = ("D2R "+ELEMENTS[e].name+" "+c+" D"+run.depth).slice(0,40);
   return {
     name, classType:CLASS_TYPE[c], clearSpace:false,
@@ -1170,7 +1212,7 @@ function baseBuildHTML(cls, el){
   return `<div class="basebuild el-${el}">
     <div class="row between"><h3>Starter build: ${ELEMENTS[el].name} ${cls}</h3><span class="help">${unlocks} unlock options</span></div>
     <div class="chips">${STARTER_TYPES.map(([t,l])=>`<span class="chip el el-${el}">${l}: ${esc(b[t])}</span>`).join("")}<span class="chip empty">0 aspects</span><span class="chip empty">0 fragments</span></div>
-    <p class="help" style="margin:0">Unlockable: ${k.super.length-1} supers, ${k.grenade.length-1} grenades, ${k.jump.length-1} jumps, ${k.melee.length-1} melees, ${k.classAbility.length-1} class abilities, ${k.aspect.length} aspects (2 max), ${k.fragment.length} fragments.</p>
+    <p class="help" style="margin:0">Unlockable: ${k.super.length-1} supers, ${k.grenade.length-1} grenades, ${k.jump.length-1} jumps, ${k.melee.length-1} melees, ${k.classAbility.length-1} class abilities, ${k.aspect.length} aspects (2 equipped at a time), ${k.fragment.length} fragments.</p>
   </div>`;
 }
 function pullSteps(cls){
@@ -1337,16 +1379,20 @@ function renderCharacterTab(run){
 function renderSubclassTab(run){
   const a = run.ab, act = a.active||{}, slots = fragSlots(run);
   const supers = a.supers.filter(n=>n!==act.super);
-  const aspects = [0,1].map(i=>{ const n = a.aspects[i]; if(!n) return `<div class="aslot empty"><span class="ph">+</span><span class="help">Aspect slot</span></div>`;
-    const d = descOf(run,"aspect",n); return `<div class="aslot">${abilityTile(run,"aspect",n,{big:true})}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></div>`; }).join("");
-  const frags = []; for(let i=0;i<Math.max(slots,1);i++){ const n = a.fragments[i]; frags.push(n && i<slots ? `<div class="fslot">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></div>` : `<div class="fslot empty">${i<slots?"<span class='ph'>+</span><span>Open</span>":"<span class='help'>Get an aspect to open fragment slots</span>"}</div>`); }
-  const waiting = a.fragments.slice(slots);
+  const actA = activeAspects(run), aBench = a.aspects.filter(n=>!actA.includes(n));
+  const aspects = [0,1].map(i=>{ const n = actA[i]; if(!n) return `<div class="aslot empty"><span class="ph">+</span><span class="help">Aspect slot</span></div>`;
+    const d = descOf(run,"aspect",n); return `<button class="aslot ${ui.aspSel===n?"sel":""}" data-act="asp" data-name="${esc(n)}" title="${aBench.length?"Tap to swap this aspect out":""}">${abilityTile(run,"aspect",n,{big:true})}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></button>`; }).join("")
+    + (aBench.length ? `<div class="fbench"><span class="glabel">Owned, not equipped${ui.aspSel?` · tap one to swap in for ${esc(ui.aspSel)}`:" · tap an equipped aspect first, then one of these"}</span>${aBench.map(n=>{ const d = descOf(run,"aspect",n); return `<button class="aslot bench" data-act="asp" data-name="${esc(n)}">${abilityTile(run,"aspect",n)}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></button>`; }).join("")}${ui.aspHint?`<p class="help warn-text">Both aspect slots are full: tap an equipped aspect to swap it out.</p>`:""}</div>` : "");
+  const actF = activeFrags(run), bench = a.fragments.filter(n=>!actF.includes(n));
+  const frags = []; for(let i=0;i<Math.max(slots,1);i++){ const n = actF[i]; frags.push(n ? `<button class="fslot ${ui.fragSel===n?"sel":""}" data-act="frag" data-name="${esc(n)}" title="${bench.length?"Tap to swap this fragment out":""}">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></button>` : `<div class="fslot empty">${i<slots?"<span class='ph'>+</span><span>Open</span>":"<span class='help'>Get an aspect to open fragment slots</span>"}</div>`); }
+  const benchHtml = bench.length ? `<div class="fbench"><span class="glabel">Owned, not equipped${ui.fragSel?` · tap one to swap in for ${esc(ui.fragSel)}`:actF.length>=slots?" · tap an equipped fragment first, then one of these":" · tap to equip"}</span><div class="fslots">${bench.map(n=>`<button class="fslot bench" data-act="frag" data-name="${esc(n)}">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></button>`).join("")}</div>${ui.fragHint?`<p class="help warn-text">All fragment slots are full: tap an equipped fragment to swap it out.</p>`:""}</div>` : "";
+  const waiting = [];
   const subs = Object.keys(ELEMENTS).filter(e=>(run.subs||{})[e]);
   const switcher = `<div class="switcher"><span class="glabel">Subclasses</span>${subs.map(e=>`<button class="swbtn el-${e} ${e===run.el?"on":""}" data-act="subSwitch" data-el="${e}" ${e===run.el?"aria-pressed=\"true\"":""}>${esc(ELEMENTS[e].name)}</button>`).join("")}${subs.length<2?`<span class="help">Unlock more as S-tier rewards.</span>`:""}</div>`;
   return `${switcher}<div class="subscreen el-${run.el}">
     <div class="scol"><h3>Abilities</h3>${abilityRow(run,"classAbility","Class ability")}${abilityRow(run,"jump","Jump")}${abilityRow(run,"melee","Melee")}${abilityRow(run,"grenade","Grenade")}</div>
     <div class="scenter"><h3>Super</h3>${act.super?abilityTile(run,"super",act.super,{big:true,diamond:true,on:true}):""}<b class="supername">${esc(act.super||"")}</b>${supers.length?`<div class="aothers">${supers.map(n=>abilityTile(run,"super",n,{act:true})).join("")}</div>`:""}<span class="help">${esc(ELEMENTS[run.el].name)} ${esc(run.cls)}</span></div>
-    <div class="scol"><h3>Aspects (${a.aspects.length}/2)</h3><div class="aslots">${aspects}</div><h3>Fragments (${Math.min(a.fragments.length,slots)}/${slots})</h3><div class="fslots">${frags.join("")}</div>${waiting.length?`<p class="help warn-text">Waiting for a slot (not equipped): ${esc(waiting.join(", "))}</p>`:""}</div>
+    <div class="scol"><h3>Aspects (${actA.length}/2${aBench.length?` · ${a.aspects.length} owned`:""})</h3><div class="aslots">${aspects}</div><h3>Fragments (${actF.length}/${slots})</h3><div class="fslots">${frags.join("")}</div>${benchHtml}</div>
   </div>
   <details class="descs"><summary>Ability descriptions</summary>${descList(run,"aspect",a.aspects)}${descList(run,"fragment",a.fragments)}${descList(run,"super",a.supers)}${descList(run,"classAbility",a.classAbilities)}${descList(run,"jump",a.jumps||[])}${descList(run,"melee",a.melees)}${descList(run,"grenade",a.grenades)}</details>
   <p class="help">Tap a small icon to switch to it; ${window.D2R_BUNGIE&&window.D2R_BUNGIE.opts&&window.D2R_BUNGIE.opts.autoSubclass?"the app sets it in game for you.":"then equip it in game."} Hover for details.</p>`;
@@ -1369,7 +1415,7 @@ function renderPending(run){
   }
   if(p.boon){
     const canReroll = p.rerollAt!==p.boonsLeft && artLeft(run)>=REROLL_COST;
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.spill?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot${run.ab.aspects.length<2?": it stays inactive until another aspect opens room":": it stays inactive (both aspects are full)"}</span>`:""}${b.spill?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${sFloor(p.diff||0)?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice. `:""}Reward level ${p.lvl||3}: ${(o=>TIER_ORDER.filter(t=>o[t]).map(t=>t+" "+o[t]+"%").join(" · "))(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.spill?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot: it waits, not equipped, until you have room (another aspect, or swap fragments in the Subclass tab)</span>`:""}${b.spill?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
@@ -1577,6 +1623,8 @@ document.addEventListener("click", e=>{
   else if(act==="encounter") encounterCleared();
   else if(act==="artReset") resetArtifact();
   else if(act==="tab"){ ui.tab = b.dataset.tab; render(); }
+  else if(act==="frag") fragClick(b.dataset.name);
+  else if(act==="asp") aspClick(b.dataset.name);
   else if(act==="clearHistory"){ const n = (state.history||[]).length; state.history = []; ui.confirm = null; save(); render(); toast("Cleared "+n+" finished run"+(n===1?"":"s")+" from history."); }
   else if(act==="openGuide"){ const g = document.querySelector("details.guide"); if(g){ g.open = true; g.scrollIntoView({behavior:"smooth", block:"start"}); } }
   else if(act==="saveExit") saveAndExit();
