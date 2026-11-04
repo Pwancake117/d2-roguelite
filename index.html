@@ -402,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=131"></script>
+<script src="bungie.js?v=132"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -981,11 +981,31 @@ function takeLoot(i){
   if(!p.boonsLeft) run.pending = null;
   save(); afterChange(); render();
 }
+/* Offer log: every set of choices shown is saved on its event (what was offered, which was taken or rerolled),
+   so the real S/A/B/C offer rates can be checked against the odds. */
+function logOffers(run, p, taken){
+  if(!p || !p.boon || !p.boon.length) return;
+  const ev = run.events.find(e=>e.n===p.eventN); if(!ev) return;
+  (ev.offers = ev.offers||[]).push({lvl:p.lvl, diff:p.diff||0,
+    c:p.boon.map(b=>({t:TIERED[b.type]?tierOfType(b.type):"-", type:b.type, n:b.name})),
+    taken:taken==null?null:taken, rerolled:taken==null});
+}
+function offerStats(runs){
+  const st = {sets:0, sOffered:0, sTaken:0, tiers:{S:0,A:0,B:0,C:0}, choices:0};
+  runs.forEach(r=>(r.events||[]).forEach(e=>(e.offers||[]).forEach(o=>{
+    if(o.c.every(x=>x.t==="-")) return;    // the first-artifact pick is not tiered
+    st.sets++; o.c.forEach(x=>{ if(st.tiers[x.t]!=null){ st.tiers[x.t]++; st.choices++; } });
+    if(o.c.some(x=>x.t==="S")) st.sOffered++;
+    if(o.taken!=null && o.c[o.taken] && o.c[o.taken].t==="S") st.sTaken++;
+  })));
+  return st;
+}
 /* Reroll: redraw all 3 choices of the current pick for 1 unspent artifact point, once per pick */
 const REROLL_COST = 1;
 function rerollPick(){
   const run = state.run, p = run && run.pending; if(!p || !p.boon || p.rerollAt===p.boonsLeft || artLeft(run)<REROLL_COST) return;
   run.artPts -= REROLL_COST; p.rerollAt = p.boonsLeft;
+  logOffers(run, p, null);
   p.boon = p.boon.some(b=>b.type==="artpick") ? artifactOffers(run) : boonOffers(run, p.lvl, p.diff);
   const ev = run.events.find(e=>e.n===p.eventN); if(ev){ ev.rerolls = (ev.rerolls||0)+1; }
   run.rerolls = (run.rerolls||0)+1;
@@ -993,6 +1013,7 @@ function rerollPick(){
 }
 function takeBoon(i){
   const run = state.run, p = run.pending; if(!p || !p.boon) return;
+  logOffers(run, p, i);
   const b = p.boon[i], a = (b.spill && b.el && run.subs && run.subs[b.el]) ? run.subs[b.el] : run.ab;
   const map = {grenade:"grenades",jump:"jumps",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
   if(!a.artifact) a.artifact = [];
@@ -1198,6 +1219,9 @@ function showTierList(){
     <p class="help">Each choice in a pick rolls a tier, then a reward inside it. A pick offers at most one S reward and one A reward. Fragments can show up even when your slots are full; the card warns you. Highlighted = already unlocked; hover a name for its description. Reward level = event power (tier + difficulty), +1 for a flawless clear.</p>
     ${rows}
     <p class="help">Master: ${Math.round(sFloor(3)*100)}% chance a pick includes an S reward. Grandmaster/Ultimate: ${Math.round(sFloor(4)*100)}%. On top of that, every choice rolls the odds below.</p><h3>Odds per choice by reward level</h3><table><thead><tr><th>Level</th>${TIER_ORDER.map(t=>`<th>${t}</th>`).join("")}</tr></thead><tbody>${odds}</tbody></table>
+    ${(()=>{ const st = offerStats([run]); if(!st.sets) return `<h3>This run's offers</h3><p class="help">Choices are saved from now on; numbers show up after your next pick.</p>`;
+      const pct = n => st.choices ? Math.round(n/st.choices*100)+"%" : "0%";
+      return `<h3>This run's offers</h3><p class="help">${st.sets} choice set${st.sets===1?"":"s"} shown (rerolls included) · S offered in ${st.sOffered} (${Math.round(st.sOffered/st.sets*100)}%) · S taken ${st.sTaken}. Per choice: ${TIER_ORDER.map(t=>t+" "+pct(st.tiers[t])).join(" · ")}. Saved since Nov 3; earlier picks only recorded what you took.</p>`; })()}
   </div></div>`;
 }
 function chipList(list, el, emptyText, slots){
