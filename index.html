@@ -402,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=132"></script>
+<script src="bungie.js?v=133"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -679,7 +679,7 @@ const TIER_OF_TYPE = (()=>{ const m = {}, T = window.D2R_TIERS||{}; TIER_ORDER.f
 function tierOfType(type){ return TIER_OF_TYPE[type] || "C"; }
 function oddsFor(lvl){ const O = window.D2R_REWARD_ODDS || [{upTo:Infinity,S:25,A:25,B:25,C:25}]; return O.find(o=>lvl<=o.upTo) || O[O.length-1]; }
 const TIERED = {grenade:1,jump:1,melee:1,super:1,classAbility:1,aspect:1,fragment:1,fragslot:1,life:1,life2:1,artpts:1,artswap:1,subclass:1};
-const MAX_FRAGMENTS = 6;
+const MAX_FRAGMENTS = Infinity;   // no cap on fragments owned: extras wait in the Subclass tab to be swapped in (equipped count is limited by aspect slots)
 const ONE_PER_PICK = window.D2R_ONE_PER_PICK || ["S","A"];
 const TYPE_WEIGHT = {artswap:0.2, subclass:0.3, life:0.45, life2:0.35, artpts:0.5};   // inside A, aspects stay the most common   // inside its tier, an artifact swap comes up less often than a super
 function sFloor(diff){ const F = window.D2R_S_FLOOR || {}; return F[diff] || 0; }
