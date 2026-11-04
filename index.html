@@ -402,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=134"></script>
+<script src="bungie.js?v=135"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -724,8 +724,15 @@ function boonOffers(run, lvl, diff){
   }
   while(out.length<3 && pool.length){
     const byTier = {}; pool.forEach(o=>{ const t = tierOfType(o.type); (byTier[t] = byTier[t]||[]).push(o); });
-    const tiers = Object.keys(byTier).map(t=>({t, w:odds[t]||0}));
-    const t = (tiers.some(x=>x.w>0) ? weighted(tiers.filter(x=>x.w>0)) : pick(tiers)).t;
+    // S keeps its listed chance; the share of any empty tier goes to the other non-S tiers, never to S.
+    // If nothing but S is left, the remaining choice is S only on its own roll (otherwise the pick shows fewer choices).
+    const present = Object.keys(byTier), sW = present.includes("S") ? (odds.S||0) : 0;
+    const rest = present.filter(t=>t!=="S"), restBase = rest.reduce((n,t)=>n+(odds[t]||0),0), restTotal = 100 - (odds.S||0);
+    const tiers = rest.map(t=>({t, w: restBase>0 ? (odds[t]||0)/restBase*restTotal : restTotal/rest.length}));
+    if(sW) tiers.push({t:"S", w:sW});
+    if(!rest.length) tiers.push({t:null, w:restTotal});
+    let t = weighted(tiers.filter(x=>x.w>0)).t;
+    if(!t){ if(out.length) break; t = "S"; }   // never leave a pick empty
     // spread across reward types inside the tier (e.g. grenade vs melee vs jump), then pick a reward
     const types = {}; byTier[t].forEach(o=>{ (types[o.type] = types[o.type]||[]).push(o); });
     const fresh = Object.keys(types).filter(k=>!out.some(o=>o.type===k));
