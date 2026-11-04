@@ -78,6 +78,8 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 **Engrams:** engrams you don't pick up in time go to the Postmaster. The app tracks every engram that drops during the run along with the event it came from, shows them in the Character tab with where they are, and **Pull from Postmaster** pulls them too. Decrypt them in game; the gear that comes out is added to your run and credited to the engram's event.
 
 
+**Dismantled gear:** looted weapons and armor that are no longer anywhere in your inventory (dismantled, or otherwise gone) are removed from your run on their own. The app checks about every 5 minutes and after each activity, and an item has to be missing twice in a row before it's removed.
+
 **Run history:** finished runs (ended or died) are kept in your browser, up to the last 30. **Export CSV/JSON** to keep a copy; **Clear history** (red, asks to confirm) deletes finished runs. It never touches your active or saved runs.
 
 **Saving runs:** your active run saves automatically. **Save & exit** parks it in **Saved runs** (on the start screen) so you can start or resume another one, such as a run per character; activities and loot from while it was parked don't count when you resume. **Download run file** gives you a file; **Load run file** brings it back on any browser or device.

@@ -394,6 +394,7 @@ B.sync = async (run, {quiet} = {}) => {
       if(added) run.queue.slice(-added).forEach(q=>{ if(q.deaths || !q.completed) q.equippedLoot = eqLoot; });
       await B.loadArtifact();
       const opened = trackEngrams(run, added ? run.queue[run.queue.length-1].note : null);
+      pruneGone(run);
       const loot = findLoot(run);
       if(loot.length){
         // decrypted gear only gets credited to an engram whose rarity fits (Exotic Engram -> exotic gear, other engrams -> legendary or lower)
@@ -510,6 +511,26 @@ function stackEngramCounts(){
 }
 B.stackEngramCounts = stackEngramCounts;
 B.trackEngrams = trackEngrams;
+/* Looted gear you've dismantled (gone from every character, the vault and the Postmaster) is removed from the run.
+   It has to be missing on two checks in a row, so a slow profile read can't drop something by mistake. */
+function pruneGone(run){
+  if(!B.profile) return [];
+  const removed = [];
+  const check = list => list.filter(x=>{
+    if(!x.inst) return true;
+    if(B.whereIs(x.inst)!=="gone"){ delete x.missingSince; return true; }
+    if(!x.missingSince){ x.missingSince = Date.now(); return true; }
+    removed.push(x); return false;
+  });
+  run.weapons = check(run.weapons); run.armor = check(run.armor);
+  if(removed.length){
+    run.dismantled = (run.dismantled||[]).concat(removed.map(x=>({name:x.name, rarity:x.rarity, kind:x.kind, inst:x.inst, at:Date.now()})));
+    (run.ownedAtStart = run.ownedAtStart||[]).push(...removed.map(x=>x.inst));   // never re-added as new loot
+    note("Removed from your run (no longer in your inventory): "+removed.map(x=>x.name).join(", ")+".","");
+  }
+  return removed;
+}
+B.pruneGone = pruneGone;
 /* Where is an item right now? postmaster | equipped | character | vault | other | null */
 B.whereIs = inst => {
   if(!B.profile || !inst) return null;
