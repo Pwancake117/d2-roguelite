@@ -78,7 +78,7 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 **Engrams:** engrams you don't pick up in time go to the Postmaster. The app tracks every engram that drops during the run along with the event it came from, shows them in the Character tab with where they are, and **Pull from Postmaster** pulls them too. Decrypt them in game; the gear that comes out is added to your run and credited to the engram's event.
 
 
-**Swapping aspects and fragments:** aspects keep dropping after you own 2, and fragments can drop even when your slots are full. In the Subclass tab, extras show under **Owned, not equipped**: tap an equipped aspect or fragment, then the one you want in its place. Fragment slots come from the 2 equipped aspects, so swapping an aspect can change how many fragments fit.
+**Swapping aspects and fragments:** aspects keep dropping after you own 2, and fragments can drop even when your slots are full. In the Subclass tab, each aspect and fragment slot works like the ability rows: the equipped one is shown large, and your spares appear as small icons next to it; tap one to swap it into that slot. Fragment slots come from the 2 equipped aspects, so swapping an aspect can change how many fragments fit.
 
 **Dismantled gear:** looted weapons and armor that are no longer anywhere in your inventory (dismantled, or otherwise gone) are removed from your run on their own. The app checks about every 5 minutes and after each activity, and an item has to be missing twice in a row before it's removed.
 

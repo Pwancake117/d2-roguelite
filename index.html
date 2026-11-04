@@ -187,6 +187,8 @@ button.fslot:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
 .fslot.bench{opacity:.75;border-style:dashed}
 .fslot.bench:hover{opacity:1}
 .fbench{display:grid;gap:6px;margin-top:4px}
+.slotrows{display:grid;gap:10px}
+.emptytile{border-style:dashed!important}
 /* character screen */
 .charscreen{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.6fr) minmax(0,1fr);gap:18px;align-items:start}
 .gcol{display:grid;gap:10px;align-content:start}
@@ -391,7 +393,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=125"></script>
+<script src="bungie.js?v=126"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1349,6 +1351,27 @@ function abilityTile(run, type, name, opts={}){
     ? `<button class="${cls}" data-act="active" data-type="${type}" data-name="${esc(name)}" title="${tip}" aria-pressed="${!!opts.on}">${inner}</button>`
     : `<span class="${cls}" title="${tip}">${inner}</span>`;
 }
+function swapTile(run, kind, i, name){
+  const d = descOf(run, kind, name), ic = d && d.i ? ICON_ROOT + d.i : "";
+  return `<button class="atile el-${run.el}" data-act="slotSwap" data-kind="${kind}" data-slot="${i}" data-name="${esc(name)}" title="${esc("Swap in "+name+(d&&d.d?" — "+d.d:""))}">${ic?`<img src="${ic}" alt="" loading="lazy">`:`<span class="ph">${esc(name.slice(0,2))}</span>`}</button>`;
+}
+function setSlot(kind, i, name){
+  const run = state.run; if(!run) return;
+  const a = run.ab, cur = kind==="aspect" ? activeAspects(run) : activeFrags(run), owned = kind==="aspect" ? a.aspects : a.fragments;
+  if(!owned.includes(name)) return;
+  const next = cur.slice(), at = next.indexOf(name);
+  if(at>=0){ if(i<next.length){ next[at] = next[i]; next[i] = name; } }
+  else if(i<next.length) next[i] = name; else next.push(name);
+  if(kind==="aspect") a.aspActive = next; else a.fragActive = next;
+  save(); afterChange(); render(); toast(name+" equipped"+(kind==="aspect"?". Fragment slots: "+fragSlots(run):"")+".");
+}
+/* aspect / fragment slot rows, laid out like the ability rows: equipped piece large, owned spares as small icons to swap in */
+function slotRow(run, kind, i, name, spares, label){
+  const d = name ? descOf(run, kind, name) : null;
+  const main = name ? abilityTile(run, kind, name, {big:kind==="aspect", on:true}) : `<span class="atile ${kind==="aspect"?"big":""} emptytile"><span class="ph">+</span></span>`;
+  const sub = name ? (kind==="aspect" && d && d.cap ? `<span class="capline">Opens ${d.cap} fragment slots</span>` : "") : `<span class="help">Open slot</span>`;
+  return `<div class="arow"><div class="alabel">${label}</div><div class="aequip">${main}<div><b>${esc(name||"Empty")}</b>${sub}${spares.length?`<div class="aothers">${spares.map(n=>swapTile(run,kind,i,n)).join("")}</div>`:""}</div></div></div>`;
+}
 function abilityRow(run, type, label){
   const list = run.ab[LIST_KEY[type]]||[], act = (run.ab.active||{})[type];
   const others = list.filter(n=>n!==act);
@@ -1380,19 +1403,17 @@ function renderSubclassTab(run){
   const a = run.ab, act = a.active||{}, slots = fragSlots(run);
   const supers = a.supers.filter(n=>n!==act.super);
   const actA = activeAspects(run), aBench = a.aspects.filter(n=>!actA.includes(n));
-  const aspects = [0,1].map(i=>{ const n = actA[i]; if(!n) return `<div class="aslot empty"><span class="ph">+</span><span class="help">Aspect slot</span></div>`;
-    const d = descOf(run,"aspect",n); return `<button class="aslot ${ui.aspSel===n?"sel":""}" data-act="asp" data-name="${esc(n)}" title="${aBench.length?"Tap to swap this aspect out":""}">${abilityTile(run,"aspect",n,{big:true})}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></button>`; }).join("")
-    + (aBench.length ? `<div class="fbench"><span class="glabel">Owned, not equipped${ui.aspSel?` · tap one to swap in for ${esc(ui.aspSel)}`:" · tap an equipped aspect first, then one of these"}</span>${aBench.map(n=>{ const d = descOf(run,"aspect",n); return `<button class="aslot bench" data-act="asp" data-name="${esc(n)}">${abilityTile(run,"aspect",n)}<div><b>${esc(n)}</b>${d&&d.cap?`<span class="capline">Opens ${d.cap} fragment slots</span>`:""}</div></button>`; }).join("")}${ui.aspHint?`<p class="help warn-text">Both aspect slots are full: tap an equipped aspect to swap it out.</p>`:""}</div>` : "");
+  const aspects = [0,1].map(i=>slotRow(run,"aspect",i,actA[i],aBench,"Aspect "+(i+1))).join("");
   const actF = activeFrags(run), bench = a.fragments.filter(n=>!actF.includes(n));
-  const frags = []; for(let i=0;i<Math.max(slots,1);i++){ const n = actF[i]; frags.push(n ? `<button class="fslot ${ui.fragSel===n?"sel":""}" data-act="frag" data-name="${esc(n)}" title="${bench.length?"Tap to swap this fragment out":""}">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></button>` : `<div class="fslot empty">${i<slots?"<span class='ph'>+</span><span>Open</span>":"<span class='help'>Get an aspect to open fragment slots</span>"}</div>`); }
-  const benchHtml = bench.length ? `<div class="fbench"><span class="glabel">Owned, not equipped${ui.fragSel?` · tap one to swap in for ${esc(ui.fragSel)}`:actF.length>=slots?" · tap an equipped fragment first, then one of these":" · tap to equip"}</span><div class="fslots">${bench.map(n=>`<button class="fslot bench" data-act="frag" data-name="${esc(n)}">${abilityTile(run,"fragment",n)}<span>${esc(n)}</span></button>`).join("")}</div>${ui.fragHint?`<p class="help warn-text">All fragment slots are full: tap an equipped fragment to swap it out.</p>`:""}</div>` : "";
+  const frags = slots ? Array.from({length:slots},(_,i)=>slotRow(run,"fragment",i,actF[i],bench,"Fragment "+(i+1))).join("") : `<div class="help">Get an aspect to open fragment slots.</div>`;
+  const benchHtml = bench.length ? `<p class="help">Tap a small icon to swap that fragment into the slot.</p>` : "";
   const waiting = [];
   const subs = Object.keys(ELEMENTS).filter(e=>(run.subs||{})[e]);
   const switcher = `<div class="switcher"><span class="glabel">Subclasses</span>${subs.map(e=>`<button class="swbtn el-${e} ${e===run.el?"on":""}" data-act="subSwitch" data-el="${e}" ${e===run.el?"aria-pressed=\"true\"":""}>${esc(ELEMENTS[e].name)}</button>`).join("")}${subs.length<2?`<span class="help">Unlock more as S-tier rewards.</span>`:""}</div>`;
   return `${switcher}<div class="subscreen el-${run.el}">
     <div class="scol"><h3>Abilities</h3>${abilityRow(run,"classAbility","Class ability")}${abilityRow(run,"jump","Jump")}${abilityRow(run,"melee","Melee")}${abilityRow(run,"grenade","Grenade")}</div>
     <div class="scenter"><h3>Super</h3>${act.super?abilityTile(run,"super",act.super,{big:true,diamond:true,on:true}):""}<b class="supername">${esc(act.super||"")}</b>${supers.length?`<div class="aothers">${supers.map(n=>abilityTile(run,"super",n,{act:true})).join("")}</div>`:""}<span class="help">${esc(ELEMENTS[run.el].name)} ${esc(run.cls)}</span></div>
-    <div class="scol"><h3>Aspects (${actA.length}/2${aBench.length?` · ${a.aspects.length} owned`:""})</h3><div class="aslots">${aspects}</div><h3>Fragments (${actF.length}/${slots})</h3><div class="fslots">${frags.join("")}</div>${benchHtml}</div>
+    <div class="scol"><h3>Aspects (${actA.length}/2${aBench.length?` · ${a.aspects.length} owned`:""})</h3><div class="slotrows">${aspects}</div>${aBench.length?`<p class="help">Tap a small icon to swap that aspect into the slot.</p>`:""}<h3>Fragments (${actF.length}/${slots}${bench.length?` · ${a.fragments.length} owned`:""})</h3><div class="slotrows">${frags}</div>${benchHtml}</div>
   </div>
   <details class="descs"><summary>Ability descriptions</summary>${descList(run,"aspect",a.aspects)}${descList(run,"fragment",a.fragments)}${descList(run,"super",a.supers)}${descList(run,"classAbility",a.classAbilities)}${descList(run,"jump",a.jumps||[])}${descList(run,"melee",a.melees)}${descList(run,"grenade",a.grenades)}</details>
   <p class="help">Tap a small icon to switch to it; ${window.D2R_BUNGIE&&window.D2R_BUNGIE.opts&&window.D2R_BUNGIE.opts.autoSubclass?"the app sets it in game for you.":"then equip it in game."} Hover for details.</p>`;
@@ -1625,6 +1646,7 @@ document.addEventListener("click", e=>{
   else if(act==="tab"){ ui.tab = b.dataset.tab; render(); }
   else if(act==="frag") fragClick(b.dataset.name);
   else if(act==="asp") aspClick(b.dataset.name);
+  else if(act==="slotSwap") setSlot(b.dataset.kind, parseInt(b.dataset.slot,10), b.dataset.name);
   else if(act==="clearHistory"){ const n = (state.history||[]).length; state.history = []; ui.confirm = null; save(); render(); toast("Cleared "+n+" finished run"+(n===1?"":"s")+" from history."); }
   else if(act==="openGuide"){ const g = document.querySelector("details.guide"); if(g){ g.open = true; g.scrollIntoView({behavior:"smooth", block:"start"}); } }
   else if(act==="saveExit") saveAndExit();
