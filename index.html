@@ -284,6 +284,7 @@ td.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .dropin .btn{justify-self:start}
 .checklist{margin:0}
 .privacy{margin:0;padding:8px 10px;border-left:3px solid var(--good);background:rgba(95,227,154,.06)}
+.evdesc{font-style:italic;opacity:.85}
 .saverow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .saverow > div:first-child{display:grid;gap:2px}
 .manualoff{display:grid;gap:4px;padding:10px 12px;border:1px dashed var(--line);border-radius:6px}
@@ -401,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=128"></script>
+<script src="bungie.js?v=129"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1516,7 +1517,7 @@ function renderEventForm(run){
 function eventTitle(e){
   const d = e.details;
   if(!d || !d.activity) return esc(e.event);
-  return `<b>${esc(d.activity)}</b> <span class="help">${esc(e.event)}${d.type&&d.type!==d.activity?" · "+esc(d.type):""}</span>`;
+  return `<b title="${esc(d.desc||"")}">${esc(d.activity)}</b> <span class="help">${esc(e.event)}${d.type&&d.type!==d.activity?" · "+esc(d.type):""}</span>${d.desc?`<br><span class="help evdesc">${esc(d.desc)}</span>`:""}`;
 }
 function eventDetailLine(e){
   const d = e.details; if(!d) return "";

@@ -349,13 +349,13 @@ function difficulty(name){
 const actInfo = {};
 async function activityInfo(hash){
   if(actInfo[hash]) return actInfo[hash];
-  try { const d = await api(`/Destiny2/Manifest/DestinyActivityDefinition/${hash}/`); actInfo[hash] = {name:(d.displayProperties && d.displayProperties.name) || "Activity", type:d.activityTypeHash, dest:d.destinationHash}; }
+  try { const d = await api(`/Destiny2/Manifest/DestinyActivityDefinition/${hash}/`); actInfo[hash] = {name:(d.displayProperties && d.displayProperties.name) || "Activity", type:d.activityTypeHash, dest:d.destinationHash, modes:d.activityModeHashes||[], desc:(d.displayProperties && d.displayProperties.description) || ""}; }
   catch(e){ actInfo[hash] = null; }
   return actInfo[hash];
 }
 /* Event details: the actual activity played (a playlist like Quickplay points at the real strike/mission),
    its activity type (e.g. Strike, Reclaim), its destination, time played, kills and deaths. */
-const typeNames = {}, destNames = {};
+const typeNames = {}, destNames = {}, modeNames = {};
 async function defName(kind, hash, cache){
   if(!hash) return "";
   if(cache[hash]!==undefined) return cache[hash];
@@ -366,13 +366,16 @@ async function activityDetails(act){
   const ad = act.activityDetails, v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
   const playlist = await activityInfo(ad.directorActivityHash || ad.referenceId);
   const real = ad.referenceId && ad.referenceId!==ad.directorActivityHash ? await activityInfo(ad.referenceId) : playlist;
-  const typeName = await defName("DestinyActivityTypeDefinition", (real&&real.type) || (playlist&&playlist.type), typeNames);
+  // the mode name ("Strike", "Lost Sector"…) describes the activity better than its type ("Mission")
+  const modeName = real && real.modes && real.modes.length ? await defName("DestinyActivityModeDefinition", real.modes[0], modeNames) : "";
+  const typeName = modeName || await defName("DestinyActivityTypeDefinition", (real&&real.type) || (playlist&&playlist.type), typeNames);
   const place = await defName("DestinyDestinationDefinition", (real&&real.dest) || (playlist&&playlist.dest), destNames);
   const strip = n => (n||"").replace(/:\s*(Matchmade|Customize|Standard|Normal)\s*$/i,"");
   return {
     activity: strip(real && real.name), playlist: playlist && real && playlist.name!==real.name ? playlist.name : "",
     type: typeName, place, minutes: Math.round((val("timePlayedSeconds")||val("activityDurationSeconds"))/60),
-    kills: val("kills"), deaths: val("deaths"), assists: val("assists"), players: val("playerCount")||null
+    kills: val("kills"), deaths: val("deaths"), assists: val("assists"), players: val("playerCount")||null,
+    desc: ((real && real.desc) || "").split(/(?<=[.!?])\s/)[0].slice(0,140)
   };
 }
 B.activityDetails = activityDetails;
