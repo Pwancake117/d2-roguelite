@@ -523,7 +523,7 @@ B.equippedLoot = run => {
 /* Seasonal artifact: Bungie lets apps read perks (per character) but not change them. */
 B.artifact = null;
 /* Ability descriptions (aspects, fragments, abilities, artifact perks) from the public manifest, cached in localStorage. */
-const DESC_KEY = "d2r.desc4";
+const DESC_KEY = "d2r.desc5";
 const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
 B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
 const descBusy = new Set();
@@ -536,8 +536,10 @@ B.describe = async hashes => {
     const d = await fullDef(h);
     const texts = [];
     for(const pk of d.perks||[]){
-      if(pk.perkVisibility!==0) continue;
-      try { const sp = await api(`/Destiny2/Manifest/DestinySandboxPerkDefinition/${pk.perkHash}/`); const t = sp.displayProperties && sp.displayProperties.description; if(t && !texts.includes(t)) texts.push(t); } catch(e){}
+      // visibility 0 = shown, 1 = shown on some aspects (e.g. Crackshot), 2 = stat lines like "-10 Class"
+      if(pk.perkVisibility===2) continue;
+      try { const sp = await api(`/Destiny2/Manifest/DestinySandboxPerkDefinition/${pk.perkHash}/`), dp = sp.displayProperties||{}, t = dp.description;
+        if(t && (pk.perkVisibility===0 || sp.isDisplayable) && t!==dp.name && !texts.includes(t)) texts.push(t); } catch(e){}
     }
     if(!texts.length && d.displayProperties && d.displayProperties.description) texts.push(d.displayProperties.description);
     const st = d.investmentStats||[];
