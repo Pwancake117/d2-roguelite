@@ -402,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=140"></script>
+<script src="bungie.js?v=141"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -443,6 +443,7 @@ const P = {
   supers:(c,e)=>KIT[c][e].super.map(x=>x.n), grenades:(c,e)=>KIT[c][e].grenade.map(x=>x.n), melees:(c,e)=>KIT[c][e].melee.map(x=>x.n),
   jumps:(c,e)=>KIT[c][e].jump.map(x=>x.n), classAbilities:(c,e)=>KIT[c][e].classAbility.map(x=>x.n), aspects:(c,e)=>KIT[c][e].aspect.map(x=>x.n), fragments:(c,e)=>KIT[c][e].fragment.map(x=>x.n)
 };
+const SUB_KEY = {super:"supers",grenade:"grenades",jump:"jumps",melee:"melees",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
 function plugHash(c,e,type,name){ const f = (KIT[c]&&KIT[c][e]&&KIT[c][e][type]||[]).find(x=>x.n===name); return f ? f.h : null; }
 /* descriptions: hash for an offer/owned item, text from the Bungie manifest (loaded on demand) */
 const DESC_TYPES = {jump:"jump",grenade:"grenade",melee:"melee",super:"super",classAbility:"classAbility",aspect:"aspect",fragment:"fragment"};
@@ -545,6 +546,17 @@ function normalize(){
   if(!r.artifacts) r.artifacts = r.artifact ? [r.artifact.n] : [];
   if(!r.artSlotsBy) r.artSlotsBy = {};
   if(r.artifact) r.artSlotsBy[r.artifact.n] = r.artSlots;   // keep the current artifact's slots linked
+  // repair: an ability sitting on a subclass it doesn't belong to moves to the unlocked subclass that has it
+  try { for(const [el,a] of Object.entries(r.subs)) for(const key of Object.values(SUB_KEY)){
+    const list = a[key]||[], fn = P[key], keep = [];
+    list.forEach(n=>{ if(fn(r.cls,el).includes(n)) { keep.push(n); return; }
+      const home = Object.keys(r.subs).find(o=>o!==el && fn(r.cls,o).includes(n));
+      if(home){ const h = r.subs[home]; h[key] = h[key]||[]; if(!h[key].includes(n)) h[key].push(n); }
+      else keep.push(n); });
+    if(keep.length!==list.length){ a[key] = keep;
+      if(key==="aspects" && a.aspActive) a.aspActive = a.aspActive.filter(n=>keep.includes(n));
+      if(key==="fragments" && a.fragActive) a.fragActive = a.fragActive.filter(n=>keep.includes(n)); }
+  } } catch(e){}
 }
 normalize();
 let db=null, userId=null, downloads=null, saving=false, dirty=false;
@@ -743,6 +755,8 @@ function boonOffers(run, lvl, diff, noFloor, floorP){
   }
   // shuffle so the S choice isn't always first
   for(let i=out.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [out[i],out[j]] = [out[j],out[i]]; }
+  // remember which subclass each ability was drawn for, so switching subclass before picking can't misplace it
+  out.forEach(o=>{ if(SUB_KEY[o.type] && !o.el) o.el = e; });
   return spillover(run, out);
 }
 /* Spillover: with more than one unlocked subclass, about 1 in 5 ability/aspect/fragment choices is for one of the
@@ -1033,7 +1047,7 @@ function rerollPick(){
 function takeBoon(i){
   const run = state.run, p = run.pending; if(!p || !p.boon) return;
   logOffers(run, p, i);
-  const b = p.boon[i], a = (b.spill && b.el && run.subs && run.subs[b.el]) ? run.subs[b.el] : run.ab;
+  const b = p.boon[i], a = (b.el && SUB_KEY[b.type] && run.subs && run.subs[b.el]) ? run.subs[b.el] : run.ab;
   const map = {grenade:"grenades",jump:"jumps",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
   if(!a.artifact) a.artifact = [];
   if(map[b.type]){ a[map[b.type]].push(b.name); if(a.active && b.type in a.active) a.active[b.type] = b.name;
@@ -1499,7 +1513,7 @@ function renderPending(run){
   }
   if(p.boon){
     const canReroll = p.rerollAt!==p.boonsLeft && artLeft(run)>=REROLL_COST;
-    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${(p.floorP||0)>=1&&!p.floorDone?`Dungeon clear: this first pick includes an S choice. `:sFloor(p.diff||0)&&!p.floorDone?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice on this first pick. `:""}Reward level ${p.lvl||3}: ${(o=>`S in ${o.S||0}% of picks · other choices A ${o.A||0}% · B ${o.B||0}% · C ${o.C||0}%`)(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.spill?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot: it waits, not equipped, until you have room (another aspect, or swap fragments in the Subclass tab)</span>`:""}${b.spill?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
+    html += `<div class="pickhead"><b>Choose one</b>${p.boonsLeft>1?`<span class="tabbadge">${p.boonsLeft} picks left</span>`:""}<button class="btn reroll" data-act="reroll" ${canReroll?"":"disabled"} title="${p.rerollAt===p.boonsLeft?"Already rerolled this pick":artLeft(run)<REROLL_COST?"Needs "+REROLL_COST+" unspent artifact point":"Redraw all 3 choices"}">⟳ Reroll · ${REROLL_COST} artifact point</button></div><p class="help">${(p.floorP||0)>=1&&!p.floorDone?`Dungeon clear: this first pick includes an S choice. `:sFloor(p.diff||0)&&!p.floorDone?`${DIFFS[p.diff]}: ${Math.round(sFloor(p.diff)*100)}% chance of a guaranteed S choice on this first pick. `:""}Reward level ${p.lvl||3}: ${(o=>`S in ${o.S||0}% of picks · other choices A ${o.A||0}% · B ${o.B||0}% · C ${o.C||0}%`)(oddsFor(p.lvl||3))} <button class="btn ghost" data-act="tierList">Tier list</button></p><div class="offers ${p.boon.some(b=>b.type==="artpick")?"wide":""}">${p.boon.map((b,i)=>`<button class="offer boon el-${run.el}" data-act="boon" data-i="${i}"><span class="rtag" style="color:var(--el)">${esc(b.label)}${TIERED[b.type]?` <span class="tierbadge t-${tierOfType(b.type)}">${tierOfType(b.type)}</span>`:""}</span><span class="nm">${esc(b.name)}</span>${b.type==="fragment"&&(b.el&&b.el!==run.el&&run.subs[b.el]?run.subs[b.el].fragments.length>=fragSlotsFor(run,b.el):run.ab.fragments.length>=fragSlots(run))?`<span class="warnline">⚠ No open fragment slot: it waits, not equipped, until you have room (another aspect, or swap fragments in the Subclass tab)</span>`:""}${b.el&&SUB_KEY[b.type]&&b.el!==run.el?`<span class="spilltag el-${b.el}">For your ${esc(ELEMENTS[b.el].name)} subclass</span>`:""}${DESC_TYPES[b.type]?descHtml(descOf(run,b.type,b.name,b.el)):b.type==="artpick"?artInfoHtml(run,b.name):b.type==="artswap"?`${artInfoHtml(run,b.name)}<span class="desc">Added to your artifacts; switch between them anytime. Each keeps its own mods.</span>`:b.type==="subclass"?`<span class="desc">Starts at the ${esc(b.name)} base build with its own unlocks. Switch between your subclasses anytime.</span>`:""}</button>`).join("")}</div>`;
   }
   return html + `</div>`;
 }
