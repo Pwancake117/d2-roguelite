@@ -18,10 +18,10 @@ window.D2R_ONE_PER_PICK = ["S", "A"];
 window.D2R_REWARD_ODDS = [
   {upTo: 3,        S: 5,  A: 25, B: 25, C: 45},
   {upTo: 5,        S: 10, A: 30, B: 30, C: 30},
-  {upTo: 7,        S: 20, A: 30, B: 30, C: 20},
-  {upTo: Infinity, S: 30, A: 30, B: 30, C: 10}
+  {upTo: 7,        S: 12, A: 32, B: 32, C: 24},
+  {upTo: Infinity, S: 15, A: 35, B: 35, C: 15}
 ];
 
-/* Difficulty floor for S tier: chance that a pick includes at least one S reward, by difficulty
+/* Difficulty floor for S tier: chance that the first reward pick of an event includes an S reward, by difficulty
    (0 Normal, 1 Advanced/Hero, 2 Expert/Legend, 3 Master, 4 Grandmaster/Ultimate). */
 window.D2R_S_FLOOR = {3: 0.5, 4: 0.95};
