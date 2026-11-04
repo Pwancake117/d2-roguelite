@@ -353,6 +353,29 @@ async function activityInfo(hash){
   catch(e){ actInfo[hash] = null; }
   return actInfo[hash];
 }
+/* Event details: the actual activity played (a playlist like Quickplay points at the real strike/mission),
+   its activity type (e.g. Strike, Reclaim), its destination, time played, kills and deaths. */
+const typeNames = {}, destNames = {};
+async function defName(kind, hash, cache){
+  if(!hash) return "";
+  if(cache[hash]!==undefined) return cache[hash];
+  try { const d = await api(`/Destiny2/Manifest/${kind}/${hash}/`); cache[hash] = (d.displayProperties && d.displayProperties.name) || ""; } catch(e){ cache[hash] = ""; }
+  return cache[hash];
+}
+async function activityDetails(act){
+  const ad = act.activityDetails, v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
+  const playlist = await activityInfo(ad.directorActivityHash || ad.referenceId);
+  const real = ad.referenceId && ad.referenceId!==ad.directorActivityHash ? await activityInfo(ad.referenceId) : playlist;
+  const typeName = await defName("DestinyActivityTypeDefinition", (real&&real.type) || (playlist&&playlist.type), typeNames);
+  const place = await defName("DestinyDestinationDefinition", (real&&real.dest) || (playlist&&playlist.dest), destNames);
+  const strip = n => (n||"").replace(/:\s*(Matchmade|Customize|Standard|Normal)\s*$/i,"");
+  return {
+    activity: strip(real && real.name), playlist: playlist && real && playlist.name!==real.name ? playlist.name : "",
+    type: typeName, place, minutes: Math.round((val("timePlayedSeconds")||val("activityDurationSeconds"))/60),
+    kills: val("kills"), deaths: val("deaths"), assists: val("assists"), players: val("playerCount")||null
+  };
+}
+B.activityDetails = activityDetails;
 /* Pull activities finished since the run started and queue them as events. */
 B.sync = async (run, {quiet} = {}) => {
   if(!B.connected() || !run || run.status!=="active" || B.busy) return 0;
@@ -383,7 +406,8 @@ B.sync = async (run, {quiet} = {}) => {
       // leaving: within the grace period it's not an event; after it, it counts as a failed attempt
       const played = val("timePlayedSeconds") || val("activityDurationSeconds");
       if(!completed && played < LEAVE_GRACE_SECONDS) continue;
-      run.queue.push({eventId:type, diff:difficulty(name), completed, deaths, note:name, at:Date.parse(act.period), instanceId:id});
+      let details = null; try { details = await activityDetails(act); } catch(e){}
+      run.queue.push({eventId:type, diff:difficulty(name), completed, deaths, note:name, at:Date.parse(act.period), instanceId:id, details});
       added++;
     }
     // what's equipped right now (hardcore losses), and anything new picked up since the last sync

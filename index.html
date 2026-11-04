@@ -401,7 +401,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=127"></script>
+<script src="bungie.js?v=128"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -805,7 +805,7 @@ function logEventData(x, noRender){
   const hardcore = run.difficulty==="hardcore";
   const outcome = flawless ? "flawless" : completed ? "clear" : "death";
   const entry = {n:run.events.length+1, at:x.at||Date.now(), eventId:ev.id, event:ev.name, diff, diffName:DIFFS[diff], power, outcome, deaths, note:x.note||"", source:x.instanceId?"bungie":"manual",
-    loot:(x.loot&&x.loot.length)?x.loot.join(", "):null, boons:[], lost:null, lifeLost:false, lightBefore:run.light, scoreBefore:run.score, lightGain:0};
+    loot:(x.loot&&x.loot.length)?x.loot.join(", "):null, boons:[], lost:null, lifeLost:false, lightBefore:run.light, scoreBefore:run.score, lightGain:0, details:x.details||null, instanceId:x.instanceId||null};
   if(ev.id==="dungeon" && completed){ const dn = dungeonOf(x.note) || dungeonOf(run.dungeon && run.dungeon.name); if(dn){ run.dungeonsBeaten = run.dungeonsBeaten||[]; if(!run.dungeonsBeaten.includes(dn)){ run.dungeonsBeaten.push(dn); entry.newDungeon = dn; } } }
   if(ev.id==="dungeon" && run.dungeon){ entry.note = (entry.note?entry.note+" · ":"")+run.dungeon.encounters+" encounter"+(run.dungeon.encounters===1?"":"s")+" cleared"; run.dungeon = null; }
   run.events.push(entry);
@@ -1137,9 +1137,9 @@ async function copy(text){
 /* ---------------- Export ---------------- */
 function csvEscape(v){ v = String(v ?? ""); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
 function buildCSV(runs){
-  const head = ["run_id","class","subclass","run_result","event_no","time","event","difficulty","power","outcome","loot","boons","lost_item","note"];
+  const head = ["run_id","class","subclass","run_result","event_no","time","event","activity","activity_type","destination","minutes","kills","deaths","difficulty","power","outcome","loot","boons","lost_item","note"];
   const rows = [head.join(",")];
-  runs.forEach(r=>r.events.forEach(e=>rows.push([r.id,r.cls,ELEMENTS[r.el].name,r.result||r.status,e.n,new Date(e.at).toISOString(),e.event,e.diffName,e.power,e.outcome,e.loot||"",(e.boons||[]).join(" | "),e.lost||"",e.note||""].map(csvEscape).join(","))));
+  runs.forEach(r=>r.events.forEach(e=>rows.push([r.id,r.cls,ELEMENTS[r.el].name,r.result||r.status,e.n,new Date(e.at).toISOString(),e.event,(e.details&&e.details.activity)||"",(e.details&&e.details.type)||"",(e.details&&e.details.place)||"",(e.details&&e.details.minutes)||"",(e.details&&e.details.kills!=null)?e.details.kills:"",e.deaths||0,e.diffName,e.power,e.outcome,e.loot||"",(e.boons||[]).join(" | "),e.lost||"",e.note||""].map(csvEscape).join(","))));
   return rows.join("\n");
 }
 function allRuns(){ const list = state.history.slice(); if(state.run && state.run.status==="active") list.unshift(Object.assign({result:"active"},state.run)); return list; }
@@ -1513,10 +1513,20 @@ function renderEventForm(run){
     <div class="row"><button class="btn primary" type="submit">Log event</button><span class="help">Higher tier and difficulty roll better loot and more Light.</span></div>
   </form>`;
 }
+function eventTitle(e){
+  const d = e.details;
+  if(!d || !d.activity) return esc(e.event);
+  return `<b>${esc(d.activity)}</b> <span class="help">${esc(e.event)}${d.type&&d.type!==d.activity?" · "+esc(d.type):""}</span>`;
+}
+function eventDetailLine(e){
+  const d = e.details; if(!d) return "";
+  const bits = [d.playlist?"via "+d.playlist:"", d.place, d.minutes?d.minutes+" min":"", d.kills!=null?d.kills+" kills":"", d.players&&d.players>1?d.players+" players":""].filter(Boolean);
+  return bits.length ? `<br><span class="help evdetail">${esc(bits.join(" · "))}</span>` : "";
+}
 function renderEventLog(events){
   if(!events.length) return `<div class="empty-note">No events logged yet. Clear something in game, then log it here.</div>`;
   return `<div class="tablewrap"><table><thead><tr><th>#</th><th>Event</th><th>Result</th><th>Reward / loss</th></tr></thead><tbody>
-    ${events.slice().reverse().map(e=>`<tr><td class="num">${e.n}</td><td>${esc(e.event)}<br><span class="help">${esc(e.diffName)} · power ${e.power}${e.note?" · "+esc(e.note):""}</span></td>
+    ${events.slice().reverse().map(e=>`<tr><td class="num">${e.n}</td><td>${eventTitle(e)}<br><span class="help">${esc(e.diffName)} · power ${e.power}${e.details?"":e.note?" · "+esc(e.note):""}</span>${eventDetailLine(e)}</td>
     <td><span class="res ${e.outcome}">${e.outcome==="flawless"?"Flawless":e.outcome==="clear"?"Cleared":e.eventId==="encounter"?"Cleared":"Failed"}</span>${e.deaths?`<br><span class="help">${e.deaths} death${e.deaths>1?"s":""}</span>`:""}</td>
     <td>${esc([e.lightGain?"+"+e.lightGain+" Light":"", e.loot?"Looted "+e.loot:"", ...(e.boons||[]), e.lifeLost?"Lost a life":"", e.lost?"Lost "+e.lost:""].filter(Boolean).join(" · ")||"—")}</td></tr>`).join("")}
   </tbody></table></div>`;
