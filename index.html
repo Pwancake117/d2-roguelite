@@ -402,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=133"></script>
+<script src="bungie.js?v=134"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -696,6 +696,17 @@ function boonOffers(run, lvl, diff){
   add("aspect","Aspect",P.aspects(c,e).filter(n=>!a.aspects.includes(n)));   // aspects keep dropping after 2; extras can be swapped in
   // fragments can be offered without a free slot: the card warns, and the fragment waits until an aspect opens room
   if(a.fragments.length<MAX_FRAGMENTS) add("fragment","Fragment",P.fragments(c,e).filter(n=>!a.fragments.includes(n)));
+  // finished types feed your other unlocked subclasses: if the current subclass has nothing left of a type,
+  // that type is offered from another unlocked subclass instead (never one you haven't unlocked)
+  const FILL = [["super","Super","supers"],["grenade","Grenade","grenades"],["jump","Jump","jumps"],["melee","Melee","melees"],["classAbility","Class Ability","classAbilities"],["aspect","Aspect","aspects"],["fragment","Fragment","fragments"]];
+  const others = Object.keys(run.subs||{}).filter(x=>x!==e);
+  FILL.forEach(([type,label,key])=>{
+    if(cands.some(o=>o.type===type)) return;
+    others.forEach(oe=>{ const ab = run.subs[oe];
+      (P[key](c,oe)||[]).filter(n=>!(ab[key]||[]).includes(n))
+        .forEach(name=>cands.push({type,label:label+" ("+ELEMENTS[oe].name+")",name,el:oe,spill:true}));
+    });
+  });
   // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
   if(run.artifact) artifactOffers(run, 6).forEach(o=>cands.push({type:"artswap",label:"New Artifact",name:o.name}));
   Object.keys(ELEMENTS).filter(e=>KIT[c][e] && !(run.subs||{})[e]).forEach(e=>cands.push({type:"subclass",label:"Unlock Subclass",name:ELEMENTS[e].name,el:e}));
@@ -736,7 +747,7 @@ function spillover(run, out){
   const others = Object.keys(run.subs||{}).filter(e=>e!==run.el);
   if(!others.length) return out;
   return out.map(o=>{
-    if(!SPILL_TYPES[o.type] || Math.random() >= SPILL_CHANCE) return o;
+    if(o.spill || !SPILL_TYPES[o.type] || Math.random() >= SPILL_CHANCE) return o;
     const el = pick(others), ab = run.subs[el], key = SPILL_TYPES[o.type];
     if(o.type==="fragment" && ab.fragments.length>=MAX_FRAGMENTS) return o;
     const names = (KIT[run.cls][el][SPILL_LIST[o.type]]||[]).map(x=>x.n).filter(n=>!(ab[key]||[]).includes(n) && !out.some(x=>x.el===el && x.name===n));
