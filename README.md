@@ -102,7 +102,7 @@ Rewards are tiered by type (set in `tiers.js`):
 | Tier | Rewards |
 |---|---|
 | S | Supers, unlock another subclass |
-| A | Aspects, a new artifact, +2 Lives, +2 Artifact Points |
+| A | Aspects, a new artifact, +2 Artifact Points |
 | B | Fragments (offered even when your slots are full, with a warning; the fragment waits until an aspect opens room), +1 Life (up to 2 over your starting lives) |
 | C | Grenades, jumps, melees, class abilities |
 

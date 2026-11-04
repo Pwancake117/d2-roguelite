@@ -400,9 +400,9 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <div id="modal"></div>
 
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
-<script src="tiers.js?v=12"></script>
+<script src="tiers.js?v=13"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=136"></script>
+<script src="bungie.js?v=137"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -707,12 +707,11 @@ function boonOffers(run, lvl, diff){
         .forEach(name=>cands.push({type,label:label+" ("+ELEMENTS[oe].name+")",name,el:oe,spill:true}));
     });
   });
-  // extra lives: up to 2 over the starting count; +2 Lives is a rarer roll of the same reward
+  // extra lives: up to 2 over the starting count (+2 Lives was removed Nov 3; old picks still pay out)
   if(run.artifact) artifactOffers(run, 6).forEach(o=>cands.push({type:"artswap",label:"New Artifact",name:o.name}));
   Object.keys(ELEMENTS).filter(e=>KIT[c][e] && !(run.subs||{})[e]).forEach(e=>cands.push({type:"subclass",label:"Unlock Subclass",name:ELEMENTS[e].name,el:e}));
   cands.push({type:"artpts",label:"Artifact Points",name:"+"+ART_PTS_REWARD+" Artifact Points"});
   if(run.lives<run.maxLives+2) cands.push({type:"life",label:"Revive Token",name:"+1 Life",n:1});
-  if(run.lives+2<=run.maxLives+2) cands.push({type:"life2",label:"Revive Tokens",name:"+2 Lives",n:2});
   const odds = oddsFor(lvl), out = []
   let pool = cands.slice();
   // Master / Grandmaster: chance that one choice is guaranteed S tier (tiers.js D2R_S_FLOOR)
