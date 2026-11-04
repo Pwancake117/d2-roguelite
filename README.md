@@ -106,14 +106,16 @@ Rewards are tiered by type (set in `tiers.js`):
 | B | Fragments (offered even when your slots are full, with a warning; the fragment waits until an aspect opens room), +1 Life (up to 2 over your starting lives) |
 | C | Grenades, jumps, melees, class abilities |
 
-Each of the 3 choices in a pick rolls a tier, then a reward inside it. A pick offers at most one S reward and one A reward; B and C rewards can repeat. Harder events roll higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
+Each pick first rolls once for S (at most one S choice per pick); the other choices each roll A, B or C, then a reward inside it. A pick offers at most one A reward; B and C rewards can repeat. Harder events roll S and higher tiers more often. Reward level = event power (tier + difficulty), +1 for a flawless clear:
 
-| Reward level | S | A | B | C |
+| Reward level | S (per pick) | A | B | C |
 |---|---|---|---|---|
-| up to 3 (e.g. Solo Ops, Normal) | 3% | 25% | 27% | 45% |
-| 4–5 | 6% | 30% | 32% | 32% |
-| 6–7 | 8% | 32% | 34% | 26% |
-| 8+ (e.g. Grandmaster) | 10% | 35% | 38% | 17% |
+| up to 3 (e.g. Solo Ops, Normal) | 6% | 26% | 28% | 46% |
+| 4–5 | 10% | 32% | 34% | 34% |
+| 6–7 | 14% | 35% | 37% | 28% |
+| 8+ (e.g. Grandmaster) | 17% | 39% | 42% | 19% |
+
+S is rolled once per pick: the S number is the chance a pick includes one S choice. A, B and C are the share of the other choices.
 
 A **full dungeon clear** always includes an S choice on its first reward pick. Master and Grandmaster boost S on the **first reward pick of each event**: Master gives a 50% chance of a guaranteed S choice, Grandmaster/Ultimate 95%. The event's other picks roll the normal odds above.
 

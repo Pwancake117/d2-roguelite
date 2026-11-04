@@ -12,16 +12,18 @@ window.D2R_TIERS = {
 /* Tiers that can appear at most once in a pick */
 window.D2R_ONE_PER_PICK = ["S", "A"];
 
-/* Odds of each tier per offered choice, by reward level.
+/* Odds by reward level. S = chance a pick includes one S choice (rolled once per pick).
+   A / B / C = share of the other choices (an empty tier's share goes to the rest).
    Reward level = event power (tier + difficulty) + 1 if flawless.
    Solo Ops on Normal = 2, Fireteam Ops on Expert = 5, Pinnacle on Master = 7, Grandmaster = 8+. */
 window.D2R_REWARD_ODDS = [
-  {upTo: 3,        S: 3,  A: 25, B: 27, C: 45},
-  {upTo: 5,        S: 6,  A: 30, B: 32, C: 32},
-  {upTo: 7,        S: 8,  A: 32, B: 34, C: 26},
-  {upTo: Infinity, S: 10, A: 35, B: 38, C: 17}
+  {upTo: 3,        S: 6,  A: 26, B: 28, C: 46},
+  {upTo: 5,        S: 10, A: 32, B: 34, C: 34},
+  {upTo: 7,        S: 14, A: 35, B: 37, C: 28},
+  {upTo: Infinity, S: 17, A: 39, B: 42, C: 19}
 ];
 
 /* Difficulty floor for S tier: chance that the first reward pick of an event includes an S reward, by difficulty
+   (replaces the normal S per pick when higher)
    (0 Normal, 1 Advanced/Hero, 2 Expert/Legend, 3 Master, 4 Grandmaster/Ultimate). */
 window.D2R_S_FLOOR = {3: 0.5, 4: 0.95};
