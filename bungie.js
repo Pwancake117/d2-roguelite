@@ -460,13 +460,49 @@ function trackEngrams(run, eventNote){
   }
   if(eventNote) for(const e of run.engrams) if(e.pendingTag){ e.event = eventNote; e.pendingTag = false; }
   const opened = [];
-  for(const e of run.engrams) if(e.status==="held" && !present.has(e.inst)){ e.status = "opened"; e.openedAt = Date.now(); opened.push(e); }
+  for(const e of run.engrams) if(e.status==="held" && !e.stack && !present.has(e.inst)){ e.status = "opened"; e.openedAt = Date.now(); opened.push(e); }
+  // stackable engrams (e.g. Exotic Engrams) have no instance id: track them by count per item type
+  const counts = stackEngramCounts();
+  if(!run.engramStackBase) run.engramStackBase = counts;
+  for(const [h,n] of Object.entries(counts)){
+    const d = B.defs[h], base = run.engramStackBase[h]||0, held = run.engrams.filter(e=>e.stack && e.hash==h && e.status==="held").length;
+    for(let k=0; k < n - base - held; k++){
+      const pendingTag = !eventNote && ((B.lastAct && B.lastAct.counted) || (B.justLeft && Date.now()-B.justLeft < 15*60000));
+      run.engrams.push({inst:"stack:"+h+":"+Date.now().toString(36)+k, stack:true, hash:+h, name:(d&&d.n)||"Engram", rarity:TIER[d&&d.tier]||"exotic", event:eventNote||(pendingTag?"Current activity":(run.events.length?run.events[run.events.length-1].event:"Found during the run")), pendingTag:!!pendingTag, at:Date.now(), status:"held"});
+      note("Engram tracked: "+((d&&d.n)||"Engram")+".","ok");
+    }
+  }
+  for(const e of run.engrams.filter(e=>e.stack && e.status==="held")){
+    const h = e.hash, n = counts[h]||0, base = Math.min(run.engramStackBase[h]||0, n);
+    const held = run.engrams.filter(x=>x.stack && x.hash==h && x.status==="held");
+    if(held.length > n - base){ e.status = "opened"; e.openedAt = Date.now(); opened.push(e); }
+  }
+  // fewer stacked engrams than the baseline (some pre-run ones opened): lower the baseline
+  for(const h of Object.keys(run.engramStackBase)) if((counts[h]||0) < run.engramStackBase[h]) run.engramStackBase[h] = counts[h]||0;
   return opened;
 }
+function stackEngramCounts(){
+  const out = {}, P = B.profile; if(!P) return out;
+  const add = it => { if(it.itemInstanceId) return; const d = B.defs[it.itemHash]; if(d && d.t===8) out[it.itemHash] = (out[it.itemHash]||0) + (it.quantity||1); };
+  ((P.profileInventory && P.profileInventory.data && P.profileInventory.data.items) || []).forEach(add);
+  const ci = (P.characterInventories && P.characterInventories.data) || {};
+  Object.values(ci).forEach(v=>v.items.forEach(add));
+  return out;
+}
+B.stackEngramCounts = stackEngramCounts;
 B.trackEngrams = trackEngrams;
 /* Where is an item right now? postmaster | equipped | character | vault | other | null */
 B.whereIs = inst => {
   if(!B.profile || !inst) return null;
+  if(String(inst).startsWith("stack:")){
+    const h = +String(inst).split(":")[1], ci = B.profile.characterInventories.data||{};
+    const mine = (ci[B.charId]||{}).items||[];
+    if(mine.some(i=>i.itemHash===h && i.bucketHash===215593132)) return "postmaster";
+    if(mine.some(i=>i.itemHash===h)) return "character";
+    for(const [cid,v] of Object.entries(ci)) if(cid!==B.charId && v.items.some(i=>i.itemHash===h)) return "other";
+    if(((B.profile.profileInventory.data||{}).items||[]).some(i=>i.itemHash===h)) return "vault";
+    return "gone";
+  }
   const ci = B.profile.characterInventories.data||{}, ce = B.profile.characterEquipment.data||{};
   for(const [cid,v] of Object.entries(ce)) if(v.items.some(i=>i.itemInstanceId===inst)) return cid===B.charId ? "equipped" : "other";
   for(const [cid,v] of Object.entries(ci)){ const it = v.items.find(i=>i.itemInstanceId===inst); if(it) return it.bucketHash===215593132 ? (cid===B.charId ? "postmaster" : "other postmaster") : cid===B.charId ? "character" : "other"; }
@@ -505,6 +541,10 @@ B.pullPostmaster = async run => {
     await loadProfile();
     const inv = (B.profile.characterInventories.data[B.charId]||{}).items||[];
     const looted = new Set(run.weapons.concat(run.armor).map(x=>x.inst).concat((run.engrams||[]).filter(e=>e.status==="held").map(e=>e.inst)).filter(Boolean));
+    const stackHeld = new Set((run.engrams||[]).filter(e=>e.stack && e.status==="held").map(e=>e.hash));
+    for(const it of inv.filter(i=>i.bucketHash===215593132 && !i.itemInstanceId && stackHeld.has(i.itemHash))){
+      try { await api("/Destiny2/Actions/Items/PullFromPostmaster/", {method:"POST", body:{itemReferenceHash:it.itemHash, stackSize:it.quantity||1, itemId:"0", characterId:B.charId, membershipType:B.account.type}}); n++; await sleep(300); } catch(e){}
+    }
     for(const it of inv.filter(i=>i.bucketHash===215593132 && looted.has(i.itemInstanceId))){
       await api("/Destiny2/Actions/Items/PullFromPostmaster/", {method:"POST", body:{itemReferenceHash:it.itemHash, stackSize:1, itemId:it.itemInstanceId, characterId:B.charId, membershipType:B.account.type}});
       n++; await sleep(300);
