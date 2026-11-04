@@ -402,7 +402,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=11"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=129"></script>
+<script src="bungie.js?v=130"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1514,10 +1514,13 @@ function renderEventForm(run){
     <div class="row"><button class="btn primary" type="submit">Log event</button><span class="help">Higher tier and difficulty roll better loot and more Light.</span></div>
   </form>`;
 }
+/* activities Bungie labels as a Strike that play like something else */
+const ACT_TYPE_OVERRIDE = {"Cabal's Watch":"Mission"};
 function eventTitle(e){
   const d = e.details;
   if(!d || !d.activity) return esc(e.event);
-  return `<b title="${esc(d.desc||"")}">${esc(d.activity)}</b> <span class="help">${esc(e.event)}${d.type&&d.type!==d.activity?" · "+esc(d.type):""}</span>${d.desc?`<br><span class="help evdesc">${esc(d.desc)}</span>`:""}`;
+  const type = ACT_TYPE_OVERRIDE[d.activity] || d.type;
+  return `<b>${esc(d.activity)}</b> <span class="help">${esc(e.event)}${type&&type!==d.activity?" · "+esc(type):""}</span>`;
 }
 function eventDetailLine(e){
   const d = e.details; if(!d) return "";
