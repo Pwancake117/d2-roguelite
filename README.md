@@ -64,7 +64,7 @@ Any white pieces work and can be mixed. The more you own, the more each run's st
 Once you're connected, the app's **Setup guide** shows which classes are ready and which pieces are missing.
 
 ## Playing
-**Recommended before each run:** move everything on that character except your common starter gear to the vault, empty its Postmaster, and clear your artifact's mod slots. Then anything that shows up on your character during the run is clearly run loot. Once a run has started, the **Move non-run gear to vault** button in the Bungie panel does this for you (it leaves run gear alone).
+**Recommended before each run:** move everything on that character except your common starter gear to the vault, empty its Postmaster, and clear your artifact's mod slots. Then anything that shows up on your character during the run is clearly run loot. Once you start the run, the next page has a **Move non-run gear to vault** button that moves your non-run gear for you (it leaves run gear alone).
 
 1. **Connect your Bungie account.** Sign-in happens on bungie.net. The app asks to read your inventory and to move or equip gear.
 2. **Pick a class and subclass, then start the run.** The app moves your common gear to that character, equips it and sets the subclass's base build.
