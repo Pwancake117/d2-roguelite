@@ -398,12 +398,16 @@ B.sync = async (run, {quiet} = {}) => {
       if(loot.length){
         // decrypted gear only gets credited to an engram whose rarity fits (Exotic Engram -> exotic gear, other engrams -> legendary or lower)
         const fits = (e,x) => e.rarity==="exotic" ? x.rarity==="exotic" : x.rarity!=="exotic";
+        // gear from engrams owned before the run doesn't count: drop matching-rarity gear, one item per pre-run engram opened
+        const pre = (opened.preRun||[]).slice(), keep = [];
+        for(const x of loot){ const k = pre.findIndex(r=>r==="exotic" ? x.rarity==="exotic" : x.rarity!=="exotic"); if(k>=0 && !opened.some(e=>fits(e,x))){ pre.splice(k,1); (run.ownedAtStart = run.ownedAtStart||[]).push(x.inst); note(x.name+" came from an engram you had before the run, so it isn't run loot.",""); } else keep.push(x); }
+        loot.length = 0; keep.forEach(x=>loot.push(x));
         loot.forEach(x=>{ const from = opened.filter(e=>fits(e,x));
           x.source = from.length ? "Decrypted "+from.map(e=>e.name).join(", ")+(from[0].event?" ("+from[0].event+")":"") : added ? run.queue[run.queue.length-1].note : "Found during the run";
           (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
         if(added) run.queue[run.queue.length-1].loot = loot.map(x=>x.name);
         else run.unattachedLoot = (run.unattachedLoot||[]).concat(loot.map(x=>x.name));
-        note("Looted: "+loot.map(x=>x.name).join(", ")+". You can use "+(loot.length>1?"them":"it")+" now.","ok");
+        if(loot.length) note("Looted: "+loot.map(x=>x.name).join(", ")+". You can use "+(loot.length>1?"them":"it")+" now.","ok");
       }
     }
     B.lastSync = Date.now();
@@ -470,6 +474,11 @@ function trackEngrams(run, eventNote){
   }
   if(eventNote) for(const e of run.engrams) if(e.pendingTag){ e.event = eventNote; e.pendingTag = false; }
   const opened = [];
+  // engrams you owned before the run that were decrypted now: what comes out isn't run loot (rarity says which gear)
+  const baseNow = now.filter(it=>base.has(it.inst)).map(it=>it.inst), baseGone = (run.engramBaseline||[]).filter(i=>!present.has(i));
+  if(run._baseRarity){ opened.preRun = baseGone.map(i=>run._baseRarity[i]).filter(Boolean); }
+  run._baseRarity = Object.fromEntries(now.filter(it=>base.has(it.inst)).map(it=>[it.inst, TIER[it.d.tier]||"legendary"]));
+  run.engramBaseline = (run.engramBaseline||[]).filter(i=>present.has(i));
   for(const e of run.engrams) if(e.status==="held" && !e.stack && !present.has(e.inst)){ e.status = "opened"; e.openedAt = Date.now(); opened.push(e); }
   // stackable engrams (e.g. Exotic Engrams) have no instance id: track them by count per item type
   const counts = stackEngramCounts();
