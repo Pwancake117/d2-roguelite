@@ -87,6 +87,8 @@ Artifact: Destiny 2 has seven artifacts (NPA Repulsion Regulator, Queensfoil Cen
 
 **Rerolls:** on any reward pick you can press **⟳ Reroll** to redraw all 3 choices for **1 unspent artifact point**, once per pick. The new choices follow the same tier odds and difficulty boosts.
 
+**Picks per clear:** Solo Ops give 1 guaranteed pick, Fireteam and Arena Ops 2, Pinnacle Ops and full dungeon clears 3, plus a bonus pick for every 4 Light.
+
 **What is a life?** A life is lost when an event fails: your fireteam runs out of revives and gets sent to orbit, or you leave an activity after 5 minutes. A death you're revived from doesn't cost a life in Normal mode (it only lowers the Light you earn); in Hardcore, dying at any point in an event costs one life, plus the looted gear you had equipped. At 0 lives the run is over.
 
 ### Reward tiers
@@ -122,9 +124,9 @@ Each pick card shows its tier, and the **Reward tier list** button shows everyth
 | Left within 5 minutes | Doesn't count | Doesn't count |
 | Starter commons | Never lost | Never lost |
 
-Power = Solo Ops 2, Fireteam/Arena Ops 3, Pinnacle Ops 4, plus 0–4 for difficulty. Lost loot is removed from your run; what you do with it in game is up to you. At 0 lives the run is over.
+Power = Solo Ops 1, Fireteam/Arena Ops 3, Pinnacle Ops 5, Dungeon clear 5, plus 0–4 for difficulty. Lost loot is removed from your run; what you do with it in game is up to you. At 0 lives the run is over.
 
-Vanguard Ops activities and dungeons count as events, since each has a clear start and finish. Event tier: Solo Ops 2, Fireteam Ops 3, Arena Ops 3, Pinnacle Ops 4, Dungeon 4, plus 0–4 for difficulty (Normal through Grandmaster/Ultimate). Patrols, campaign missions, Lost Sectors, dungeons, raids, Crucible and Gambit don't count.
+Vanguard Ops activities and dungeons count as events, since each has a clear start and finish. Event tier: Solo Ops 1, Fireteam Ops 3, Arena Ops 3, Pinnacle Ops 5, Dungeon 5, plus 0–4 for difficulty (Normal through Grandmaster/Ultimate). Patrols, campaign missions, Lost Sectors, dungeons, raids, Crucible and Gambit don't count.
 
 ## Dungeon Only Run
 Pick **Dungeon Only Run** on the setup screen for a run where only dungeons count.
