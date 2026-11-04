@@ -396,7 +396,11 @@ B.sync = async (run, {quiet} = {}) => {
       const opened = trackEngrams(run, added ? run.queue[run.queue.length-1].note : null);
       const loot = findLoot(run);
       if(loot.length){
-        loot.forEach(x=>{ x.source = opened.length ? "Decrypted "+opened.map(e=>e.name).join(", ")+(opened[0].event?" ("+opened[0].event+")":"") : added ? run.queue[run.queue.length-1].note : "Found during the run"; (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
+        // decrypted gear only gets credited to an engram whose rarity fits (Exotic Engram -> exotic gear, other engrams -> legendary or lower)
+        const fits = (e,x) => e.rarity==="exotic" ? x.rarity==="exotic" : x.rarity!=="exotic";
+        loot.forEach(x=>{ const from = opened.filter(e=>fits(e,x));
+          x.source = from.length ? "Decrypted "+from.map(e=>e.name).join(", ")+(from[0].event?" ("+from[0].event+")":"") : added ? run.queue[run.queue.length-1].note : "Found during the run";
+          (x.kind==="weapon" ? run.weapons : run.armor).push(x); });
         if(added) run.queue[run.queue.length-1].loot = loot.map(x=>x.name);
         else run.unattachedLoot = (run.unattachedLoot||[]).concat(loot.map(x=>x.name));
         note("Looted: "+loot.map(x=>x.name).join(", ")+". You can use "+(loot.length>1?"them":"it")+" now.","ok");
@@ -452,6 +456,12 @@ function trackEngrams(run, eventNote){
   const now = allItems().filter(i=>i.d.t===8);
   if(!run.engrams){ run.engrams = []; if(!run.engramBaseline) run.engramBaseline = now.map(i=>i.inst); }
   const base = new Set(run.engramBaseline||[]), known = new Set(run.engrams.map(e=>e.inst)), present = new Set(now.map(i=>i.inst));
+  // an engram pulled from the Postmaster can come back under a new id: a tracked engram that vanished plus a new
+  // engram of the same kind in the same check is the same engram moving, not a decrypt
+  for(const e of run.engrams.filter(e=>e.status==="held" && !e.stack && !present.has(e.inst))){
+    const moved = now.find(it=>it.hash===e.hash && !base.has(it.inst) && !known.has(it.inst));
+    if(moved){ e.inst = moved.inst; known.add(moved.inst); }
+  }
   for(const it of now) if(!base.has(it.inst) && !known.has(it.inst)){
     // seen mid-activity (before the activity lands in history): hold the tag until that activity is synced
     const pendingTag = !eventNote && ((B.lastAct && B.lastAct.counted) || (B.justLeft && Date.now()-B.justLeft < 15*60000));
