@@ -400,9 +400,9 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <div id="modal"></div>
 
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
-<script src="tiers.js?v=11"></script>
+<script src="tiers.js?v=12"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=135"></script>
+<script src="bungie.js?v=136"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -891,7 +891,7 @@ function afterChange(){
 const ART_PTS_FLAWLESS = 1, ART_PTS_REWARD = 2;
 const ENCOUNTER_ART_PTS = 1, DUNGEON_CLEAR_LIGHT = 2;   // dungeon encounters: 1 pick + 1 point; a full dungeon clear gets +2 bonus Light
 function artPtsFor(diff){ return diff>=4 ? 3 : diff===3 ? 2 : 1; }
-/* Artifact: chosen as an extra pick after the first completed event; swapping is an S-tier reward.
+/* Artifact: chosen as an extra pick after the first completed event; more artifacts are an A-tier reward.
    Points fill the 7 slots: a mod costs its tier, and each slot only takes mods up to its tier limit. Reset is free. */
 /* each artifact remembers its own mods (run.artSlotsBy[name]); run.artSlots is the current artifact's.
    Points spent on any artifact stay spent; only resetting an artifact frees its points. */
@@ -1366,7 +1366,7 @@ function renderArtifact(run){
       return `<button class="offer" data-act="artMod" data-slot="${ui.artSlot}" data-h="${h}" ${ok?"":"disabled"}>${d&&d.i?`<img class="modicon" src="${ICON_ROOT+d.i}" alt="">`:""}<span class="rtag">Tier ${t} · ${t} point${t>1?"s":""}</span><span class="nm">${esc(artName(h))}</span>${d&&d.d?`<span class="desc">${esc(d.d)}</span>`:""}</button>`; }).join("")}</div><div class="row"><button class="btn ghost" data-act="artSlot" data-i="-1">Cancel</button></div>`;
   }
   const owned = run.artifacts||[art.n];
-  const aswitch = `<div class="switcher"><span class="glabel">Your artifacts</span>${owned.map(n=>`<button class="swbtn ${n===art.n?"on":""}" data-act="artSwitch" data-name="${esc(n)}">${esc(n)}</button>`).join("")}${owned.length<2?`<span class="help">Get more as S-tier rewards.</span>`:`<span class="help">Each artifact keeps its own mods.</span>`}</div>`;
+  const aswitch = `<div class="switcher"><span class="glabel">Your artifacts</span>${owned.map(n=>`<button class="swbtn ${n===art.n?"on":""}" data-act="artSwitch" data-name="${esc(n)}">${esc(n)}</button>`).join("")}${owned.length<2?`<span class="help">Get more as A-tier rewards.</span>`:`<span class="help">Each artifact keeps its own mods.</span>`}</div>`;
   return `<div class="slotgroup">${aswitch}<h3>Artifact · ${esc(art.n)}</h3>${left>0?`<div class="ptsbanner"><b>${left}</b><span>point${left===1?"":"s"} to spend: tap a glowing slot</span></div>`:`<p class="help">No points to spend. Complete events to earn more.</p>`}
     <p class="help">${artInfoHtml(run, art.n)}</p>
     <p class="help">Each completed event earns points (1, Master 2, Grandmaster 3, +1 if flawless). A mod costs its tier. Slots 1-2 take tier 1, slots 3-5 up to tier 2, slots 6-7 up to tier 3. The app equips the artifact and its mods for you when "Equip subclass picks automatically" is on, or use Set artifact in game.</p>
