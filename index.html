@@ -373,6 +373,44 @@ html.theme-dungeon,html.theme-dungeon body{background:
   #061016;background-attachment:fixed;background-size:auto,auto,auto,auto,320px 320px,260px 260px,auto}
 html.theme-dungeon .panel{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0) 120px),rgba(6,18,26,.66);backdrop-filter:blur(3px);border-color:rgba(120,230,240,.16)}
 html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{background:rgba(6,16,22,.88)}
+
+/* ---- phone layout ---- */
+.pickpanel{border-color:var(--accent)}
+.topstack{display:grid;gap:inherit}
+.bfold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:2px 0}
+.bfold>summary::-webkit-details-marker{display:none}
+.bfold>summary::before{content:"▸";color:var(--accent);font-size:1.1rem}
+.bfold[open]>summary::before{content:"▾"}
+.bfold[open]>summary{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.bsum{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline}
+.bsum b{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em}
+.bfold[open] .row.between>div>h2{display:none}
+.tipbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:60;display:grid;gap:4px;padding:12px 40px 12px 14px;background:#0d1a26;border:1px solid var(--accent);border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,.6);max-width:640px;margin:0 auto}
+.tipbar[hidden]{display:none}
+.tipbar b{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;color:#fff}
+.tipbar span{font-size:.9rem;line-height:1.4;color:var(--ink)}
+.tipx{position:absolute;top:4px;right:6px;width:32px;height:32px;background:none;border:0;color:var(--ink);font-size:1.3rem;cursor:pointer}
+@media (max-width:820px){
+  .brand{gap:10px;min-width:0}
+  .brandtext{min-width:0}
+  .brand h1.title{font-size:1.25rem;letter-spacing:.12em}
+  .tagline{font-size:.6rem;letter-spacing:.1em;flex-wrap:wrap}
+  .swbtn,.tab{min-height:44px}
+  .tabs{width:100%}
+  .tab{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:8px 4px;letter-spacing:.08em;font-size:.78rem;min-width:0}
+  .tab .tabbadge{margin-left:4px;padding:1px 5px}
+  .wrap,.wrap>*,#app,#app>*,.grid2>*{min-width:0}
+  .topstack .pickpanel{order:-1}
+  .topstack:has(.pickpanel) .pickbanner{display:none}
+  .status>*{padding-top:10px;padding-bottom:10px}
+  .pickhead .reroll{margin-left:0}
+  .tablewrap:has(.evlog){max-height:none;overflow:visible}
+  .evlog,.evlog tbody{display:block}
+  .evlog thead{display:none}
+  .evlog tr{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:start;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:2px;background:var(--panel-2)}
+  .evlog td{display:block;padding:0;border:0}
+  .evlog td:nth-child(4){grid-column:1/-1;font-size:.88rem;padding-top:6px;border-top:1px solid var(--line)}
+}
 </style>
 </head>
 <body>
@@ -397,12 +435,13 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
   <main id="app" class="wrap" style="padding:0;width:100%;max-width:none"></main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="tipbar" id="tipbar" role="status" aria-live="polite" hidden></div>
 <div id="modal"></div>
 
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=142"></script>
+<script src="bungie.js?v=143"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1394,7 +1433,7 @@ function renderStatus(run){
   for(let i=0;i<Math.max(run.maxLives,run.lives);i++) pips.push(`<span class="pip ${i<run.lives?"on":"lost"}" title="${i<run.lives?"Life":"Lost life"}"></span>`);
   const pct = Math.round(run.light/LIGHT_PER_BOON*100);
   const picks = run.pending ? (run.pending.boonsLeft||0) + (run.pending.loot&&run.pending.loot.length?1:0) : 0;
-  return `${picks?`<div class="pickbanner" role="status"><b>${picks} reward pick${picks>1?"s":""} waiting</b><span>Choose ${picks>1?"them":"it"} in the Ability unlock panel before logging your next event.</span></div>`:""}<section class="status">
+  return `${picks?`<div class="pickbanner" role="status"><b>${picks} reward pick${picks>1?"s":""} waiting</b><span>Choose ${picks>1?"them":"it"} just below before logging your next event.</span></div>`:""}<section class="status">
     <div class="who el-${run.el}"><span class="lbl">${RUN_MODES[run.mode||"ops"]} · ${run.difficulty==="hardcore"?"Hardcore":"Normal"} · ${ELEMENTS[run.el].name} ${run.cls}</span><b>${run.depth} event${run.depth===1?"":"s"} cleared</b><span class="lbl">Started ${fmtTime(run.startedAt)}</span></div>
     <div title="A life is lost when an event fails: out of revives and sent to orbit, or leaving after 5 minutes.${run.difficulty==="hardcore"?" Hardcore: dying at any point in an event costs one life, plus your equipped loot.":""}"><span class="lbl">Lives ⓘ</span><div class="pips" aria-label="${run.lives} lives left">${pips.join("")}</div></div>
     <div><span class="lbl">Light to bonus pick</span><span class="val"><svg class="lighticon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z"/></svg>${run.light}/${LIGHT_PER_BOON}</span><div class="meter"><b style="width:${pct}%"></b></div></div>
@@ -1493,7 +1532,7 @@ function renderSubclassTab(run){
     <div class="scol"><h3>Aspects (${actA.length}/2${aBench.length?` · ${a.aspects.length} owned`:""})</h3>${aspects}<h3>Fragments (${actF.length}/${slots}${bench.length?` · ${a.fragments.length} owned`:""})</h3>${frags}</div>
   </div>
   <details class="descs"><summary>Ability descriptions</summary>${descList(run,"aspect",a.aspects)}${descList(run,"fragment",a.fragments)}${descList(run,"super",a.supers)}${descList(run,"classAbility",a.classAbilities)}${descList(run,"jump",a.jumps||[])}${descList(run,"melee",a.melees)}${descList(run,"grenade",a.grenades)}</details>
-  <p class="help">Tap a small icon to switch to it; ${window.D2R_BUNGIE&&window.D2R_BUNGIE.opts&&window.D2R_BUNGIE.opts.autoSubclass?"the app sets it in game for you.":"then equip it in game."} Hover for details.</p>`;
+  <p class="help">Tap a small icon to switch to it; ${window.D2R_BUNGIE&&window.D2R_BUNGIE.opts&&window.D2R_BUNGIE.opts.autoSubclass?"the app sets it in game for you.":"then equip it in game."} Tap or hover an icon for details.</p>`;
 }
 function renderLoadout(run){
   const tab = ui.tab || "subclass";
@@ -1587,7 +1626,7 @@ function eventDetailLine(e){
 }
 function renderEventLog(events){
   if(!events.length) return `<div class="empty-note">No events logged yet. Clear something in game, then log it here.</div>`;
-  return `<div class="tablewrap"><table><thead><tr><th>#</th><th>Event</th><th>Result</th><th>Reward / loss</th></tr></thead><tbody>
+  return `<div class="tablewrap"><table class="evlog"><thead><tr><th>#</th><th>Event</th><th>Result</th><th>Reward / loss</th></tr></thead><tbody>
     ${events.slice().reverse().map(e=>`<tr><td class="num">${e.n}</td><td>${eventTitle(e)}<br><span class="help">${esc(e.diffName)} · power ${e.power}${e.details?"":e.note?" · "+esc(e.note):""}</span>${eventDetailLine(e)}</td>
     <td><span class="res ${e.outcome}">${e.outcome==="flawless"?"Flawless":e.outcome==="clear"?"Cleared":e.eventId==="encounter"?"Cleared":"Failed"}</span>${e.deaths?`<br><span class="help">${e.deaths} death${e.deaths>1?"s":""}</span>`:""}</td>
     <td>${esc([e.lightGain?"+"+e.lightGain+" Light":"", e.loot?"Looted "+e.loot:"", ...(e.boons||[]), e.lifeLost?"Lost a life":"", e.lost?"Lost "+e.lost:""].filter(Boolean).join(" · ")||"—")}</td></tr>`).join("")}
@@ -1616,11 +1655,12 @@ function render(){
   const run = state.run;
   let html = "";
   if(run && run.status==="active"){
-    html += renderStatus(run);
+    // a waiting pick sits right under the status bar (above it on phones)
+    html += `<div class="topstack">${renderStatus(run)}${run.pending ? `<section class="panel pickpanel" id="pickpanel">${renderPending(run)}</section>` : ""}</div>`;
     html += renderBungie(run);
     html += `<div class="grid2">${renderLoadout(run)}<section class="panel"><div style="display:grid;gap:14px">
       ${renderSyncCard(run)}
-      ${run.pending ? renderPending(run) : renderEventForm(run)}
+      ${run.pending ? "" : renderEventForm(run)}
       <h2>Event log</h2>${renderEventLog(run.events)}
       <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
         ${ui.confirm==="extract" ? `<span>End the run and save it to your history?</span><button class="btn endrun" data-act="extract">Yes, end run</button><button class="btn ghost" data-act="cancel">Cancel</button>`
@@ -1655,7 +1695,10 @@ function renderBungie(run){
   const counts = run ? B.allowedCounts(run) : null;
   const countHtml = counts ? Object.entries(counts).map(([k,v])=>`<span class="chip ${v?"":"warn"}">${esc(cap(k))}: ${v}</span>`).join("") : "";
   const ago = B.lastSync ? Math.max(0,Math.round((Date.now()-B.lastSync)/60000)) : null;
-  return `<section class="panel bungie">
+  // once a run has its first event the panel folds to one line; tap to open (your choice is remembered until reload)
+  const fold = !!run && run.events.length>0, open = ui.bungieOpen!=null ? ui.bungieOpen : !fold;
+  const head = fold ? `<details class="panel bungie bfold" data-act="bungieToggle" ${open?"open":""}><summary><span class="bsum"><b>Bungie.net · ${esc(B.account ? B.account.name : "connected")}</b><span class="help">${ago!=null?`Last sync ${ago} min ago`:"Connected"} · loadout, vault and sync settings</span></span></summary>` : `<section class="panel bungie">`;
+  return `${head}
     <div class="row between"><div><h2>Bungie.net · ${esc(B.account ? B.account.name : "connected")}</h2>
       <p class="help" style="margin:4px 0 0">${B.manifestState ? esc(B.manifestState) : run ? (mine.length ? "Playing on your "+run.cls+(mine.length>1?"":"")+"." : "No "+run.cls+" on this account.") : "Start a run and the app equips it on your matching character."}</p></div>
       <div class="row">
@@ -1672,7 +1715,7 @@ function renderBungie(run){
       ${ago!=null?`<span class="help">Last sync ${ago} min ago${run.queue&&run.queue.length?` · ${run.queue.length} waiting`:""}</span>`:""}
     </div>` : ""}
     ${logHtml?`<ul class="blog">${logHtml}</ul>`:""}
-  </section>`;
+  ${fold?"</details>":"</section>"}`;
 }
 let bRenderT = null;
 window.renderBungieSoon = () => { clearTimeout(bRenderT); bRenderT = setTimeout(render, 50); };
@@ -1721,7 +1764,19 @@ document.addEventListener("change", e=>{
   render();
 });
 document.addEventListener("toggle", e=>{
-  const t = e.target; if(t && t.dataset && t.dataset.act==="aboutToggle"){ try { localStorage.setItem("d2r.aboutClosed", t.open ? "0" : "1"); } catch(err){} }
+  const t = e.target; if(t && t.dataset && t.dataset.act==="bungieToggle"){ ui.bungieOpen = t.open; return; }
+  if(t && t.dataset && t.dataset.act==="aboutToggle"){ try { localStorage.setItem("d2r.aboutClosed", t.open ? "0" : "1"); } catch(err){} }
+}, true);
+/* Tap an ability icon to read its description (touch screens have no hover) */
+function showTip(text){
+  const t = $("#tipbar"); if(!t) return;
+  const i = text.indexOf(" — "), name = i>=0 ? text.slice(0,i) : text, body = i>=0 ? text.slice(i+3) : "";
+  t.innerHTML = `<b>${esc(name)}</b>${body?`<span>${esc(body)}</span>`:""}<button class="tipx" aria-label="Close">×</button>`;
+  t.hidden = false; clearTimeout(showTip._t); showTip._t = setTimeout(()=>{ t.hidden = true; }, 9000);
+}
+document.addEventListener("click", e=>{
+  const tile = e.target.closest(".atile[title]"), bar = $("#tipbar");
+  if(tile && tile.title) showTip(tile.title); else if(bar && !bar.hidden) bar.hidden = true;
 }, true);
 document.addEventListener("click", e=>{
   const b = e.target.closest("[data-act]"); if(!b) return;
