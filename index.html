@@ -426,13 +426,10 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 .moved b{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;color:#fff}
 .moved a:not(.btn){color:var(--accent)}
 .moved span{flex:1 1 320px}
-.reconnect,.undobar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 16px;border-radius:2px}
+.reconnect{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 16px;border-radius:2px}
 .reconnect{border:2px solid #e8a33d;background:color-mix(in srgb,#e8a33d 14%,var(--panel))}
 .reconnect b{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;color:#ffd08a}
 .reconnect span{flex:1 1 300px}
-.undobar{border:1px solid var(--line);background:var(--panel-2)}
-.undobar>span:first-child{flex:1 1 auto}
-.undobar .help{flex-basis:100%}
 </style>
 </head>
 <body>
@@ -464,7 +461,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=151"></script>
+<script src="bungie.js?v=152"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1097,18 +1094,6 @@ function offerStats(runs){
 }
 /* Reroll: redraw all 3 choices of the current pick for 1 unspent artifact point, once per pick */
 const REROLL_COST = 1;
-function undoPick(){
-  const u = ui.lastPick, run = state.run;
-  if(!u || !run || run.id!==u.runId || run.events.length!==u.events || run.boons!==u.boons) { ui.lastPick = null; render(); return; }
-  state.run = JSON.parse(u.snap); normalize(); ui.lastPick = null;
-  save(); afterChange(); render(); window.scrollTo(0,0);
-  toast("Pick undone. Choose again.");
-}
-function renderUndo(run){
-  const u = ui.lastPick;
-  if(!u || run.id!==u.runId || run.events.length!==u.events || run.boons!==u.boons) return "";
-  return `<div class="undobar" role="status"><span>Took <b>${esc(u.label)}</b></span><button class="btn ghost" data-act="undoPick">Undo</button>${u.gameSide?`<span class="help">If the app already equipped this in game, switch back there too.</span>`:""}</div>`;
-}
 function rerollPick(){
   const run = state.run, p = run && run.pending; if(!p || !p.boon || p.rerollAt===p.boonsLeft || artLeft(run)<REROLL_COST) return;
   run.artPts -= REROLL_COST; p.rerollAt = p.boonsLeft;
@@ -1120,8 +1105,6 @@ function rerollPick(){
 }
 function takeBoon(i){
   const run = state.run, p = run.pending; if(!p || !p.boon) return;
-  // Undo: keep a copy of the run from just before this pick (same choices come back, so it can't be used to reroll)
-  ui.lastPick = {runId:run.id, snap:JSON.stringify(run), label:p.boon[i] ? p.boon[i].label+": "+p.boon[i].name : "", events:run.events.length, boons:run.boons+1, gameSide:!!(window.D2R_BUNGIE && window.D2R_BUNGIE.connected() && (window.D2R_BUNGIE.opts||{}).autoSubclass && (SUB_KEY[(p.boon[i]||{}).type] || ["subclass","artpick","artswap"].includes((p.boon[i]||{}).type)))};
   logOffers(run, p, i);
   const b = p.boon[i], a = (b.el && SUB_KEY[b.type] && run.subs && run.subs[b.el]) ? run.subs[b.el] : run.ab;
   const map = {grenade:"grenades",jump:"jumps",melee:"melees",super:"supers",classAbility:"classAbilities",aspect:"aspects",fragment:"fragments"};
@@ -1728,7 +1711,7 @@ function render(){
   if(location.hash==="#feedback"){ $("#app").innerHTML = renderFeedbackPage(); return; }
   if(run && run.status==="active"){
     // a waiting pick sits right under the status bar (above it on phones)
-    html += renderReconnect(run) + renderUndo(run);
+    html += renderReconnect(run);
     html += `<div class="topstack">${renderStatus(run)}${run.pending ? `<section class="panel pickpanel" id="pickpanel">${renderPending(run)}</section>` : ""}</div>`;
     html += renderBungie(run);
     html += `<div class="grid2">${renderLoadout(run)}<section class="panel"><div style="display:grid;gap:14px">
@@ -1884,7 +1867,6 @@ document.addEventListener("click", e=>{
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
   if(act==="sendFeedback"){ sendFeedback(); return; }
-  if(act==="undoPick"){ undoPick(); return; }
   if(act==="fbBack"){ if(history.length>1 && ui.fbFromApp) history.back(); else { history.replaceState(null,"",location.pathname+location.search); render(); } return; }
   if(act==="start") startRun();
   else if(act==="loot") takeLoot(parseInt(b.dataset.i,10));
