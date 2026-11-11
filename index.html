@@ -411,6 +411,8 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
   .evlog td{display:block;padding:0;border:0}
   .evlog td:nth-child(4){grid-column:1/-1;font-size:.88rem;padding-top:6px;border-top:1px solid var(--line)}
 }
+.feedback textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:2px;padding:10px;resize:vertical;min-height:96px}
+.feedback{display:grid;gap:12px}
 </style>
 </head>
 <body>
@@ -441,7 +443,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=143"></script>
+<script src="bungie.js?v=144"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1632,6 +1634,39 @@ function renderEventLog(events){
     <td>${esc([e.lightGain?"+"+e.lightGain+" Light":"", e.loot?"Looted "+e.loot:"", ...(e.boons||[]), e.lifeLost?"Lost a life":"", e.lost?"Lost "+e.lost:""].filter(Boolean).join(" · ")||"—")}</td></tr>`).join("")}
   </tbody></table></div>`;
 }
+/* Feedback: opens the player's mail app with a filled-in message to the project inbox */
+const FEEDBACK_EMAIL = "d2roguelite@gmail.com";
+const FEEDBACK_TYPES = [["bug","Bug"],["balance","Rewards / balance"],["idea","Idea"],["other","Other"]];
+function renderFeedback(){
+  const f = ui.feedback || (ui.feedback = {type:"bug", text:"", details:true});
+  return `<section class="panel feedback" id="feedback">
+    <h2>Feedback</h2>
+    <p class="help">Found a bug, think a reward is off, or have an idea? Write it here and press <b>Send feedback</b>: your mail app opens with the message ready to send to <a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>. Nothing is sent until you press send there.</p>
+    <div class="seg" role="radiogroup" aria-label="Feedback type">${FEEDBACK_TYPES.map(([k,l])=>`<input type="radio" id="fb-${k}" name="fbType" value="${k}" ${f.type===k?"checked":""}><label for="fb-${k}">${l}</label>`).join("")}</div>
+    <label class="field" for="fbText">Your feedback<textarea id="fbText" name="fbText" rows="4" maxlength="1500" placeholder="What happened, or what would you change?">${esc(f.text)}</textarea></label>
+    <label class="tog"><input type="checkbox" id="fbDetails" ${f.details?"checked":""}> Include my run details (class, subclass, events cleared, last few events) to help track down problems</label>
+    <div class="row"><button class="btn primary" data-act="sendFeedback">Send feedback</button><span class="help">No mail app? Copy your message and email it to ${FEEDBACK_EMAIL}.</span></div>
+  </section>`;
+}
+function feedbackDetails(){
+  const r = state.run, lines = ["", "---", "App version: "+(([...document.scripts].map(x=>x.src).find(x=>/bungie\.js/.test(x))||"").split("v=")[1]||"?"), "Screen: "+innerWidth+"x"+innerHeight];
+  if(r){
+    lines.push("Run: "+(r.mode==="dungeon"?"Dungeon Only":"Vanguard Ops")+" · "+r.difficulty+" · "+r.cls+" "+cap(r.el)+" · "+r.events.length+" events · lives "+r.lives+"/"+r.maxLives);
+    lines.push("Subclasses: "+Object.keys(r.subs||{}).join(", ")+" · artifacts: "+(r.artifacts||[]).length);
+    r.events.slice(-3).forEach(e=>lines.push("Event "+e.n+": "+(e.details&&e.details.activity?e.details.activity+" · ":"")+e.event+" · "+e.diffName+" · "+e.outcome+(e.boons&&e.boons.length?" · "+e.boons.join(", "):"")));
+  } else lines.push("No active run");
+  return lines.join("\n");
+}
+function sendFeedback(){
+  const f = ui.feedback || {}, text = ($("#fbText")||{}).value || "";
+  if(!text.trim()){ toast("Write your feedback first."); $("#fbText") && $("#fbText").focus(); return; }
+  const type = (FEEDBACK_TYPES.find(t=>t[0]===f.type)||FEEDBACK_TYPES[0])[1];
+  const subject = "D2 Roguelite feedback: "+type;
+  let body = text.trim() + (f.details ? "\n"+feedbackDetails() : "");
+  if(body.length > 1800) body = body.slice(0,1800)+"…";   // mail links have a length limit
+  location.href = "mailto:"+FEEDBACK_EMAIL+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  toast("Opening your mail app…");
+}
 function renderHistory(){
   const h = state.history;
   return `<section class="panel">
@@ -1677,6 +1712,7 @@ function render(){
     html += renderSetup();
   }
   html += renderHistory();
+  html += renderFeedback();
   $("#app").innerHTML = html;
 }
 
@@ -1763,6 +1799,13 @@ document.addEventListener("change", e=>{
   try { localStorage.setItem(MANUAL_KEY, t.checked ? "1" : "0"); } catch(err){}
   render();
 });
+document.addEventListener("input", e=>{
+  const t = e.target; if(!t) return;
+  const f = ui.feedback || (ui.feedback = {type:"bug", text:"", details:true});
+  if(t.id==="fbText") f.text = t.value;
+  else if(t.name==="fbType") f.type = t.value;
+  else if(t.id==="fbDetails") f.details = t.checked;
+});
 document.addEventListener("toggle", e=>{
   const t = e.target; if(t && t.dataset && t.dataset.act==="bungieToggle"){ ui.bungieOpen = t.open; return; }
   if(t && t.dataset && t.dataset.act==="aboutToggle"){ try { localStorage.setItem("d2r.aboutClosed", t.open ? "0" : "1"); } catch(err){} }
@@ -1781,6 +1824,7 @@ document.addEventListener("click", e=>{
 document.addEventListener("click", e=>{
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
+  if(act==="sendFeedback"){ sendFeedback(); return; }
   if(act==="start") startRun();
   else if(act==="loot") takeLoot(parseInt(b.dataset.i,10));
   else if(act==="boon") takeBoon(parseInt(b.dataset.i,10));

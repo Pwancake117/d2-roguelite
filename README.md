@@ -142,5 +142,9 @@ Pick **Dungeon Only Run** on the setup screen for a run where only dungeons coun
 - Bungie's API doesn't report dungeon encounters, so the encounter tap is the one manual step.
 - You can run every dungeon in one run, back to back. The run keeps going until you're out of lives or you end it. **Can you beat them all in one run?** The Dungeon tracker and status bar count which of the 11 dungeons you've beaten (The Shattered Throne, Pit of Heresy, Prophecy, Grasp of Avarice, Duality, Spire of the Watcher, Ghosts of the Deep, Warlord's Ruin, Vesper's Host, Sundered Doctrine, Equilibrium), and Run history shows how close you got.
 
+## Feedback
+
+Found a bug, think a reward is off, or have an idea? Use the **Feedback** section at the bottom of the app: it opens your mail app with a message ready to send to **d2roguelite@gmail.com**, optionally with your run details attached. You can also email that address directly.
+
 ## Export
 Download your runs as CSV (one row per event) or JSON from Run history. Run data is stored in your own browser.
