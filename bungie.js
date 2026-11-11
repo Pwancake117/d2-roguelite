@@ -38,6 +38,11 @@ B.login = () => {
   try { sessionStorage.setItem("d2r.oauthState", st); } catch(e){}
   location.href = BNG.auth + "?client_id=" + BNG.clientId + "&response_type=code&state=" + st;
 };
+/* remembers that this browser was signed in, so an expired sign-in can show a Reconnect prompt
+   (cleared only when the player disconnects on purpose) */
+const WAS_KEY = "d2r.wasConnected";
+B.expired = () => { if(B.connected()) return false; try { return localStorage.getItem(WAS_KEY)==="1"; } catch(e){ return false; } };
+B.disconnect = () => { try { localStorage.removeItem(WAS_KEY); } catch(e){} B.logout(); };
 B.logout = () => { B.auth=null; B.account=null; B.profile=null; try{localStorage.removeItem(AUTH_KEY);}catch(e){} window.render && window.render(); };
 async function handleRedirect(){
   const p = new URLSearchParams(location.search);
@@ -51,7 +56,7 @@ async function handleRedirect(){
   const j = await r.json().catch(()=>({}));
   if(!r.ok || !j.access_token){ note("Bungie sign-in failed: "+(j.error_description||j.error||r.status),"err"); return; }
   B.auth = {token:j.access_token, expiresAt:Date.now()+ (j.expires_in||3600)*1000, bnetId:j.membership_id};
-  try { localStorage.setItem(AUTH_KEY, JSON.stringify(B.auth)); } catch(e){}
+  try { localStorage.setItem(AUTH_KEY, JSON.stringify(B.auth)); localStorage.setItem(WAS_KEY, "1"); } catch(e){}
   note("Connected to Bungie.net","ok");
 }
 
