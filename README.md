@@ -144,7 +144,7 @@ Pick **Dungeon Only Run** on the setup screen for a run where only dungeons coun
 
 ## Feedback
 
-Found a bug, think a reward is off, or have an idea? Use the **Feedback** section at the bottom of the app: it opens your mail app with a message ready to send to **d2roguelite@gmail.com**, optionally with your run details attached. You can also email that address directly.
+Found a bug, think a reward is off, or have an idea? Use the **Send feedback** link at the bottom of the app: it opens your mail app with a message ready to send to **d2roguelite@gmail.com**, optionally with your run details attached. You can also email that address directly.
 
 ## Export
 Download your runs as CSV (one row per event) or JSON from Run history. Run data is stored in your own browser.

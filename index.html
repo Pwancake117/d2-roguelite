@@ -413,6 +413,10 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 }
 .feedback textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:2px;padding:10px;resize:vertical;min-height:96px}
 .feedback{display:grid;gap:12px}
+.fbpage{display:grid;gap:14px;max-width:760px;width:100%;margin:0 auto;justify-items:start}
+.fbpage .feedback{width:100%}
+.fblink{margin:0;text-align:center;color:var(--muted);font-size:.9rem}
+.fblink a{color:var(--accent);font-weight:600}
 </style>
 </head>
 <body>
@@ -443,7 +447,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=144"></script>
+<script src="bungie.js?v=145"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1637,16 +1641,17 @@ function renderEventLog(events){
 /* Feedback: opens the player's mail app with a filled-in message to the project inbox */
 const FEEDBACK_EMAIL = "d2roguelite@gmail.com";
 const FEEDBACK_TYPES = [["bug","Bug"],["balance","Rewards / balance"],["idea","Idea"],["other","Other"]];
-function renderFeedback(){
+function renderFeedbackPage(){
   const f = ui.feedback || (ui.feedback = {type:"bug", text:"", details:true});
-  return `<section class="panel feedback" id="feedback">
+  return `<div class="fbpage"><button class="btn ghost" data-act="fbBack">← Back to the app</button>
+  <section class="panel feedback" id="feedback">
     <h2>Feedback</h2>
     <p class="help">Found a bug, think a reward is off, or have an idea? Write it here and press <b>Send feedback</b>: your mail app opens with the message ready to send to <a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>. Nothing is sent until you press send there.</p>
     <div class="seg" role="radiogroup" aria-label="Feedback type">${FEEDBACK_TYPES.map(([k,l])=>`<input type="radio" id="fb-${k}" name="fbType" value="${k}" ${f.type===k?"checked":""}><label for="fb-${k}">${l}</label>`).join("")}</div>
     <label class="field" for="fbText">Your feedback<textarea id="fbText" name="fbText" rows="4" maxlength="1500" placeholder="What happened, or what would you change?">${esc(f.text)}</textarea></label>
     <label class="tog"><input type="checkbox" id="fbDetails" ${f.details?"checked":""}> Include my run details (class, subclass, events cleared, last few events) to help track down problems</label>
     <div class="row"><button class="btn primary" data-act="sendFeedback">Send feedback</button><span class="help">No mail app? Copy your message and email it to ${FEEDBACK_EMAIL}.</span></div>
-  </section>`;
+  </section></div>`;
 }
 function feedbackDetails(){
   const r = state.run, lines = ["", "---", "App version: "+(([...document.scripts].map(x=>x.src).find(x=>/bungie\.js/.test(x))||"").split("v=")[1]||"?"), "Screen: "+innerWidth+"x"+innerHeight];
@@ -1689,6 +1694,7 @@ function render(){
   setTimeout(()=>{ const B = window.D2R_BUNGIE; if(!wantDesc.size || !B || !B.describe) return; const hs = [...wantDesc]; wantDesc.clear(); B.describe(hs).then(n=>{ if(n) render(); }); }, 0);
   const run = state.run;
   let html = "";
+  if(location.hash==="#feedback"){ $("#app").innerHTML = renderFeedbackPage(); return; }
   if(run && run.status==="active"){
     // a waiting pick sits right under the status bar (above it on phones)
     html += `<div class="topstack">${renderStatus(run)}${run.pending ? `<section class="panel pickpanel" id="pickpanel">${renderPending(run)}</section>` : ""}</div>`;
@@ -1712,7 +1718,7 @@ function render(){
     html += renderSetup();
   }
   html += renderHistory();
-  html += renderFeedback();
+  html += `<p class="fblink">Found a bug or have an idea? <a href="#feedback">Send feedback →</a></p>`;
   $("#app").innerHTML = html;
 }
 
@@ -1799,6 +1805,7 @@ document.addEventListener("change", e=>{
   try { localStorage.setItem(MANUAL_KEY, t.checked ? "1" : "0"); } catch(err){}
   render();
 });
+addEventListener("hashchange", ()=>{ if(location.hash==="#feedback") ui.fbFromApp = true; render(); window.scrollTo(0,0); });
 document.addEventListener("input", e=>{
   const t = e.target; if(!t) return;
   const f = ui.feedback || (ui.feedback = {type:"bug", text:"", details:true});
@@ -1825,6 +1832,7 @@ document.addEventListener("click", e=>{
   const b = e.target.closest("[data-act]"); if(!b) return;
   const act = b.dataset.act;
   if(act==="sendFeedback"){ sendFeedback(); return; }
+  if(act==="fbBack"){ if(history.length>1 && ui.fbFromApp) history.back(); else { history.replaceState(null,"",location.pathname+location.search); render(); } return; }
   if(act==="start") startRun();
   else if(act==="loot") takeLoot(parseInt(b.dataset.i,10));
   else if(act==="boon") takeBoon(parseInt(b.dataset.i,10));
