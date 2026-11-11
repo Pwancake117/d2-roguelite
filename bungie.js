@@ -633,6 +633,8 @@ B.artifact = null;
 const DESC_KEY = "d2r.desc5";
 const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
 B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
+// drop blank entries saved by a failed lookup (before Nov 10), so they load again
+for(const h of Object.keys(B.desc)){ const v = B.desc[h]; if(v && !v.d && !(v.s&&v.s.length) && !v.cap) delete B.desc[h]; }
 const descBusy = new Set();
 const descFailed = {};
 B.describe = async hashes => {
@@ -643,14 +645,15 @@ B.describe = async hashes => {
   let i = 0, got = 0;
   const one = async h => {
     const d = await fullDef(h);
-    const texts = [];
+    const texts = []; let perkFail = null;
     for(const pk of d.perks||[]){
       // visibility 0 = shown, 1 = shown on some aspects (e.g. Crackshot), 2 = stat lines like "-10 Class"
       if(pk.perkVisibility===2) continue;
       try { const sp = await api(`/Destiny2/Manifest/DestinySandboxPerkDefinition/${pk.perkHash}/`), dp = sp.displayProperties||{}, t = dp.description;
-        if(t && (pk.perkVisibility===0 || sp.isDisplayable) && t!==dp.name && !texts.includes(t)) texts.push(t); } catch(e){}
+        if(t && (pk.perkVisibility===0 || sp.isDisplayable) && t!==dp.name && !texts.includes(t)) texts.push(t); } catch(e){ perkFail = e; }
     }
     if(!texts.length && d.displayProperties && d.displayProperties.description) texts.push(d.displayProperties.description);
+    if(perkFail && !texts.length) throw perkFail;   // don't save a blank description: try again later
     const st = d.investmentStats||[];
     const cap = (st.find(x=>x.statTypeHash===2223994109)||{}).value;
     const stats = st.filter(x=>x.value && STAT_NAME[x.statTypeHash]).map(x=>(x.value>0?"+":"")+x.value+" "+STAT_NAME[x.statTypeHash]);
