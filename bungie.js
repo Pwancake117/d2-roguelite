@@ -634,8 +634,10 @@ const DESC_KEY = "d2r.desc5";
 const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
 B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
 const descBusy = new Set();
+const descFailed = {};
 B.describe = async hashes => {
-  const todo = [...new Set(hashes.filter(h=>h && !B.desc[h] && !descBusy.has(h)))];
+  const now = Date.now();
+  const todo = [...new Set(hashes.filter(h=>h && !B.desc[h] && !descBusy.has(h) && !(descFailed[h] > now - 60000)))];   // failed lookups wait a minute before retrying
   if(!todo.length) return 0;
   todo.forEach(h=>descBusy.add(h));
   let i = 0, got = 0;
@@ -655,7 +657,16 @@ B.describe = async hashes => {
     B.desc[h] = {n:(d.displayProperties||{}).name||"", i:(d.displayProperties||{}).icon||"", d:texts.join(" "), s:stats, cap:cap||null};
     got++;
   };
-  await Promise.all(Array.from({length:Math.min(6,todo.length)}, async()=>{ while(i<todo.length){ const h = todo[i++]; try { await one(h); } catch(e){} descBusy.delete(h); } }));
+  let fail = null;
+  await Promise.all(Array.from({length:Math.min(6,todo.length)}, async()=>{ while(i<todo.length){ const h = todo[i++]; try { await one(h); } catch(e){ fail = e; } descBusy.delete(h); } }));
+  // a lookup that fails (e.g. the API key's allowed origin doesn't match this address) shows a message instead of "Loading…" forever
+  if(fail && !got){
+    todo.forEach(h=>{ if(!B.desc[h]) descFailed[h] = Date.now(); });
+    const first = !B.descError; B.descError = (fail && fail.message) || "Bungie.net didn't answer.";
+    if(first) console.warn("Ability descriptions unavailable:", B.descError);
+    return first ? 1 : 0;   // re-render once to show the message, never in a loop
+  }
+  B.descError = null;
   try { localStorage.setItem(DESC_KEY, JSON.stringify(B.desc)); } catch(e){}
   return got;
 };

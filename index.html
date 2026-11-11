@@ -457,7 +457,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=147"></script>
+<script src="bungie.js?v=148"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -515,7 +515,7 @@ function descOf(run, type, name, el){
   return d;
 }
 const capText = d => d && d.cap ? `<span class="dstat capline">Opens ${d.cap} fragment slot${d.cap>1?"s":""}</span>` : "";
-function descHtml(d){ return d ? `<span class="desc">${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}</span>${capText(d)}` : `<span class="desc muted">Loading description…</span>`; }
+function descHtml(d){ return d ? `<span class="desc">${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}</span>${capText(d)}` : `<span class="desc muted">${window.D2R_BUNGIE&&window.D2R_BUNGIE.descError?"Description unavailable right now ("+esc(window.D2R_BUNGIE.descError)+")":"Loading description…"}</span>`; }
 function descList(run, type, names){
   if(!names.length) return "";
   return `<ul class="desclist">${names.map(n=>{ const d = descOf(run,type,n); return `<li><b>${esc(n)}</b>${d&&d.cap?` <span class="dstat">(${d.cap} fragment slot${d.cap>1?"s":""})</span>`:""}${d?` — ${esc(d.d||"")}${d.s&&d.s.length?` <span class="dstat">${esc(d.s.join(" · "))}</span>`:""}`:""}</li>`; }).join("")}</ul>`;
