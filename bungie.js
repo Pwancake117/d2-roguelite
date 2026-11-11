@@ -634,7 +634,7 @@ const DESC_KEY = "d2r.desc5";
 const STAT_NAME = {144602215:"Super",392767087:"Health",1735777505:"Grenade",1943323491:"Class",2996146975:"Weapons",4244567218:"Melee"};
 B.desc = (()=>{ try { return JSON.parse(localStorage.getItem(DESC_KEY))||{}; } catch(e){ return {}; } })();
 // drop blank entries saved by a failed lookup (before Nov 10), so they load again
-for(const h of Object.keys(B.desc)){ const v = B.desc[h]; if(v && !v.d && !(v.s&&v.s.length) && !v.cap) delete B.desc[h]; }
+for(const h of Object.keys(B.desc)){ const v = B.desc[h]; if(v && !v.d) delete B.desc[h]; }
 const descBusy = new Set();
 const descFailed = {};
 B.describe = async hashes => {
