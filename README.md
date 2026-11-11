@@ -2,7 +2,7 @@
 
 A roguelite run tracker for Destiny 2. Each run starts on a fixed base build with common gear, earns loot and abilities from activities you clear, and ends when you run out of lives.
 
-**Play:** https://pwancake117.github.io/d2-roguelite/
+**Play:** https://d2roguelite.app
 
 ## What is D2 Roguelite?
 
