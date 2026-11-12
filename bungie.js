@@ -404,6 +404,8 @@ B.sync = async (run, {quiet} = {}) => {
       const id = act.activityDetails.instanceId;
       if(run.synced.includes(id)) continue;
       run.synced.push(id);
+      // never log the same Bungie activity twice, even if two syncs overlap
+      if(run.events.some(e=>e.instanceId===id) || run.queue.some(q=>q.instanceId===id)) continue;
       const v = act.values || {}, val = k => v[k] && v[k].basic ? v[k].basic.value : 0;
       const info = await activityInfo(act.activityDetails.directorActivityHash || act.activityDetails.referenceId);
       const isDungeon = info && (info.type===DUNGEON_TYPE || (act.activityDetails.modes||[]).includes(DUNGEON_MODE) || act.activityDetails.mode===DUNGEON_MODE);
