@@ -312,7 +312,7 @@ async function applySubclass(run, cid){
     if(cur[i] && cur[i]!==want[i] && cur[i]!==empty(i) && empty(i)){ try { await insertPlug(sub.inst, cid, i, empty(i)); cur[i]=empty(i); } catch(e){} }
   }
   // 2) abilities, aspects, then fragments
-  const order = [0,2,3,4].concat(aspectIdx, fragIdx);
+  const order = [0,1,2,3,4].concat(aspectIdx, fragIdx);   // 0 class ability, 1 jump, 2 super, 3 melee, 4 grenade
   for(const i of order){
     if(want[i] && cur[i]!==want[i]){
       try { await insertPlug(sub.inst, cid, i, want[i]); cur[i]=want[i]; }
