@@ -461,7 +461,7 @@ html.theme-dungeon .status > div,html.theme-dungeon .status > .stat-hot{backgrou
 <script>try{const q=new URLSearchParams(location.search).get("theme");if(q){localStorage.setItem("d2r.theme",q);}const t=localStorage.getItem("d2r.theme")||"dungeon";if(t!=="classic"&&t!=="default")document.documentElement.classList.add("theme-"+(t==="dungeon"?"dungeon":t));}catch(e){}</script>
 <script src="tiers.js?v=16"></script>
 <script src="starters.js?v=15"></script>
-<script src="bungie.js?v=154"></script>
+<script src="bungie.js?v=155"></script>
 <script>
 /* ---------------- Game data ---------------- */
 const CLASSES = ["Hunter","Titan","Warlock"];
@@ -1185,7 +1185,7 @@ function renderOverview(){
     <p class="lead">D2 Roguelite is a free web app that turns Destiny 2 into a roguelite. You start a run as a stripped-down Guardian with only common (white) gear and a basic starter build, then earn your way back up by playing.</p>
     <ol class="steps ovsteps">
       <li><b>Start weak.</b> Pick a class and subclass. You begin with common weapons and armor and a fixed starter build: no aspects, no fragments, no artifact.</li>
-      <li><b>Play events.</b> Run Vanguard Ops or dungeons in game. The app connects to your Bungie account and logs each finished activity automatically.</li>
+      <li><b>Play events.</b> Run Vanguard Ops (Solo, Fireteam, Arena and Pinnacle Ops), story missions from the campaigns (Normal or Legendary) or dungeons in game. The app connects to your Bungie account and logs each finished activity automatically.</li>
       <li><b>Loot and unlock.</b> Any gear that drops during the run is yours to use. Every clear also gives you reward picks in the app, where you choose 1 of 3 rewards: new supers, grenades, melees, aspects, fragments, artifacts or even other subclasses. Harder and cleaner clears earn more.</li>
       <li><b>Don't run out of lives.</b> Failing an event costs a life. In Hardcore, dying costs a life and your looted gear too. At 0 lives the run is over.</li>
       <li><b>See how far you got.</b> Every run is saved to your history with events cleared, deaths and score, and you can export it.</li>
@@ -1199,7 +1199,7 @@ function renderAbout(){
     <h3>Things to know</h3>
     <ul class="steps">
       <li><b>Engrams can be a bit wonky.</b> Engrams at the end of an event can take a few minutes to show up from the Postmaster in the app, even after the event's rewards have posted. Some of this runs on the honor system.</li>
-      <li><b>Stick with Vanguard Ops.</b> Some activities pour out drops. Vanguard Ops seem to give a more normal, manageable amount.</li>
+      <li><b>Stick with Vanguard Ops and story missions.</b> Some activities pour out drops. Vanguard Ops and story missions seem to give a more normal, manageable amount.</li>
       <li><b>Dungeon encounter rewards are lightly tested.</b> I haven't tried them much, so you may need to push those out manually as you progress through a dungeon.</li>
     </ul>
     <h3>What's next</h3>
@@ -1401,7 +1401,7 @@ function renderSetup(){
       <li><b>Connect Bungie</b>, pick your run below and press <b>Start run</b>.</li>
     </ol><button type="button" class="btn ghost" data-act="openGuide">Full per-class steps in the Setup guide</button></div>
     <div><h3>Run type</h3>${seg("mode", [["ops","Vanguard Ops Run"],["dungeon","Dungeon Only Run"]], s.mode||"ops")}
-      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter is treated as a completed event with reward unlocks: tap Encounter cleared after each one for a guaranteed pick and 1 artifact point. Finishing the dungeon counts as one more event when it syncs, with its Light plus a +2 Light dungeon bonus, and deaths come from Bungie's record when the dungeon ends. You can run every dungeon in one run, back to back; the run keeps going until you're out of lives or end it. Can you beat them all in one run?" : "Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops), campaign missions count (Normal as tier 2 with 2 picks, Legendary as tier 3 with 3 picks), and so do dungeons, with the same rewards as a Dungeon Only Run: tap Encounter cleared after each encounter, and the full clear counts as one more event. Harder ops pay more: Solo Ops give 1 guaranteed pick, Fireteam and Arena Ops 2, Pinnacle Ops and dungeon clears 3, and Light from harder or flawless clears earns bonus picks."}</p></div>
+      <p class="help" style="margin:6px 0 0">${(s.mode||"ops")==="dungeon" ? "Only dungeons count. Every encounter is treated as a completed event with reward unlocks: tap Encounter cleared after each one for a guaranteed pick and 1 artifact point. Finishing the dungeon counts as one more event when it syncs, with its Light plus a +2 Light dungeon bonus, and deaths come from Bungie's record when the dungeon ends. You can run every dungeon in one run, back to back; the run keeps going until you're out of lives or end it. Can you beat them all in one run?" : "Vanguard Ops count (Solo, Fireteam, Arena and Pinnacle Ops), story missions from the campaigns count (Normal as tier 2 with 2 picks, Legendary as tier 3 with 3 picks), and so do dungeons, with the same rewards as a Dungeon Only Run: tap Encounter cleared after each encounter, and the full clear counts as one more event. Harder ops pay more: Solo Ops give 1 guaranteed pick, Fireteam and Arena Ops 2, Pinnacle Ops and dungeon clears 3, and Light from harder or flawless clears earns bonus picks."}</p></div>
     <div><h3>Mode</h3>${seg("difficulty", [["normal","Normal"],["hardcore","Hardcore"]], s.difficulty||"normal")}
       <p class="help" style="margin:6px 0 0">${(s.difficulty||"normal")==="hardcore" ? "Dying at any point in an event, or leaving an activity after 5 minutes, costs one life and every looted item you had equipped. Your starter commons are never lost." : "Clearing with no deaths earns bonus Light. Dying only reduces the Light you earn; failing an activity, or leaving after 5 minutes, costs a life."} Flawless clears earn +${2} Light and +25 score in both modes.</p><div class="startnote lightnote"><b>What is Light?</b> Light is the completion reward the app uses to decide how many rewards you get. Every completed event gives guaranteed picks (Solo Ops 1, Fireteam and Arena Ops 2, Pinnacle Ops and dungeon clears 3) and earns Light equal to its power (activity tier + difficulty), +2 for a flawless clear. Activity tiers: Solo 1, Fireteam 3, Arena 3, Pinnacle 5, dungeon 5. In Normal mode each death lowers it by 1 (minimum 1). Every 4 Light adds a bonus pick, and leftover Light carries over. Harder and cleaner clears mean more picks.</div></div>
     <div><h3>Class</h3>${seg("cls", CLASSES.map(c=>[c,c]), s.cls)}</div>

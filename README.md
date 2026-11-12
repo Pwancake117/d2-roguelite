@@ -10,7 +10,7 @@ D2 Roguelite is a free web app that turns Destiny 2 into a roguelite. You start 
 
 **How a run works**
 1. **Start weak.** Pick a class and subclass. You begin with common weapons and armor and a fixed starter build: no aspects, no fragments, no artifact.
-2. **Play events.** Run Vanguard Ops or dungeons in game. The app connects to your Bungie account and logs each finished activity automatically.
+2. **Play events.** Run Vanguard Ops (Solo, Fireteam, Arena and Pinnacle Ops), story missions from the campaigns (Normal or Legendary) or dungeons in game. The app connects to your Bungie account and logs each finished activity automatically.
 3. **Loot and unlock.** Any gear that drops during the run is yours to use. Every clear also gives you reward picks in the app, where you choose 1 of 3 rewards: new supers, grenades, melees, aspects, fragments, artifacts or even other subclasses. Harder and cleaner clears earn more.
 4. **Don't run out of lives.** Failing an event costs a life. In Hardcore, dying costs a life and your looted gear too. At 0 lives the run is over.
 5. **See how far you got.** Every run is saved to your history with events cleared, deaths and score, and you can export it.
@@ -22,7 +22,7 @@ I started on this idea a while back, but was recently inspired by Lep's Dungeon 
 ### Things to know
 
 - **Engrams can be a bit wonky.** Engrams at the end of an event can take a few minutes to show up from the Postmaster in the app, even after the event's rewards have posted. Some of this runs on the honor system.
-- **Stick with Vanguard Ops.** Some activities pour out drops. Vanguard Ops seem to give a more normal, manageable amount.
+- **Stick with Vanguard Ops and story missions.** Some activities pour out drops. Vanguard Ops and story missions seem to give a more normal, manageable amount.
 - **Dungeon encounter rewards are lightly tested.** I haven't tried them much, so you may need to push those out manually as you progress through a dungeon.
 
 ### What's next
