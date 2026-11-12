@@ -332,6 +332,7 @@ const VO_DESTS = {2171594315:"fireteam", 103806431:"arena", 4008773657:"solo"};
    strikes/Nightfalls/Onslaught (Fireteam Ops), 6-player seasonal arenas (Arena Ops), exotic missions (Pinnacle Ops). */
 const FIRETEAM_MODES = [3, 18, 16, 17, 46];
 const ONSLAUGHT_TYPE = 2897687202, EXOTIC_MISSION_TYPE = 1227821118;
+const STORY_TYPE = 1686739444, STORY_MODE = 2;   // campaign missions
 const ARENA_TYPES = [102866517, 263019149, 904017341, 1728319841, 3481239102, 3565127261];
 function classify(info, act){
   if(!info) return null;
@@ -342,6 +343,7 @@ function classify(info, act){
   if(info.type===EXOTIC_MISSION_TYPE) return "pinnacle";
   if(ARENA_TYPES.includes(info.type)) return "arena";
   if(info.type===ONSLAUGHT_TYPE || modes.some(m=>FIRETEAM_MODES.includes(m))) return "fireteam";
+  if(info.type===STORY_TYPE || modes.includes(STORY_MODE)) return /legend/i.test(info.name||"") ? "missionL" : "mission";
   return null;
 }
 function difficulty(name){
@@ -414,8 +416,20 @@ B.sync = async (run, {quiet} = {}) => {
       // leaving: within the grace period it's not an event; after it, it counts as a failed attempt
       const played = val("timePlayedSeconds") || val("activityDurationSeconds");
       if(!completed && played < LEAVE_GRACE_SECONDS) continue;
+      const start = Date.parse(act.period), isMission = type==="mission" || type==="missionL";
+      // some missions are reported as two back-to-back activities (e.g. The Arrival): the second part is the same mission, not a new one
+      const base = n => (n||"").replace(/:\s*(Legendary|Normal|Classic|Matchmade|Customize)\s*$/i,"").trim();
+      if(isMission && run.lastMission && run.lastMission.name===base(name) && start - run.lastMission.end < 10*60e3){
+        run.lastMission.end = start + played*1000;
+        const q = run.queue.find(x=>x.instanceId===run.lastMission.id);
+        if(q){ q.deaths += deaths; q.completed = q.completed && completed; if(q.details) q.details.minutes = Math.round((q.details.minutes||0) + played/60); }
+        continue;
+      }
+      if(isMission) run.lastMission = {name:base(name), end:start + played*1000, id};
       let details = null; try { details = await activityDetails(act); } catch(e){}
-      run.queue.push({eventId:type, diff:difficulty(name), completed, deaths, note:name, at:Date.parse(act.period), instanceId:id, details});
+      // Legendary is the mission's tier, not a difficulty step on top of it
+      const diff = isMission ? difficulty(name.replace(/legend\w*/i,"")) : difficulty(name);
+      run.queue.push({eventId:type, diff, completed, deaths, note:name, at:start, instanceId:id, details});
       added++;
     }
     // what's equipped right now (hardcore losses), and anything new picked up since the last sync
