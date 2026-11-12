@@ -124,7 +124,7 @@ Each pick card shows its tier, and the **Reward tier list** button shows everyth
 ## Modes and deaths
 | | Normal | Hardcore |
 |---|---|---|
-| Clear with no deaths | Power + 2 bonus Light, +25 score | Same |
+| Clear with no deaths | Power + 1 bonus Light, +25 score | Same |
 | Clear with deaths | Light reduced by 1 per death (min 1), no other penalty | Lose a life **and every looted item you had equipped** |
 | Failed, or left after 5 minutes | Lose a life | Lose a life and your equipped loot |
 | Left within 5 minutes | Doesn't count | Doesn't count |
@@ -138,7 +138,7 @@ Vanguard Ops activities, campaign missions and dungeons count as events, since e
 Pick **Dungeon Only Run** on the setup screen for a run where only dungeons count.
 - The app detects when you're in a dungeon (it checks every 20 seconds) and shows a **Dungeon tracker**.
 - Tap **Encounter cleared** after each boss or major fight. Every encounter is treated as a completed event with reward unlocks: a guaranteed pick and 1 artifact point (no Light).
-- When the dungeon ends, Bungie's record logs the clear: its Light (dungeon power, +2 if flawless) plus a **+2 Light dungeon bonus**, your deaths and the loot you picked up.
+- When the dungeon ends, Bungie's record logs the clear: its Light (dungeon power, +1 if flawless) plus a **+2 Light dungeon bonus**, your deaths and the loot you picked up.
 - Bungie's API doesn't report dungeon encounters, so the encounter tap is the one manual step.
 - You can run every dungeon in one run, back to back. The run keeps going until you're out of lives or you end it. **Can you beat them all in one run?** The Dungeon tracker and status bar count which of the 11 dungeons you've beaten (The Shattered Throne, Pit of Heresy, Prophecy, Grasp of Avarice, Duality, Spire of the Watcher, Ghosts of the Deep, Warlord's Ruin, Vesper's Host, Sundered Doctrine, Equilibrium), and Run history shows how close you got.
 
